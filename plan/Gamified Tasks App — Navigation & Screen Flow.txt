@@ -1,0 +1,223 @@
+# 📱 Gamified Tasks App — Navigation & Screen Flow
+
+---
+
+# 🧭 Global Navigation Structure
+
+```id="nav001"
+App Start
+   │
+   ▼
+Auth Flow
+   │
+   ├── Login Screen
+   ├── Register Screen
+   └── Session Restore
+           │
+           ▼
+Group Selection Flow
+           │
+           ├── Create Group
+           ├── Join Group (Invite)
+           └── Select Existing Group
+                    │
+                    ▼
+Main App (Tabs)
+```
+
+---
+
+# 🏠 Main Application Layout
+
+Recommended structure:
+
+```id="nav002"
+Bottom Tab Navigation
+--------------------------------
+│ Home │ Tasks │ Rewards │ Profile │
+--------------------------------
+```
+
+⚠️ Rewards tab appears only after Stage 3.
+
+---
+
+# 🏡 HOME TAB — Dashboard
+
+## Purpose
+
+Quick overview of user progress.
+
+### Screens
+
+* Dashboard
+* Today's Tasks Summary
+* User Level Progress (future)
+* Current Streak (future)
+* Group Activity Feed
+
+### User Actions
+
+* View pending tasks
+* Open task details
+* View group ranking (future)
+
+---
+
+# ✅ TASKS TAB — Core System (MOST IMPORTANT)
+
+```id="nav003"
+Tasks List
+   │
+   ├── Assigned To Me
+   ├── Pending Approval
+   ├── Completed
+   │
+   ▼
+Task Detail
+   │
+   ├── Mark Complete
+   ├── Upload Proof
+   └── View Status
+```
+
+---
+
+## Owner/Sub-Owner Extra Flow
+
+```id="nav004"
+Task Management
+   │
+   ├── Create Task
+   ├── Assign Members
+   ├── Define Points
+   └── Require Proof (optional)
+```
+
+---
+
+## Approval Flow
+
+```id="nav005"
+Pending Approval
+      │
+      ├── Approve ✅
+      └── Reject ❌
+```
+
+Approval triggers gamification event later.
+
+---
+
+# 🎁 REWARDS TAB (Stage 3)
+
+```id="nav006"
+Rewards List
+      │
+      ├── Reward Detail
+      │        │
+      │        └── Redeem Reward
+      │
+      ▼
+Redemption Requests
+      │
+      ├── Approved
+      └── Pending
+```
+
+Owner/Sub-Owner:
+
+* Approve redemption
+* Reject redemption
+
+---
+
+# 👤 PROFILE TAB
+
+```id="nav007"
+Profile
+   │
+   ├── User Stats
+   ├── Level / XP (future)
+   ├── Streak Info (future)
+   ├── Group Settings
+   └── Logout
+```
+
+---
+
+# 👥 GROUP MANAGEMENT FLOW
+
+Accessible from Profile or Home.
+
+```id="nav008"
+Group Settings
+   │
+   ├── Members List
+   ├── Invite Member
+   ├── Change Role
+   ├── Remove Member
+   └── Group Configuration
+```
+
+---
+
+# 🔔 FUTURE GLOBAL SCREENS
+
+Accessible from anywhere:
+
+* Notifications Center
+* Activity History
+* Achievement Screen
+* Leaderboard
+
+---
+
+# 🧠 Navigation Principles
+
+✅ Tabs = Major Domains
+✅ Stack = Detail Screens
+✅ Modal = Creation / Approval flows
+
+---
+
+# 🚨 Important Rule
+
+Task creation and approval should NEVER live inside dashboard logic.
+
+Each domain owns its navigation stack.
+
+---
+
+# ✅ MVP Navigation Scope
+
+IMPLEMENT NOW:
+
+* Auth Flow
+* Group Creation/Join
+* Home Dashboard
+* Tasks List
+* Task Detail
+* Task Approval
+* Profile
+
+DO NOT BUILD YET:
+
+* Rewards
+* Levels
+* Leaderboards
+* Achievements
+
+---
+
+# 🚀 Development Order (Recommended)
+
+1. Auth Flow
+2. Group Flow
+3. Tasks List
+4. Task Detail
+5. Approval Flow
+6. Dashboard
+7. Profile
+
+Only after stabilization → Stage 2.

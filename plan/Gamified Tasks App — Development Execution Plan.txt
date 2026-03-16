@@ -1,0 +1,252 @@
+# 📅 Gamified Tasks App — Development Execution Plan
+
+---
+
+# 🎯 Development Strategy
+
+Rules:
+
+* Ship something usable every 2 weeks.
+* Never build more than one system at once.
+* UI follows data, not the opposite.
+* Each week produces visible progress.
+
+Estimated pace:
+👉 8–10 weeks for solid MVP.
+
+---
+
+# 🟢 PHASE 1 — Core MVP
+
+---
+
+## ✅ Week 1 — Project Foundation
+
+### Goal
+
+Stable project setup.
+
+### Tasks
+
+* Initialize React Native project
+* Configure TypeScript
+* Setup navigation structure
+* Setup folder architecture
+* Connect Supabase project
+* Environment variables setup
+
+### Result
+
+App opens → navigation works → Supabase connected.
+
+---
+
+## ✅ Week 2 — Authentication
+
+### Tasks
+
+* Register screen
+* Login screen
+* Session persistence
+* Logout flow
+* Basic profile fetch
+
+### Result
+
+User authentication fully working.
+
+✔ First real milestone.
+
+---
+
+## ✅ Week 3 — Groups System
+
+### Tasks
+
+* Create group
+* Join group via invite
+* Membership creation
+* Role assignment
+* Group selector screen
+
+### Result
+
+Users can collaborate.
+
+App becomes multi-user.
+
+---
+
+## ✅ Week 4 — Tasks Creation
+
+### Tasks
+
+* Create task screen
+* Assign member
+* Define points
+* Task list per group
+* Task detail screen
+
+### Result
+
+Core functionality exists.
+
+---
+
+## ✅ Week 5 — Task Submission Flow
+
+### Tasks
+
+* Mark task completed
+* Optional proof upload
+* Submission creation
+* Pending review state
+
+### Result
+
+Real workflow appears.
+
+---
+
+## ✅ Week 6 — Approval System ⭐
+
+### Tasks
+
+* Pending approvals list
+* Approve / reject submission
+* Status updates
+* Permission validation
+
+### Result
+
+FULL CORE LOOP COMPLETE.
+
+Owner assigns → Member completes → Owner approves.
+
+🚀 MVP LOGIC DONE.
+
+---
+
+# 🟡 PHASE 2 — Engagement Layer
+
+---
+
+## ✅ Week 7 — Points System
+
+### Tasks
+
+* Point transactions table
+* Add points on approval
+* User balance calculation
+* Dashboard balance display
+
+### Result
+
+Users now feel rewarded.
+
+---
+
+## ✅ Week 8 — Basic Dashboard
+
+### Tasks
+
+* Home summary
+* Assigned tasks preview
+* Completed tasks count
+* Group activity overview
+
+### Result
+
+App feels alive.
+
+---
+
+## ✅ Week 9 — Streak System
+
+### Tasks
+
+* Daily activity detection
+* Streak counter
+* Reset logic
+* Visual indicator
+
+### Result
+
+Daily retention mechanic added.
+
+---
+
+## ✅ Week 10 — Levels & XP
+
+### Tasks
+
+* XP model
+* Level thresholds
+* Progress bar
+* Level-up feedback
+
+### Result
+
+Gamification foundation complete.
+
+---
+
+# 🟣 PHASE 3 — Rewards
+
+(Future)
+
+* Rewards creation
+* Redemption requests
+* Approval flow
+
+---
+
+# 🧠 Weekly Work Pattern
+
+Each week:
+
+1. Database change
+2. Supabase integration
+3. Screen implementation
+4. Edge cases
+5. Small refactor
+
+---
+
+# 🚨 Anti-Burnout Rule
+
+If a feature takes >5 days:
+
+👉 Split it.
+
+Never fight architecture while tired.
+
+---
+
+# ✅ Definition of MVP DONE
+
+App allows:
+
+* Login
+* Create group
+* Invite users
+* Assign tasks
+* Submit completion
+* Approve tasks
+* Earn points
+
+Everything else is enhancement.
+
+---
+
+# 🏁 First Public Test Target
+
+End of Week 6.
+
+Invite:
+
+* spouse
+* family
+* friends
+
+Real usage > perfect UI.

@@ -1,0 +1,299 @@
+# 🗄 Gamified Tasks App — Database Mental Model (Supabase)
+
+---
+
+# 🎯 Goal
+
+Design a scalable data structure supporting:
+
+* Groups
+* Roles
+* Tasks
+* Approvals
+* Points
+* Future gamification
+* Future SaaS expansion
+
+Without requiring database rewrites.
+
+---
+
+# 🧩 Core Entities Overview
+
+```id="db001"
+Users
+  ↓
+Memberships
+  ↓
+Groups
+  ↓
+Tasks
+  ↓
+Task Submissions
+  ↓
+Events
+  ↓
+Points / Progression / Rewards
+```
+
+---
+
+# 👤 USERS
+
+Represents authenticated users.
+
+### users
+
+* id
+* email
+* name
+* avatar_url
+* created_at
+
+Managed partially by Supabase Auth.
+
+---
+
+# 👥 GROUPS
+
+A collaborative space.
+
+### groups
+
+* id
+* name
+* created_by
+* created_at
+* max_members (future SaaS)
+* settings_json
+
+Example settings:
+
+* proof_required_default
+* points_expiration_enabled
+
+---
+
+# 🔗 MEMBERSHIPS (IMPORTANT TABLE)
+
+This connects users and groups.
+
+✅ Enables multi-group users.
+
+### memberships
+
+* id
+* user_id
+* group_id
+* role
+
+Roles:
+
+* owner
+* sub_owner
+* member
+
+---
+
+# ✅ TASKS
+
+Defines work to be done.
+
+### tasks
+
+* id
+* group_id
+* title
+* description
+* points_value
+* created_by
+* requires_proof
+* assigned_to
+* status
+* created_at
+
+Status example:
+
+* active
+* archived
+
+---
+
+# 📸 TASK SUBMISSIONS
+
+A task completion attempt.
+
+### task_submissions
+
+* id
+* task_id
+* user_id
+* proof_image_url
+* note
+* status
+* reviewed_by
+* reviewed_at
+* created_at
+
+Status:
+
+* pending
+* approved
+* rejected
+
+⚠️ Tasks are NOT completed directly.
+Submissions represent completion attempts.
+
+---
+
+# ⚡ EVENTS (CRITICAL FUTURE TABLE)
+
+Tracks user actions.
+
+### user_events
+
+* id
+* user_id
+* group_id
+* event_type
+* reference_id
+* metadata_json
+* created_at
+
+Examples:
+
+* TaskApproved
+* DailyActive
+* RewardRedeemed
+
+Gamification systems read from here.
+
+---
+
+# 🪙 POINTS LEDGER (DO NOT STORE TOTAL ONLY)
+
+Never store only balance.
+
+### point_transactions
+
+* id
+* user_id
+* group_id
+* event_id
+* amount
+* reason
+* created_at
+
+Balance = calculated sum.
+
+Prevents cheating & bugs.
+
+---
+
+# 🎁 REWARDS (Stage 3)
+
+### rewards
+
+* id
+* group_id
+* title
+* cost_points
+* created_by
+* active
+
+---
+
+# 🧾 REWARD REDEMPTIONS
+
+### reward_redemptions
+
+* id
+* reward_id
+* user_id
+* status
+* approved_by
+* approved_at
+* created_at
+
+Status:
+
+* pending
+* approved
+* rejected
+
+---
+
+# 🧠 Relationship Diagram
+
+```id="db002"
+User
+ └── Membership ─── Group
+                        │
+                        ├── Tasks
+                        │      └── Task Submissions
+                        │
+                        ├── Rewards
+                        │      └── Redemptions
+                        │
+                        └── Events
+                               └── Point Transactions
+```
+
+---
+
+# 🚨 Golden Database Rules
+
+✅ Users NEVER belong directly to groups
+✅ Tasks NEVER store completion state
+✅ Points NEVER stored as fixed balance
+✅ Gamification reads EVENTS
+✅ Permissions handled via memberships
+
+---
+
+# 🚀 MVP Tables Only
+
+CREATE FIRST:
+
+* users
+* groups
+* memberships
+* tasks
+* task_submissions
+
+WAIT UNTIL LATER:
+
+* user_events
+* point_transactions
+* rewards
+* redemptions
+
+---
+
+# ✅ MVP Data Flow
+
+```id="db003"
+User completes task
+      ↓
+Create submission
+      ↓
+Owner approves
+      ↓
+(Create event later)
+      ↓
+(Add points later)
+```
+
+---
+
+# 📈 SaaS Ready
+
+This structure already supports:
+
+* multi-tenancy
+* subscriptions
+* analytics
+* scaling groups
+* enterprise logic
+
+No redesign required.

@@ -1,0 +1,277 @@
+# 📘 Architecture Decision Record (ADR)
+
+## Gamified Tasks App
+
+---
+
+# ADR-001 — Mobile Framework Selection
+
+**Status:** Accepted
+**Date:** 2026
+
+### Decision
+
+Use **React Native** as the primary mobile framework.
+
+### Context
+
+Developer recently started professional work using React Native and wants the side project to reinforce real-world skills.
+
+### Reasoning
+
+* Aligns learning with current job.
+* Improves professional experience.
+* Enables reuse of production knowledge.
+* Large ecosystem and hiring demand.
+
+### Consequences
+
+* Faster skill growth in RN ecosystem.
+* Flutter remains secondary stack (maintenance only).
+
+---
+
+# ADR-002 — Backend Platform Choice
+
+**Status:** Accepted
+
+### Decision
+
+Use **Supabase** as backend platform for MVP.
+
+### Context
+
+Project requires authentication, database, storage and realtime updates without backend overhead.
+
+### Reasoning
+
+* Built-in authentication.
+* PostgreSQL database.
+* File storage support.
+* Row Level Security.
+* Fast MVP iteration.
+
+### Consequences
+
+* No custom backend needed initially.
+* Faster development speed.
+* Backend API may be introduced later.
+
+---
+
+# ADR-003 — Backend API Strategy
+
+**Status:** Planned
+
+### Decision
+
+Do NOT introduce intermediate backend during MVP.
+
+### Context
+
+Early introduction increases complexity and slows delivery.
+
+### Reasoning
+
+Supabase already handles:
+
+* Auth
+* Database logic
+* Permissions
+* Storage
+
+Backend becomes necessary only when SaaS features appear.
+
+### Future Trigger
+
+Backend introduced when implementing:
+
+* subscriptions
+* billing
+* analytics
+* scheduled jobs
+* multi-tenant limits
+
+---
+
+# ADR-004 — User Group Membership Model
+
+**Status:** Accepted
+
+### Decision
+
+Users can belong to **multiple groups**.
+
+### Context
+
+Users may participate in different social contexts.
+
+### Reasoning
+
+Real-world usage:
+
+* Family
+* Couple
+* Work
+* School
+* Roommates
+
+Restrictions should be business-plan based, not database-based.
+
+### Consequences
+
+Future SaaS limits applied via subscription plans.
+
+---
+
+# ADR-005 — Gamification Architecture
+
+**Status:** Accepted
+
+### Decision
+
+Gamification will be **event-driven**, not task-driven.
+
+### Context
+
+Directly attaching rewards to tasks causes scalability issues.
+
+### Decision Model
+
+Actions generate events:
+
+* TaskApproved
+* DailyActive
+* RewardRedeemed
+
+Gamification systems react to events.
+
+### Benefits
+
+* Extensible system
+* Easy feature expansion
+* Prevents architectural rewrites
+
+---
+
+# ADR-006 — System Separation
+
+**Status:** Accepted
+
+### Decision
+
+Separate domain systems.
+
+### Systems
+
+1. Task System
+2. Points System
+3. Progression System
+4. Reward System
+
+### Reasoning
+
+Prevents coupling and future refactors.
+
+---
+
+# ADR-007 — Gamification Rollout Strategy
+
+**Status:** Accepted
+
+### Decision
+
+Gamification introduced AFTER Core MVP stability.
+
+### Order
+
+1. Functional
+2. Useful
+3. Fun
+4. Addictive
+5. Scalable
+
+### Consequences
+
+Avoids premature complexity.
+
+---
+
+# ADR-008 — Initial Group Size Limitation
+
+**Status:** Temporary
+
+### Decision
+
+Limit groups to ~3 members during MVP.
+
+### Reasoning
+
+* Simplifies testing
+* Reduces edge cases
+* Faster iteration
+
+### Future
+
+Limit removed or monetized in SaaS phase.
+
+---
+
+# ADR-009 — Points Expiration
+
+**Status:** Deferred
+
+### Decision
+
+Points do NOT expire in MVP.
+
+### Reasoning
+
+Reduces complexity early.
+
+### Future Option
+
+Group-configurable expiration system.
+
+---
+
+# ADR-010 — Proof Submission
+
+**Status:** Accepted
+
+### Decision
+
+Tasks may optionally require proof submission.
+
+### Supported Proof
+
+* Image upload
+* Optional text note
+
+### Reasoning
+
+Supports household validation scenarios.
+
+---
+
+# ✅ Current Architecture State
+
+* React Native Mobile App
+* Supabase Backend
+* Event-driven Gamification (planned)
+* Multi-group users
+* MVP-first strategy
+
+---
+
+# 📌 Usage Rule
+
+Every important technical or product decision must create a new ADR entry.
+
+Format:
+
+ADR-XXX — Title
+Decision
+Context
+Reasoning
+Consequences

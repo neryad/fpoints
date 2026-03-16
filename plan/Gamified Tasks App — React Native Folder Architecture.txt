@@ -1,0 +1,270 @@
+# 📁 Gamified Tasks App — React Native Folder Architecture
+
+---
+
+# 🎯 Architecture Goal
+
+Structure optimized for:
+
+* Feature scalability
+* Team growth
+* Domain separation
+* Maintainability
+* SaaS evolution
+
+---
+
+# 🧭 Core Principle
+
+✅ Organize by **feature**, not by file type.
+
+❌ BAD
+
+```
+components/
+screens/
+services/
+hooks/
+```
+
+✅ GOOD
+
+```
+features/
+   auth/
+   groups/
+   tasks/
+```
+
+Each feature owns everything it needs.
+
+---
+
+# 🏗 Recommended Project Structure
+
+```id="fs001"
+src/
+│
+├── app/
+│   ├── navigation/
+│   ├── providers/
+│   └── App.tsx
+│
+├── core/
+│   ├── api/
+│   ├── supabase/
+│   ├── theme/
+│   ├── utils/
+│   └── types/
+│
+├── components/
+│   ├── ui/
+│   └── shared/
+│
+├── features/
+│   │
+│   ├── auth/
+│   │   ├── screens/
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── services/
+│   │   └── types.ts
+│   │
+│   ├── groups/
+│   │   ├── screens/
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── services/
+│   │   └── types.ts
+│   │
+│   ├── tasks/
+│   │   ├── screens/
+│   │   ├── components/
+│   │   ├── hooks/
+│   │   ├── services/
+│   │   └── types.ts
+│   │
+│   ├── rewards/      (future)
+│   └── gamification/ (future)
+│
+└── assets/
+    ├── images/
+    ├── icons/
+    └── fonts/
+```
+
+---
+
+# 🧩 Folder Responsibilities
+
+---
+
+## 📦 app/
+
+Global app configuration.
+
+Contains:
+
+* navigation containers
+* global providers
+* app bootstrap
+
+Nothing business-related here.
+
+---
+
+## ⚙️ core/
+
+Reusable infrastructure.
+
+Examples:
+
+* Supabase client
+* API helpers
+* theme system
+* constants
+* utilities
+
+Rule:
+
+> Core knows nothing about features.
+
+---
+
+## 🧱 components/
+
+Reusable UI elements.
+
+Examples:
+
+* Button
+* Card
+* Modal
+* Avatar
+* Loader
+
+Must be domain-agnostic.
+
+---
+
+## 🚀 features/
+
+THE HEART OF THE APP.
+
+Each feature contains:
+
+* screens
+* hooks
+* services
+* components
+* types
+
+Example:
+
+```id="fs002"
+features/tasks/
+   screens/
+      TaskListScreen
+      TaskDetailScreen
+
+   components/
+      TaskCard
+      TaskStatusBadge
+
+   hooks/
+      useTasks
+      useCreateTask
+
+   services/
+      tasks.service.ts
+
+   types.ts
+```
+
+---
+
+# 🧠 Golden Rule
+
+If deleting a feature breaks unrelated code:
+
+❌ architecture is wrong.
+
+Features must be isolated.
+
+---
+
+# 🔌 Services Layer Pattern
+
+Example responsibility:
+
+```
+Screen → Hook → Service → Supabase
+```
+
+Never call Supabase directly from screens.
+
+---
+
+# 🧭 Navigation Placement
+
+```
+app/navigation/
+```
+
+Example:
+
+```
+AuthNavigator
+MainTabsNavigator
+TaskStackNavigator
+```
+
+Each feature exposes its screens.
+
+---
+
+# 🧠 Future Ready Expansion
+
+Easy additions later:
+
+```
+features/
+   notifications/
+   analytics/
+   billing/
+   admin/
+```
+
+No restructuring required.
+
+---
+
+# 🚨 Common Mistakes to Avoid
+
+❌ giant utils folder
+❌ global state everywhere
+❌ direct DB calls in UI
+❌ shared components tied to features
+
+---
+
+# ✅ MVP Active Features
+
+Build first:
+
+* auth
+* groups
+* tasks
+
+Create empty folders for future domains early.
+
+---
+
+# 🏁 Result
+
+Architecture capable of:
+
+* Startup scaling
+* Team collaboration
+* SaaS transition
+* Long-term maintenance

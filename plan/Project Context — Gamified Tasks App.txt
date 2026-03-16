@@ -1,0 +1,312 @@
+# 📱 Project Context — Gamified Tasks App
+
+## 🧠 Project Overview
+
+Mobile application focused on **task management for families, couples or small groups**, introducing **gamification mechanics** to increase motivation and engagement.
+
+The goal is to transform daily responsibilities into a **fun, reward-driven experience**, similar to habit-building systems used in modern productivity apps.
+
+Users complete tasks → earn points → maintain streaks → level up → redeem rewards defined by group administrators.
+
+Future vision includes evolving the platform into a **SaaS product**.
+
+---
+
+## 🎯 Core Idea
+
+A user can:
+
+* Create an account
+* Create or join a group
+* Collaborate with other members
+* Complete assigned tasks
+* Earn points and experience
+* Maintain activity streaks
+* Redeem rewards created by group owners
+
+The system introduces gaming mechanics such as:
+
+* Points
+* Levels
+* Streaks
+* Rewards
+* Progression
+
+---
+
+## 👥 User Roles
+
+### Owner
+
+* Creates group
+* Invites members
+* Creates tasks
+* Assigns tasks
+* Defines point values
+* Validates completed tasks
+* Creates rewards
+* Approves reward redemption
+
+### Sub-Owner
+
+* Same operational permissions as Owner except ownership transfer
+
+### Member
+
+* Receives assigned tasks
+* Marks tasks as completed
+* Optionally uploads proof (image/text)
+* Requests reward redemption
+
+---
+
+## 🧩 Group Model Decision
+
+✅ Users **can belong to multiple groups**.
+
+Examples:
+
+* Family group
+* Couple group
+* Roommates
+* School/team group
+
+Limits will later be controlled via SaaS plans, not database structure.
+
+---
+
+## 🎮 Gamification Philosophy
+
+The system rewards **events**, not tasks directly.
+
+Example events:
+
+* TaskApproved
+* DailyActive
+* RewardRedeemed
+* StreakMaintained
+
+Gamification systems listen to events and generate:
+
+* Points
+* XP
+* Level progression
+* Streak updates
+
+This prevents future architectural rewrites.
+
+---
+
+## 🧱 System Separation
+
+The app is divided conceptually into independent systems:
+
+### 1. Task System
+
+Handles:
+
+* Tasks
+* Assignment
+* Completion
+* Approval workflow
+
+### 2. Points System
+
+Responds to events and assigns points.
+
+### 3. Progression System
+
+Handles:
+
+* XP
+* Levels
+* User growth
+
+### 4. Reward System
+
+Handles:
+
+* Rewards catalog
+* Redemption requests
+* Approval flow
+
+---
+
+## ⚙️ Tech Stack
+
+### Mobile
+
+* React Native
+
+### Backend Platform
+
+* Supabase
+
+  * Authentication
+  * PostgreSQL Database
+  * Storage (task proof images)
+  * Realtime features
+  * Row Level Security
+
+### Backend API
+
+❌ Not required for MVP
+✅ Planned for SaaS phase
+
+Future backend candidate:
+
+* Node.js / NestJS
+
+---
+
+## 📈 Development Roadmap
+
+---
+
+# 🟢 Stage 1 — Core MVP (Current Target)
+
+### Objective
+
+Functional task collaboration between 2–3 users.
+
+### Features
+
+* Authentication
+* Create group
+* Invite members
+* Role system
+* Create tasks
+* Assign tasks
+* Mark task completed
+* Approve / reject task
+* Basic points system
+
+### Excluded
+
+* Levels
+* Streaks
+* Rewards
+* Notifications
+
+---
+
+### Prompt for Future Chat
+
+```
+I am working on Stage 1 (Core MVP) of my gamified task management app using React Native and Supabase.
+Help me design architecture and flows for task management and group collaboration without gamification yet.
+```
+
+---
+
+# 🟡 Stage 2 — Engagement Layer
+
+### Objective
+
+Make the app motivating and fun.
+
+### Features
+
+* User levels
+* XP system
+* Activity streaks
+* Progress indicators
+* Leaderboard inside group
+* Feedback animations
+
+---
+
+### Prompt
+
+```
+I am implementing Stage 2 engagement features including streaks and leveling.
+Help me design scalable gamification logic without breaking existing architecture.
+```
+
+---
+
+# 🔵 Stage 3 — Reward System
+
+### Objective
+
+Introduce real motivation loops.
+
+### Features
+
+* Reward creation
+* Points redemption
+* Approval workflow
+* Redemption history
+
+---
+
+### Prompt
+
+```
+I am implementing the reward redemption system for my gamified task app.
+Help me model reward rules and approval flows.
+```
+
+---
+
+# 🟣 Stage 4 — Retention
+
+### Objective
+
+Increase daily usage.
+
+### Features
+
+* Push notifications
+* Task reminders
+* Recurring tasks
+* Optional proof uploads
+* Activity reminders
+
+---
+
+### Prompt
+
+```
+I am working on user retention using notifications and recurring tasks in React Native with Supabase.
+Help me design retention strategies.
+```
+
+---
+
+# 🟠 Stage 5 — SaaS Preparation (Future)
+
+### Features
+
+* Subscription plans
+* Group limits
+* Analytics
+* Billing system
+* Multi-tenant architecture
+* Admin dashboard
+
+Backend API introduced here.
+
+---
+
+## 🚨 Important Development Rules
+
+* Build functionality before gamification.
+* Avoid implementing all systems simultaneously.
+* Each stage must be stable before moving forward.
+* Gamification reacts to events, never directly to UI actions.
+
+---
+
+## ✅ Current Project Status
+
+**Active Stage:** Stage 1 — Core MVP
+**Focus:** Stable task + group workflow
+**Gamification:** Not implemented yet
+**Backend:** Supabase only
+
+---
+
+## 🚀 Long-Term Vision
+
+A scalable SaaS platform that improves responsibility, habits and collaboration through gamified task systems for families and small teams.
