@@ -4,6 +4,8 @@ const env = (globalThis as { process?: { env?: Record<string, string | undefined
 
 const supabaseUrl = env.EXPO_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+console.log('Supabase URL:', supabaseUrl);
+console.log('Supabase Anon Key:', supabaseAnonKey);
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
