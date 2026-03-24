@@ -197,58 +197,20 @@ export async function reviewTaskSubmission(
   status: Exclude<TaskSubmissionStatus, "pending">,
 ): Promise<void> {
   const client = ensureSupabase();
-  const reviewerId = await getCurrentUserId();
-
-  const { data, error } = await client
-    .from("task_submissions")
-    .update({
-      status,
-      reviewed_by: reviewerId,
-      reviewed_at: new Date().toISOString(),
-    })
-    .eq("id", submissionId)
-    .eq("status", "pending")
-    .select("id")
-    .maybeSingle();
-
-  if (error) throw error;
-  if (!data) {
-    throw new Error("Este envio ya fue revisado previamente.");
-  }
-}
-
-export async function registerApprovedSubmissionPoints(
-  submission: TaskSubmission,
-  task: Task,
-): Promise<void> {
-  const client = ensureSupabase();
-  const reason = `task_approved:${submission.id}`;
-
-  // Idempotency guard: one points transaction per approved submission.
-  const { data: existing, error: existingError } = await client
-    .from("point_transactions")
-    .select("id")
-    .eq("reason", reason)
-    .maybeSingle();
-
-  if (existingError) {
-    throw new Error(
-      "No se pudo validar transacciones de puntos. Revisa tabla/politicas de point_transactions.",
-    );
-  }
-
-  if (existing) return;
-
-  const { error } = await client.from("point_transactions").insert({
-    user_id: submission.userId,
-    group_id: task.groupId,
-    amount: task.pointsValue,
-    reason,
+  const { error } = await client.rpc("review_task_submission", {
+    input_submission_id: submissionId,
+    input_status: status,
   });
 
   if (error) {
+    if (error.message.toLowerCase().includes("already reviewed")) {
+      throw new Error("Este envio ya fue revisado previamente.");
+    }
+    if (error.message.toLowerCase().includes("not authorized")) {
+      throw new Error("No tienes permisos para revisar este envio.");
+    }
     throw new Error(
-      "No se pudieron registrar puntos. Revisa esquema y RLS de point_transactions.",
+      "No se pudo revisar el envio. Verifica la RPC review_task_submission.",
     );
   }
 }

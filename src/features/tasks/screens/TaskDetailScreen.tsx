@@ -16,7 +16,6 @@ import {
   getTask,
   listMyTaskSubmissions,
   listTaskSubmissions,
-  registerApprovedSubmissionPoints,
   reviewTaskSubmission,
 } from "../services/tasks.service";
 import type { Task, TaskSubmission } from "../types";
@@ -65,19 +64,8 @@ export function TaskDetailScreen({ route, navigation }: Props) {
     try {
       setError("");
       setReviewingSubmissionId(submissionId);
-      const targetSubmission = allSubmissions.find(
-        (submission) => submission.id === submissionId,
-      );
-
-      if (!targetSubmission) {
-        throw new Error("No se encontro el envio a revisar.");
-      }
 
       await reviewTaskSubmission(submissionId, status);
-
-      if (status === "approved" && task) {
-        await registerApprovedSubmissionPoints(targetSubmission, task);
-      }
 
       await loadTaskData();
     } catch (err) {
