@@ -5,6 +5,7 @@ import {
   Pressable,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -13,6 +14,7 @@ import { useAppSession } from "../../../app/providers/AppSessionProvider";
 import { colors } from "../../../core/theme/colors";
 import {
   getMyRoleInGroup,
+  getUserDisplayNames,
   listGroupTasks,
   listTaskSubmissions,
   registerApprovedSubmissionPoints,
@@ -31,9 +33,14 @@ export function ApprovalsScreen({ navigation }: Props) {
   const { activeGroupId } = useAppSession();
   const [isReviewer, setIsReviewer] = useState(false);
   const [pending, setPending] = useState<PendingApprovalItem[]>([]);
+  const [userDisplayNames, setUserDisplayNames] = useState<
+    Record<string, string>
+  >({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const [taskFilter, setTaskFilter] = useState("");
+  const [userFilter, setUserFilter] = useState("");
 
   const loadPending = useCallback(async () => {
     if (!activeGroupId) {
@@ -72,6 +79,10 @@ export function ApprovalsScreen({ navigation }: Props) {
       });
 
       setPending(flat);
+      const labels = await getUserDisplayNames(
+        flat.map((item) => item.submission.userId),
+      );
+      setUserDisplayNames(labels);
     } catch (err) {
       setError(
         err instanceof Error
@@ -131,22 +142,55 @@ export function ApprovalsScreen({ navigation }: Props) {
     );
   }
 
+  const normalizedTaskFilter = taskFilter.trim().toLowerCase();
+  const normalizedUserFilter = userFilter.trim().toLowerCase();
+  const filteredPending = pending.filter((item) => {
+    const taskMatches =
+      normalizedTaskFilter.length === 0 ||
+      item.task.title.toLowerCase().includes(normalizedTaskFilter);
+
+    const userLabel =
+      userDisplayNames[item.submission.userId] ?? item.submission.userId;
+    const userMatches =
+      normalizedUserFilter.length === 0 ||
+      userLabel.toLowerCase().includes(normalizedUserFilter) ||
+      item.submission.userId.toLowerCase().includes(normalizedUserFilter);
+
+    return taskMatches && userMatches;
+  });
+
   return (
     <View style={styles.container}>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
-      {pending.length === 0 ? (
+      <TextInput
+        style={styles.filterInput}
+        placeholder="Filtrar por tarea"
+        value={taskFilter}
+        onChangeText={setTaskFilter}
+      />
+      <TextInput
+        style={styles.filterInput}
+        placeholder="Filtrar por usuario"
+        value={userFilter}
+        onChangeText={setUserFilter}
+        autoCapitalize="none"
+      />
+
+      {filteredPending.length === 0 ? (
         <Text style={styles.infoText}>No hay aprobaciones pendientes.</Text>
       ) : null}
 
       <FlatList
-        data={pending}
+        data={filteredPending}
         keyExtractor={(item) => item.submission.id}
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <Text style={styles.taskTitle}>{item.task.title}</Text>
             <Text style={styles.metaText}>
-              Usuario: {item.submission.userId}
+              Usuario:{" "}
+              {userDisplayNames[item.submission.userId] ??
+                item.submission.userId}
             </Text>
             <Text style={styles.metaText}>Puntos: {item.task.pointsValue}</Text>
             {item.submission.note ? (
@@ -196,6 +240,16 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 20,
+  },
+  filterInput: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 10,
+    color: colors.text,
   },
   card: {
     backgroundColor: colors.surface,
