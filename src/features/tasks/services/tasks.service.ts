@@ -8,6 +8,12 @@ import type {
   TaskSubmissionStatus,
 } from "../types";
 
+type UserProfileRow = {
+  id: string;
+  name: string | null;
+  email: string | null;
+};
+
 function ensureSupabase() {
   if (!supabase) {
     throw new Error(
@@ -245,4 +251,33 @@ export async function registerApprovedSubmissionPoints(
       "No se pudieron registrar puntos. Revisa esquema y RLS de point_transactions.",
     );
   }
+}
+
+export async function getUserDisplayNames(
+  userIds: string[],
+): Promise<Record<string, string>> {
+  const client = ensureSupabase();
+  const uniqueUserIds = Array.from(new Set(userIds)).filter(Boolean);
+  if (uniqueUserIds.length === 0) return {};
+
+  const fallback = uniqueUserIds.reduce<Record<string, string>>((acc, id) => {
+    acc[id] = `${id.slice(0, 8)}...`;
+    return acc;
+  }, {});
+
+  const { data, error } = await client
+    .from("users")
+    .select("id, name, email")
+    .in("id", uniqueUserIds);
+
+  if (error || !data) {
+    return fallback;
+  }
+
+  const labels = { ...fallback };
+  for (const row of data as UserProfileRow[]) {
+    labels[row.id] = row.name || row.email || labels[row.id];
+  }
+
+  return labels;
 }
