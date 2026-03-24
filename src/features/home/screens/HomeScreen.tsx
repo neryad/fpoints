@@ -10,6 +10,7 @@ import {
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
 import { colors } from "../../../core/theme/colors";
 import {
+  getCurrentUserIdForPoints,
   getGroupPointsLeaderboard,
   getMyPointsBalance,
   type GroupPointsEntry,
@@ -18,6 +19,7 @@ import {
 export function HomeScreen() {
   const { activeGroupId, activeGroupName } = useAppSession();
   const [myPoints, setMyPoints] = useState(0);
+  const [myUserId, setMyUserId] = useState<string | null>(null);
   const [leaderboard, setLeaderboard] = useState<GroupPointsEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -25,6 +27,7 @@ export function HomeScreen() {
   async function loadPoints() {
     if (!activeGroupId) {
       setMyPoints(0);
+      setMyUserId(null);
       setLeaderboard([]);
       setIsLoading(false);
       return;
@@ -34,13 +37,15 @@ export function HomeScreen() {
       setError("");
       setIsLoading(true);
 
-      const [myBalance, ranking] = await Promise.all([
+      const [myBalance, ranking, userId] = await Promise.all([
         getMyPointsBalance(activeGroupId),
         getGroupPointsLeaderboard(activeGroupId),
+        getCurrentUserIdForPoints(),
       ]);
 
       setMyPoints(myBalance);
       setLeaderboard(ranking);
+      setMyUserId(userId);
     } catch (err) {
       setError(
         err instanceof Error
@@ -84,7 +89,8 @@ export function HomeScreen() {
           leaderboard.map((entry, index) => (
             <View key={entry.userId} style={styles.row}>
               <Text style={styles.rowTitle}>
-                #{index + 1} {entry.displayName}
+                #{index + 1}{" "}
+                {entry.userId === myUserId ? "Tu" : entry.displayName}
               </Text>
               <Text style={styles.rowPoints}>{entry.points} pts</Text>
             </View>
