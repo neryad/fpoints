@@ -7,6 +7,8 @@ import {
   Text,
   View,
 } from "react-native";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { HomeStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
 import { colors } from "../../../core/theme/colors";
 import {
@@ -18,7 +20,9 @@ import {
   type GroupPointsEntry,
 } from "../services/points.service";
 
-export function HomeScreen() {
+type Props = NativeStackScreenProps<HomeStackParamList, "HomeDashboard">;
+
+export function HomeScreen({ navigation }: Props) {
   const { activeGroupId, activeGroupName } = useAppSession();
   const [myPoints, setMyPoints] = useState(0);
   const [myWeeklyPoints, setMyWeeklyPoints] = useState(0);
@@ -135,6 +139,13 @@ export function HomeScreen() {
             </View>
           ))
         )}
+      </View>
+
+      <View style={styles.refreshWrap}>
+        <Button
+          title="Ver historial de puntos"
+          onPress={() => navigation.navigate("PointHistory")}
+        />
       </View>
 
       <View style={styles.refreshWrap}>
