@@ -93,3 +93,84 @@ export async function joinGroupByCode(inviteCode: string) {
 
   return data as Group;
 }
+
+export type GroupMember = {
+  userId: string;
+  role: string;
+  displayName: string;
+};
+
+export async function getGroupDetails(
+  groupId: string,
+): Promise<{ id: string; name: string; invite_code: string }> {
+  const client = ensureSupabase();
+
+  const { data, error } = await client
+    .from("groups")
+    .select("id, name, invite_code")
+    .eq("id", groupId)
+    .single();
+
+  if (error) {
+    throw new Error("No se pudo cargar la información del grupo.");
+  }
+
+  return data as { id: string; name: string; invite_code: string };
+}
+
+export async function updateGroupName(
+  groupId: string,
+  name: string,
+): Promise<void> {
+  const client = ensureSupabase();
+
+  const trimmed = name.trim();
+  if (!trimmed) throw new Error("El nombre del grupo es obligatorio.");
+
+  const { error } = await client
+    .from("groups")
+    .update({ name: trimmed })
+    .eq("id", groupId);
+
+  if (error) {
+    throw new Error("No se pudo actualizar el nombre del grupo.");
+  }
+}
+
+export async function listGroupMembers(
+  groupId: string,
+): Promise<GroupMember[]> {
+  const client = ensureSupabase();
+
+  const { data: memberships, error: mError } = await client
+    .from("memberships")
+    .select("user_id, role")
+    .eq("group_id", groupId);
+
+  if (mError) {
+    throw new Error("No se pudieron cargar los miembros del grupo.");
+  }
+
+  const members = (memberships ?? []) as Array<{
+    user_id: string;
+    role: string;
+  }>;
+  if (members.length === 0) return [];
+
+  const { data: rpcData } = await client.rpc("get_group_user_labels", {
+    input_group_id: groupId,
+  });
+
+  const labelsById = new Map<string, string>();
+  for (const row of (rpcData ?? []) as Array<Record<string, unknown>>) {
+    const id = row.user_id as string;
+    const displayName = row.display_name as string;
+    if (id) labelsById.set(id, displayName || "Usuario sin perfil");
+  }
+
+  return members.map((m) => ({
+    userId: m.user_id,
+    role: m.role,
+    displayName: labelsById.get(m.user_id) ?? "Usuario sin perfil",
+  }));
+}

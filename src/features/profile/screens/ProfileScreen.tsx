@@ -7,13 +7,18 @@ import {
   TextInput,
   View,
 } from "react-native";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { ProfileStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
 import { colors } from "../../../core/theme/colors";
 import { signOut } from "../../auth/services/auth.service";
+import { getMyRoleInGroup } from "../../tasks/services/tasks.service";
 import { getMyProfile, saveMyProfile } from "../services/profile.service";
 
-export function ProfileScreen() {
-  const { clearGroup } = useAppSession();
+type Props = NativeStackScreenProps<ProfileStackParamList, "ProfileMain">;
+
+export function ProfileScreen({ navigation }: Props) {
+  const { clearGroup, activeGroupId } = useAppSession();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
@@ -22,6 +27,7 @@ export function ProfileScreen() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [canConfigureGroup, setCanConfigureGroup] = useState(false);
 
   const loadProfile = useCallback(async () => {
     try {
@@ -31,6 +37,11 @@ export function ProfileScreen() {
       setName(profile.name ?? "");
       setEmail(profile.email);
       setAvatarUrl(profile.avatarUrl ?? "");
+
+      if (activeGroupId) {
+        const role = await getMyRoleInGroup(activeGroupId);
+        setCanConfigureGroup(role === "owner" || role === "sub_owner");
+      }
     } catch (err) {
       const message =
         err instanceof Error
@@ -40,7 +51,7 @@ export function ProfileScreen() {
     } finally {
       setIsLoadingProfile(false);
     }
-  }, []);
+  }, [activeGroupId]);
 
   useEffect(() => {
     loadProfile();
@@ -132,6 +143,16 @@ export function ProfileScreen() {
       <Button title="Switch Group" onPress={clearGroup} />
 
       <View style={styles.spacer} />
+
+      {canConfigureGroup ? (
+        <>
+          <Button
+            title="Configuracion del grupo"
+            onPress={() => navigation.navigate("GroupSettings")}
+          />
+          <View style={styles.spacer} />
+        </>
+      ) : null}
 
       <Button
         title={isLoading ? "Closing session..." : "Logout"}

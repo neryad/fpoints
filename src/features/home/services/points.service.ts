@@ -18,6 +18,14 @@ export type GroupPointsEntry = {
   points: number;
 };
 
+export type PointHistoryEntry = {
+  id: string;
+  amount: number;
+  reason: string;
+  taskTitle: string | null;
+  createdAt: string;
+};
+
 function ensureSupabase() {
   if (!supabase) {
     throw new Error(
@@ -124,6 +132,75 @@ export async function getMyWeeklyPointsBalance(
   }
 
   return (data ?? []).reduce((sum, row) => sum + (row.amount as number), 0);
+}
+
+export async function listMyPointHistory(
+  groupId: string,
+): Promise<PointHistoryEntry[]> {
+  const client = ensureSupabase();
+  const userId = await getCurrentUserId();
+
+  const { data, error } = await client
+    .from("point_transactions")
+    .select("id, amount, reason, created_at")
+    .eq("group_id", groupId)
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Error(
+      "No se pudo cargar el historial de puntos. Verifica tabla/politicas de point_transactions.",
+    );
+  }
+
+  const rows = data ?? [];
+
+  // Extract submission IDs from reasons like "task_approved:{uuid}"
+  const submissionIds = rows
+    .map((row) => {
+      const reason = row.reason as string;
+      if (reason?.startsWith("task_approved:")) {
+        return reason.slice("task_approved:".length);
+      }
+      return null;
+    })
+    .filter((id): id is string => id !== null);
+
+  // Batch-resolve task titles for those submissions
+  const titlesBySubmissionId = new Map<string, string>();
+  if (submissionIds.length > 0) {
+    const { data: subData } = await client
+      .from("task_submissions")
+      .select("id, tasks(title)")
+      .in("id", submissionIds);
+
+    for (const sub of subData ?? []) {
+      const submissionId = sub.id as string;
+      const taskRaw = sub.tasks;
+      const title = Array.isArray(taskRaw)
+        ? (taskRaw[0] as { title: string } | undefined)?.title
+        : (taskRaw as { title: string } | null)?.title;
+      if (title) {
+        titlesBySubmissionId.set(submissionId, title);
+      }
+    }
+  }
+
+  return rows.map((row) => {
+    const reason = row.reason as string;
+    let taskTitle: string | null = null;
+    if (reason?.startsWith("task_approved:")) {
+      const submissionId = reason.slice("task_approved:".length);
+      taskTitle = titlesBySubmissionId.get(submissionId) ?? null;
+    }
+    return {
+      id: row.id as string,
+      amount: row.amount as number,
+      reason,
+      taskTitle,
+      createdAt: row.created_at as string,
+    };
+  });
 }
 
 export async function getWeeklyGroupPointsLeaderboard(
