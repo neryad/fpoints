@@ -29,6 +29,8 @@ type PendingApprovalItem = {
   task: Task;
 };
 
+type ProofFilter = "all" | "withProof" | "withoutProof";
+
 export function ApprovalsScreen({ navigation }: Props) {
   const { activeGroupId } = useAppSession();
   const [isReviewer, setIsReviewer] = useState(false);
@@ -41,6 +43,7 @@ export function ApprovalsScreen({ navigation }: Props) {
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [taskFilter, setTaskFilter] = useState("");
   const [userFilter, setUserFilter] = useState("");
+  const [proofFilter, setProofFilter] = useState<ProofFilter>("all");
 
   const loadPending = useCallback(async () => {
     if (!activeGroupId) {
@@ -81,6 +84,7 @@ export function ApprovalsScreen({ navigation }: Props) {
       setPending(flat);
       const labels = await getUserDisplayNames(
         flat.map((item) => item.submission.userId),
+        activeGroupId,
       );
       setUserDisplayNames(labels);
     } catch (err) {
@@ -156,7 +160,13 @@ export function ApprovalsScreen({ navigation }: Props) {
       userLabel.toLowerCase().includes(normalizedUserFilter) ||
       item.submission.userId.toLowerCase().includes(normalizedUserFilter);
 
-    return taskMatches && userMatches;
+    const hasProof = Boolean(item.submission.proofImageUrl?.trim());
+    const proofMatches =
+      proofFilter === "all" ||
+      (proofFilter === "withProof" && hasProof) ||
+      (proofFilter === "withoutProof" && !hasProof);
+
+    return taskMatches && userMatches && proofMatches;
   });
 
   return (
@@ -175,6 +185,57 @@ export function ApprovalsScreen({ navigation }: Props) {
         onChangeText={setUserFilter}
         autoCapitalize="none"
       />
+
+      <View style={styles.chipsRow}>
+        <Pressable
+          style={[
+            styles.chip,
+            proofFilter === "all" ? styles.chipActive : null,
+          ]}
+          onPress={() => setProofFilter("all")}
+        >
+          <Text
+            style={[
+              styles.chipText,
+              proofFilter === "all" ? styles.chipTextActive : null,
+            ]}
+          >
+            Todas
+          </Text>
+        </Pressable>
+        <Pressable
+          style={[
+            styles.chip,
+            proofFilter === "withProof" ? styles.chipActive : null,
+          ]}
+          onPress={() => setProofFilter("withProof")}
+        >
+          <Text
+            style={[
+              styles.chipText,
+              proofFilter === "withProof" ? styles.chipTextActive : null,
+            ]}
+          >
+            Con prueba
+          </Text>
+        </Pressable>
+        <Pressable
+          style={[
+            styles.chip,
+            proofFilter === "withoutProof" ? styles.chipActive : null,
+          ]}
+          onPress={() => setProofFilter("withoutProof")}
+        >
+          <Text
+            style={[
+              styles.chipText,
+              proofFilter === "withoutProof" ? styles.chipTextActive : null,
+            ]}
+          >
+            Sin prueba
+          </Text>
+        </Pressable>
+      </View>
 
       {filteredPending.length === 0 ? (
         <Text style={styles.infoText}>No hay aprobaciones pendientes.</Text>
@@ -250,6 +311,31 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginBottom: 10,
     color: colors.text,
+  },
+  chipsRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 12,
+  },
+  chip: {
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: colors.surface,
+  },
+  chipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  chipText: {
+    color: colors.muted,
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  chipTextActive: {
+    color: colors.primaryText,
   },
   card: {
     backgroundColor: colors.surface,

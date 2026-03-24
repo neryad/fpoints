@@ -255,15 +255,37 @@ export async function registerApprovedSubmissionPoints(
 
 export async function getUserDisplayNames(
   userIds: string[],
+  groupId?: string,
 ): Promise<Record<string, string>> {
   const client = ensureSupabase();
   const uniqueUserIds = Array.from(new Set(userIds)).filter(Boolean);
   if (uniqueUserIds.length === 0) return {};
 
   const fallback = uniqueUserIds.reduce<Record<string, string>>((acc, id) => {
-    acc[id] = `${id.slice(0, 8)}...`;
+    acc[id] = "Usuario sin perfil";
     return acc;
   }, {});
+
+  if (groupId) {
+    const { data: rpcData, error: rpcError } = await client.rpc(
+      "get_group_user_labels",
+      {
+        input_group_id: groupId,
+      },
+    );
+
+    if (!rpcError && rpcData) {
+      const labels = { ...fallback };
+      for (const row of rpcData as Array<Record<string, unknown>>) {
+        const id = (row.user_id as string) ?? "";
+        const displayName = (row.display_name as string) ?? "";
+        if (id && labels[id] !== undefined) {
+          labels[id] = displayName || labels[id];
+        }
+      }
+      return labels;
+    }
+  }
 
   const { data, error } = await client
     .from("users")
@@ -276,7 +298,7 @@ export async function getUserDisplayNames(
 
   const labels = { ...fallback };
   for (const row of data as UserProfileRow[]) {
-    labels[row.id] = row.name || row.email || labels[row.id];
+    labels[row.id] = row.name || row.email || "Usuario sin perfil";
   }
 
   return labels;

@@ -13,14 +13,20 @@ import {
   getCurrentUserIdForPoints,
   getGroupPointsLeaderboard,
   getMyPointsBalance,
+  getMyWeeklyPointsBalance,
+  getWeeklyGroupPointsLeaderboard,
   type GroupPointsEntry,
 } from "../services/points.service";
 
 export function HomeScreen() {
   const { activeGroupId, activeGroupName } = useAppSession();
   const [myPoints, setMyPoints] = useState(0);
+  const [myWeeklyPoints, setMyWeeklyPoints] = useState(0);
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [leaderboard, setLeaderboard] = useState<GroupPointsEntry[]>([]);
+  const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<
+    GroupPointsEntry[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -37,14 +43,19 @@ export function HomeScreen() {
       setError("");
       setIsLoading(true);
 
-      const [myBalance, ranking, userId] = await Promise.all([
-        getMyPointsBalance(activeGroupId),
-        getGroupPointsLeaderboard(activeGroupId),
-        getCurrentUserIdForPoints(),
-      ]);
+      const [myBalance, myWeekBalance, ranking, weekRanking, userId] =
+        await Promise.all([
+          getMyPointsBalance(activeGroupId),
+          getMyWeeklyPointsBalance(activeGroupId),
+          getGroupPointsLeaderboard(activeGroupId),
+          getWeeklyGroupPointsLeaderboard(activeGroupId),
+          getCurrentUserIdForPoints(),
+        ]);
 
       setMyPoints(myBalance);
+      setMyWeeklyPoints(myWeekBalance);
       setLeaderboard(ranking);
+      setWeeklyLeaderboard(weekRanking);
       setMyUserId(userId);
     } catch (err) {
       setError(
@@ -77,6 +88,15 @@ export function HomeScreen() {
         )}
       </View>
 
+      <View style={styles.card}>
+        <Text style={styles.cardLabel}>Tus puntos esta semana</Text>
+        {isLoading ? (
+          <ActivityIndicator size="small" color={colors.primary} />
+        ) : (
+          <Text style={styles.pointsValue}>{myWeeklyPoints}</Text>
+        )}
+      </View>
+
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
       <View style={styles.card}>
@@ -87,6 +107,25 @@ export function HomeScreen() {
           <Text style={styles.rowMeta}>Aun no hay puntos registrados.</Text>
         ) : (
           leaderboard.map((entry, index) => (
+            <View key={entry.userId} style={styles.row}>
+              <Text style={styles.rowTitle}>
+                #{index + 1}{" "}
+                {entry.userId === myUserId ? "Tu" : entry.displayName}
+              </Text>
+              <Text style={styles.rowPoints}>{entry.points} pts</Text>
+            </View>
+          ))
+        )}
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardLabel}>Top semanal</Text>
+        {isLoading ? (
+          <Text style={styles.rowMeta}>Cargando...</Text>
+        ) : weeklyLeaderboard.length === 0 ? (
+          <Text style={styles.rowMeta}>Sin puntos esta semana.</Text>
+        ) : (
+          weeklyLeaderboard.slice(0, 3).map((entry, index) => (
             <View key={entry.userId} style={styles.row}>
               <Text style={styles.rowTitle}>
                 #{index + 1}{" "}
