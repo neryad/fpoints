@@ -17,7 +17,6 @@ import {
   getUserDisplayNames,
   listGroupTasks,
   listTaskSubmissions,
-  registerApprovedSubmissionPoints,
   reviewTaskSubmission,
 } from "../services/tasks.service";
 import type { Task, TaskSubmission } from "../types";
@@ -107,9 +106,6 @@ export function ApprovalsScreen({ navigation }: Props) {
       setReviewingId(item.submission.id);
 
       await reviewTaskSubmission(item.submission.id, status);
-      if (status === "approved") {
-        await registerApprovedSubmissionPoints(item.submission, item.task);
-      }
 
       await loadPending();
     } catch (err) {
