@@ -1,17 +1,87 @@
-import React from 'react';
-import { Button, StyleSheet, Text, View } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { colors } from '../../../core/theme/colors';
-import { TasksStackParamList } from '../../../app/navigation/types';
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  Button,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { colors } from "../../../core/theme/colors";
+import { TasksStackParamList } from "../../../app/navigation/types";
+import { useAppSession } from "../../../app/providers/AppSessionProvider";
+import { listGroupTasks } from "../services/tasks.service";
+import type { Task } from "../types";
 
-type Props = NativeStackScreenProps<TasksStackParamList, 'TasksList'>;
+type Props = NativeStackScreenProps<TasksStackParamList, "TasksList">;
 
 export function TasksScreen({ navigation }: Props) {
+  const { activeGroupId } = useAppSession();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const loadTasks = useCallback(async () => {
+    if (!activeGroupId) return;
+    try {
+      setError("");
+      setIsLoading(true);
+      const data = await listGroupTasks(activeGroupId);
+      setTasks(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al cargar tareas.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [activeGroupId]);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", loadTasks);
+    return unsubscribe;
+  }, [navigation, loadTasks]);
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Tasks List</Text>
-      <Text style={styles.subtitle}>Stage 1 placeholder for assigned, pending and completed filters.</Text>
-      <Button title="Open Demo Task" onPress={() => navigation.navigate('TaskDetail', { taskId: 'demo-task-1' })} />
+      <View style={styles.header}>
+        <Button
+          title="Pending Approvals"
+          onPress={() => navigation.navigate("Approvals")}
+        />
+        <View style={styles.headerSpacer} />
+        <Button
+          title="+ New Task"
+          onPress={() => navigation.navigate("CreateTask")}
+        />
+      </View>
+
+      {isLoading ? <Text style={styles.infoText}>Loading tasks...</Text> : null}
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+      {!isLoading && !error && tasks.length === 0 ? (
+        <Text style={styles.infoText}>
+          No hay tareas activas en este grupo.
+        </Text>
+      ) : null}
+
+      <FlatList
+        data={tasks}
+        keyExtractor={(item) => item.id}
+        style={styles.list}
+        renderItem={({ item }) => (
+          <Pressable
+            style={styles.taskCard}
+            onPress={() =>
+              navigation.navigate("TaskDetail", { taskId: item.id })
+            }
+          >
+            <Text style={styles.taskTitle}>{item.title}</Text>
+            <Text style={styles.taskMeta}>{item.pointsValue} pts</Text>
+            {item.requiresProof ? (
+              <Text style={styles.taskMeta}>Requiere prueba</Text>
+            ) : null}
+          </Pressable>
+        )}
+      />
     </View>
   );
 }
@@ -19,20 +89,45 @@ export function TasksScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
     backgroundColor: colors.background,
-    padding: 24,
+    padding: 16,
   },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
+  header: {
+    alignItems: "flex-end",
+    marginBottom: 16,
+  },
+  headerSpacer: {
+    height: 8,
+  },
+  list: {
+    flex: 1,
+  },
+  taskCard: {
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  taskTitle: {
+    fontSize: 16,
+    fontWeight: "600",
     color: colors.text,
   },
-  subtitle: {
-    marginTop: 8,
-    marginBottom: 20,
+  taskMeta: {
+    marginTop: 4,
+    fontSize: 13,
     color: colors.muted,
-    textAlign: 'center',
+  },
+  infoText: {
+    textAlign: "center",
+    color: colors.muted,
+    marginTop: 40,
+  },
+  errorText: {
+    textAlign: "center",
+    color: "#ef4444",
+    marginTop: 16,
   },
 });
