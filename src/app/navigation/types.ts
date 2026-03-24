@@ -12,6 +12,7 @@ export type GroupStackParamList = {
 export type TasksStackParamList = {
   TasksList: undefined;
   TaskDetail: { taskId: string };
+  CreateTask: undefined;
 };
 
 export type MainTabParamList = {
