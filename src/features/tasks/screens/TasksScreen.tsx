@@ -45,6 +45,11 @@ export function TasksScreen({ navigation }: Props) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Button
+          title="Pending Approvals"
+          onPress={() => navigation.navigate("Approvals")}
+        />
+        <View style={styles.headerSpacer} />
+        <Button
           title="+ New Task"
           onPress={() => navigation.navigate("CreateTask")}
         />
@@ -90,6 +95,9 @@ const styles = StyleSheet.create({
   header: {
     alignItems: "flex-end",
     marginBottom: 16,
+  },
+  headerSpacer: {
+    height: 8,
   },
   list: {
     flex: 1,

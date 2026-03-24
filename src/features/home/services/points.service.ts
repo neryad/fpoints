@@ -89,6 +89,10 @@ export async function getMyPointsBalance(groupId: string): Promise<number> {
   return (data ?? []).reduce((sum, row) => sum + (row.amount as number), 0);
 }
 
+export async function getCurrentUserIdForPoints(): Promise<string> {
+  return getCurrentUserId();
+}
+
 export async function getGroupPointsLeaderboard(
   groupId: string,
 ): Promise<GroupPointsEntry[]> {

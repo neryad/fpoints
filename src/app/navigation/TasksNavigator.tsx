@@ -6,6 +6,7 @@ import { TasksScreen } from "src/features/tasks/screens/TasksScreen";
 import { TaskDetailScreen } from "src/features/tasks/screens/TaskDetailScreen";
 import { CreateTaskScreen } from "src/features/tasks/screens/CreateTaskScreen";
 import { SubmitTaskScreen } from "src/features/tasks/screens/SubmitTaskScreen";
+import { ApprovalsScreen } from "src/features/tasks/screens/ApprovalsScreen";
 
 const Stack = createNativeStackNavigator<TasksStackParamList>();
 
@@ -31,6 +32,11 @@ export function TasksNavigator() {
         name="SubmitTask"
         component={SubmitTaskScreen}
         options={{ title: "Submit Completion" }}
+      />
+      <Stack.Screen
+        name="Approvals"
+        component={ApprovalsScreen}
+        options={{ title: "Pending Approvals" }}
       />
     </Stack.Navigator>
   );
