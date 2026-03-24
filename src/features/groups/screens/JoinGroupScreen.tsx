@@ -17,10 +17,10 @@ export function JoinGroupScreen() {
       setSuccessMessage("");
       setIsLoading(true);
 
-      await joinGroupByCode(inviteCode);
+      const group = await joinGroupByCode(inviteCode);
       setSuccessMessage("Te uniste al grupo correctamente.");
       setInviteCode("");
-      selectGroup();
+      selectGroup(group.id, group.name);
     } catch (err) {
       const message =
         err instanceof Error
