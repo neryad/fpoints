@@ -3,6 +3,7 @@ import { supabase } from "../../../core/supabase/client";
 type PointTransactionRow = {
   user_id: string;
   amount: number;
+  created_at?: string;
 };
 
 type UserProfileRow = {
@@ -47,7 +48,7 @@ function aggregatePoints(rows: PointTransactionRow[]): GroupPointsEntry[] {
   return Array.from(totalsByUser.entries())
     .map(([userId, points]) => ({
       userId,
-      displayName: `${userId.slice(0, 8)}...`,
+      displayName: "Usuario sin perfil",
       points,
     }))
     .sort((a, b) => b.points - a.points);
@@ -60,7 +61,7 @@ function mergeDisplayNames(
   const usersById = new Map(
     users.map((user) => [
       user.id,
-      user.name || user.email || `${user.id.slice(0, 8)}...`,
+      user.name || user.email || "Usuario sin perfil",
     ]),
   );
 
@@ -68,6 +69,15 @@ function mergeDisplayNames(
     ...entry,
     displayName: usersById.get(entry.userId) ?? entry.displayName,
   }));
+}
+
+function getWeekStartIso() {
+  const now = new Date();
+  const day = now.getDay();
+  const diffToMonday = (day + 6) % 7;
+  now.setDate(now.getDate() - diffToMonday);
+  now.setHours(0, 0, 0, 0);
+  return now.toISOString();
 }
 
 export async function getMyPointsBalance(groupId: string): Promise<number> {
@@ -93,6 +103,76 @@ export async function getCurrentUserIdForPoints(): Promise<string> {
   return getCurrentUserId();
 }
 
+export async function getMyWeeklyPointsBalance(
+  groupId: string,
+): Promise<number> {
+  const client = ensureSupabase();
+  const userId = await getCurrentUserId();
+  const weekStartIso = getWeekStartIso();
+
+  const { data, error } = await client
+    .from("point_transactions")
+    .select("amount")
+    .eq("group_id", groupId)
+    .eq("user_id", userId)
+    .gte("created_at", weekStartIso);
+
+  if (error) {
+    throw new Error(
+      "No se pudieron cargar tus puntos semanales. Verifica tabla/politicas de point_transactions.",
+    );
+  }
+
+  return (data ?? []).reduce((sum, row) => sum + (row.amount as number), 0);
+}
+
+export async function getWeeklyGroupPointsLeaderboard(
+  groupId: string,
+): Promise<GroupPointsEntry[]> {
+  const client = ensureSupabase();
+  const weekStartIso = getWeekStartIso();
+
+  const { data, error } = await client
+    .from("point_transactions")
+    .select("user_id, amount")
+    .eq("group_id", groupId)
+    .gte("created_at", weekStartIso);
+
+  if (error) {
+    throw new Error(
+      "No se pudo cargar el ranking semanal. Verifica tabla/politicas de point_transactions.",
+    );
+  }
+
+  const leaderboard = aggregatePoints((data ?? []) as PointTransactionRow[]);
+  if (leaderboard.length === 0) return leaderboard;
+
+  const { data: rpcData, error: rpcError } = await client.rpc(
+    "get_group_user_labels",
+    {
+      input_group_id: groupId,
+    },
+  );
+
+  if (!rpcError && rpcData) {
+    const labelsById = new Map<string, string>();
+    for (const row of rpcData as Array<Record<string, unknown>>) {
+      const id = (row.user_id as string) ?? "";
+      const displayName = (row.display_name as string) ?? "";
+      if (id) {
+        labelsById.set(id, displayName || "Usuario sin perfil");
+      }
+    }
+
+    return leaderboard.map((entry) => ({
+      ...entry,
+      displayName: labelsById.get(entry.userId) ?? entry.displayName,
+    }));
+  }
+
+  return leaderboard;
+}
+
 export async function getGroupPointsLeaderboard(
   groupId: string,
 ): Promise<GroupPointsEntry[]> {
@@ -113,6 +193,30 @@ export async function getGroupPointsLeaderboard(
   if (leaderboard.length === 0) return leaderboard;
 
   const userIds = leaderboard.map((entry) => entry.userId);
+
+  // Prefer a group-scoped RPC to avoid fragile direct users-table RLS reads.
+  const { data: rpcData, error: rpcError } = await client.rpc(
+    "get_group_user_labels",
+    {
+      input_group_id: groupId,
+    },
+  );
+
+  if (!rpcError && rpcData) {
+    const labelsById = new Map<string, string>();
+    for (const row of rpcData as Array<Record<string, unknown>>) {
+      const id = (row.user_id as string) ?? "";
+      const displayName = (row.display_name as string) ?? "";
+      if (id) {
+        labelsById.set(id, displayName || "Usuario sin perfil");
+      }
+    }
+
+    return leaderboard.map((entry) => ({
+      ...entry,
+      displayName: labelsById.get(entry.userId) ?? entry.displayName,
+    }));
+  }
 
   // Best effort: if users table/RLS is not ready, keep ID fallback labels.
   const { data: usersData, error: usersError } = await client
