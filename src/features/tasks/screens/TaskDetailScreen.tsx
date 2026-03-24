@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Button,
   Pressable,
   ScrollView,
@@ -57,22 +58,33 @@ export function TaskDetailScreen({ route, navigation }: Props) {
     }
   }
 
-  async function handleReview(
-    submissionId: string,
-    status: "approved" | "rejected",
-  ) {
-    try {
-      setError("");
-      setReviewingSubmissionId(submissionId);
-
-      await reviewTaskSubmission(submissionId, status);
-
-      await loadTaskData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al revisar envio.");
-    } finally {
-      setReviewingSubmissionId(null);
-    }
+  function handleReview(submissionId: string, status: "approved" | "rejected") {
+    const label = status === "approved" ? "aprobar" : "rechazar";
+    Alert.alert(
+      "Confirmar",
+      `\u00bfSeguro que quieres ${label} esta entrega?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: status === "approved" ? "Aprobar" : "Rechazar",
+          style: status === "rejected" ? "destructive" : "default",
+          onPress: async () => {
+            try {
+              setError("");
+              setReviewingSubmissionId(submissionId);
+              await reviewTaskSubmission(submissionId, status);
+              await loadTaskData();
+            } catch (err) {
+              setError(
+                err instanceof Error ? err.message : "Error al revisar envio.",
+              );
+            } finally {
+              setReviewingSubmissionId(null);
+            }
+          },
+        },
+      ],
+    );
   }
 
   useEffect(() => {

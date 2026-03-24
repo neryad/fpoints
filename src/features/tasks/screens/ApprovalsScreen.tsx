@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Pressable,
   StyleSheet,
@@ -97,26 +98,38 @@ export function ApprovalsScreen({ navigation }: Props) {
     }
   }, [activeGroupId]);
 
-  async function handleReview(
+  function handleReview(
     item: PendingApprovalItem,
     status: "approved" | "rejected",
   ) {
-    try {
-      setError("");
-      setReviewingId(item.submission.id);
-
-      await reviewTaskSubmission(item.submission.id, status);
-
-      await loadPending();
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "No se pudo completar la revision.",
-      );
-    } finally {
-      setReviewingId(null);
-    }
+    const label = status === "approved" ? "aprobar" : "rechazar";
+    Alert.alert(
+      "Confirmar",
+      `\u00bfSeguro que quieres ${label} esta entrega?`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: status === "approved" ? "Aprobar" : "Rechazar",
+          style: status === "rejected" ? "destructive" : "default",
+          onPress: async () => {
+            try {
+              setError("");
+              setReviewingId(item.submission.id);
+              await reviewTaskSubmission(item.submission.id, status);
+              await loadPending();
+            } catch (err) {
+              setError(
+                err instanceof Error
+                  ? err.message
+                  : "No se pudo completar la revision.",
+              );
+            } finally {
+              setReviewingId(null);
+            }
+          },
+        },
+      ],
+    );
   }
 
   useEffect(() => {
