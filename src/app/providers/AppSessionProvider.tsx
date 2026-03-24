@@ -6,6 +6,7 @@ import React, {
   useState,
 } from "react";
 import { supabase } from "../../core/supabase/client";
+import { ensureCurrentUserRow } from "../../features/auth/services/auth.service";
 
 type AppSessionContextValue = {
   isAuthenticated: boolean;
@@ -48,6 +49,9 @@ export function AppSessionProvider({ children }: AppSessionProviderProps) {
         const { data } = await supabase.auth.getSession();
         if (!mounted) return;
         setIsAuthenticated(Boolean(data.session));
+        if (data.session) {
+          await ensureCurrentUserRow();
+        }
       } catch {
         if (!mounted) return;
         setIsAuthenticated(false);
@@ -60,6 +64,11 @@ export function AppSessionProvider({ children }: AppSessionProviderProps) {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setIsAuthenticated(Boolean(session));
+        if (session) {
+          ensureCurrentUserRow().catch(() => {
+            // No bloquear la UI si falla bootstrap de perfil.
+          });
+        }
         if (!session) {
           setHasActiveGroup(false);
           setActiveGroupId(null);
