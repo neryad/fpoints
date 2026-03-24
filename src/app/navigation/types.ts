@@ -13,6 +13,7 @@ export type TasksStackParamList = {
   TasksList: undefined;
   TaskDetail: { taskId: string };
   CreateTask: undefined;
+  SubmitTask: { taskId: string };
 };
 
 export type MainTabParamList = {

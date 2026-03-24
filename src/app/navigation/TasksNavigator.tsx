@@ -5,6 +5,7 @@ import { TasksStackParamList } from "./types";
 import { TasksScreen } from "src/features/tasks/screens/TasksScreen";
 import { TaskDetailScreen } from "src/features/tasks/screens/TaskDetailScreen";
 import { CreateTaskScreen } from "src/features/tasks/screens/CreateTaskScreen";
+import { SubmitTaskScreen } from "src/features/tasks/screens/SubmitTaskScreen";
 
 const Stack = createNativeStackNavigator<TasksStackParamList>();
 
@@ -25,6 +26,11 @@ export function TasksNavigator() {
         name="CreateTask"
         component={CreateTaskScreen}
         options={{ title: "New Task" }}
+      />
+      <Stack.Screen
+        name="SubmitTask"
+        component={SubmitTaskScreen}
+        options={{ title: "Submit Completion" }}
       />
     </Stack.Navigator>
   );
