@@ -1,12 +1,12 @@
-import React, { useEffect, useState } from 'react';
-import { Button, Pressable, StyleSheet, Text, View } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { useAppSession } from '../../../app/providers/AppSessionProvider';
-import { colors } from '../../../core/theme/colors';
-import { GroupStackParamList } from '../../../app/navigation/types';
-import { listMyGroups } from '../services/groups.service';
+import React, { useEffect, useState } from "react";
+import { Button, Pressable, StyleSheet, Text, View } from "react-native";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { useAppSession } from "../../../app/providers/AppSessionProvider";
+import { colors } from "../../../core/theme/colors";
+import { GroupStackParamList } from "../../../app/navigation/types";
+import { listMyGroups } from "../services/groups.service";
 
-type Props = NativeStackScreenProps<GroupStackParamList, 'GroupSelection'>;
+type Props = NativeStackScreenProps<GroupStackParamList, "GroupSelection">;
 
 type GroupListItem = {
   id: string;
@@ -16,20 +16,22 @@ type GroupListItem = {
 };
 
 export function GroupSelectionScreen({ navigation }: Props) {
-   const { selectGroup } = useAppSession();
+  const { selectGroup } = useAppSession();
   const [groups, setGroups] = useState<GroupListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   async function loadGroups() {
     try {
-      setError('');
+      setError("");
       setIsLoading(true);
       const data = await listMyGroups();
       setGroups(data);
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : 'Ocurrió un error al cargar grupos.';
+        err instanceof Error
+          ? err.message
+          : "Ocurrió un error al cargar grupos.";
       setError(message);
     } finally {
       setIsLoading(false);
@@ -43,9 +45,13 @@ export function GroupSelectionScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Select Group</Text>
-      <Text style={styles.subtitle}>Choose an existing group or create a new one.</Text>
+      <Text style={styles.subtitle}>
+        Choose an existing group or create a new one.
+      </Text>
 
-      {isLoading ? <Text style={styles.infoText}>Loading groups...</Text> : null}
+      {isLoading ? (
+        <Text style={styles.infoText}>Loading groups...</Text>
+      ) : null}
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
       {!isLoading && !error && groups.length === 0 ? (
@@ -58,7 +64,7 @@ export function GroupSelectionScreen({ navigation }: Props) {
           <Pressable
             key={group.id}
             style={styles.groupCard}
-            onPress={selectGroup}
+            onPress={() => selectGroup(group.id, group.name)}
           >
             <Text style={styles.groupName}>{group.name}</Text>
             <Text style={styles.groupMeta}>Code: {group.invite_code}</Text>
@@ -74,11 +80,17 @@ export function GroupSelectionScreen({ navigation }: Props) {
 
       <View style={styles.spacer} />
 
-      <Button title="Create Group" onPress={() => navigation.navigate('CreateGroup')} />
+      <Button
+        title="Create Group"
+        onPress={() => navigation.navigate("CreateGroup")}
+      />
 
       <View style={styles.spacer} />
 
-      <Button title="Join Group" onPress={() => navigation.navigate('JoinGroup')} />
+      <Button
+        title="Join Group"
+        onPress={() => navigation.navigate("JoinGroup")}
+      />
     </View>
   );
 }
@@ -88,29 +100,29 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
     padding: 24,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   title: {
     fontSize: 28,
-    fontWeight: '700',
+    fontWeight: "700",
     color: colors.text,
-    textAlign: 'center',
+    textAlign: "center",
   },
   subtitle: {
     marginTop: 8,
     marginBottom: 20,
     color: colors.muted,
-    textAlign: 'center',
+    textAlign: "center",
   },
   infoText: {
     color: colors.muted,
     marginBottom: 12,
-    textAlign: 'center',
+    textAlign: "center",
   },
   errorText: {
-    color: '#B42318',
+    color: "#B42318",
     marginBottom: 12,
-    textAlign: 'center',
+    textAlign: "center",
   },
   groupCard: {
     backgroundColor: colors.surface,
@@ -122,7 +134,7 @@ const styles = StyleSheet.create({
   },
   groupName: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
     color: colors.text,
   },
   groupMeta: {

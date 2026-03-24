@@ -1,17 +1,27 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { supabase } from '../../core/supabase/client';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+import { supabase } from "../../core/supabase/client";
 
 type AppSessionContextValue = {
   isAuthenticated: boolean;
   hasActiveGroup: boolean;
   isBootstrapping: boolean;
+  activeGroupId: string | null;
+  activeGroupName: string | null;
   login: () => void;
   logout: () => void;
-  selectGroup: () => void;
+  selectGroup: (groupId: string, groupName: string) => void;
   clearGroup: () => void;
 };
 
-const AppSessionContext = createContext<AppSessionContextValue | undefined>(undefined);
+const AppSessionContext = createContext<AppSessionContextValue | undefined>(
+  undefined,
+);
 
 type AppSessionProviderProps = {
   children: React.ReactNode;
@@ -21,6 +31,8 @@ export function AppSessionProvider({ children }: AppSessionProviderProps) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [hasActiveGroup, setHasActiveGroup] = useState(false);
   const [isBootstrapping, setIsBootstrapping] = useState(true);
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
+  const [activeGroupName, setActiveGroupName] = useState<string | null>(null);
 
   useEffect(() => {
     if (!supabase) {
@@ -45,12 +57,16 @@ export function AppSessionProvider({ children }: AppSessionProviderProps) {
       }
     })();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsAuthenticated(Boolean(session));
-      if (!session) {
-        setHasActiveGroup(false);
-      }
-    });
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setIsAuthenticated(Boolean(session));
+        if (!session) {
+          setHasActiveGroup(false);
+          setActiveGroupId(null);
+          setActiveGroupName(null);
+        }
+      },
+    );
 
     return () => {
       mounted = false;
@@ -63,25 +79,47 @@ export function AppSessionProvider({ children }: AppSessionProviderProps) {
       isAuthenticated,
       hasActiveGroup,
       isBootstrapping,
+      activeGroupId,
+      activeGroupName,
       login: () => setIsAuthenticated(true),
       logout: () => {
         setIsAuthenticated(false);
         setHasActiveGroup(false);
+        setActiveGroupId(null);
+        setActiveGroupName(null);
       },
-      selectGroup: () => setHasActiveGroup(true),
-      clearGroup: () => setHasActiveGroup(false),
+      selectGroup: (groupId: string, groupName: string) => {
+        setActiveGroupId(groupId);
+        setActiveGroupName(groupName);
+        setHasActiveGroup(true);
+      },
+      clearGroup: () => {
+        setHasActiveGroup(false);
+        setActiveGroupId(null);
+        setActiveGroupName(null);
+      },
     }),
-    [hasActiveGroup, isAuthenticated, isBootstrapping]
+    [
+      activeGroupId,
+      activeGroupName,
+      hasActiveGroup,
+      isAuthenticated,
+      isBootstrapping,
+    ],
   );
 
-  return <AppSessionContext.Provider value={value}>{children}</AppSessionContext.Provider>;
+  return (
+    <AppSessionContext.Provider value={value}>
+      {children}
+    </AppSessionContext.Provider>
+  );
 }
 
 export function useAppSession() {
   const context = useContext(AppSessionContext);
 
   if (!context) {
-    throw new Error('useAppSession must be used within AppSessionProvider');
+    throw new Error("useAppSession must be used within AppSessionProvider");
   }
 
   return context;

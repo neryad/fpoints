@@ -17,10 +17,10 @@ export function CreateGroupScreen() {
       setSuccessMessage("");
       setIsLoading(true);
 
-      await createGroup(name);
+      const group = await createGroup(name);
       setSuccessMessage("Grupo creado correctamente.");
       setName("");
-      selectGroup();
+      selectGroup(group.id, group.name);
     } catch (err) {
       const message =
         err instanceof Error
