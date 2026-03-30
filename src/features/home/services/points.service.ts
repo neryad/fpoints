@@ -12,6 +12,12 @@ type UserProfileRow = {
   email: string | null;
 };
 
+type LeaderboardRpcRow = {
+  user_id: string;
+  points: number;
+  display_name: string | null;
+};
+
 export type GroupPointsEntry = {
   userId: string;
   displayName: string;
@@ -26,6 +32,15 @@ export type PointHistoryEntry = {
   rewardTitle: string | null;
   createdAt: string;
 };
+
+export type PointHistoryPage = {
+  items: PointHistoryEntry[];
+  hasMore: boolean;
+  nextOffset: number;
+};
+
+const DEFAULT_POINT_HISTORY_LIMIT = 120;
+const MAX_POINT_HISTORY_LIMIT = 300;
 
 function ensureSupabase() {
   if (!supabase) {
@@ -89,6 +104,32 @@ function getWeekStartIso() {
   return now.toISOString();
 }
 
+function mapLeaderboardRpcRows(rows: LeaderboardRpcRow[]): GroupPointsEntry[] {
+  return rows.map((row) => ({
+    userId: row.user_id,
+    points: Number(row.points) || 0,
+    displayName: row.display_name || "Usuario sin perfil",
+  }));
+}
+
+async function tryGetLeaderboardFromRpc(
+  groupId: string,
+  sinceIso?: string,
+): Promise<GroupPointsEntry[] | null> {
+  const client = ensureSupabase();
+
+  const { data, error } = await client.rpc("get_group_points_leaderboard", {
+    input_group_id: groupId,
+    input_since: sinceIso ?? null,
+  });
+
+  if (error || !data) {
+    return null;
+  }
+
+  return mapLeaderboardRpcRows(data as LeaderboardRpcRow[]);
+}
+
 export async function getMyPointsBalance(groupId: string): Promise<number> {
   const client = ensureSupabase();
   const userId = await getCurrentUserId();
@@ -137,16 +178,32 @@ export async function getMyWeeklyPointsBalance(
 
 export async function listMyPointHistory(
   groupId: string,
+  limit = DEFAULT_POINT_HISTORY_LIMIT,
 ): Promise<PointHistoryEntry[]> {
+  const page = await listMyPointHistoryPage(groupId, { limit, offset: 0 });
+  return page.items;
+}
+
+export async function listMyPointHistoryPage(
+  groupId: string,
+  options?: { limit?: number; offset?: number },
+): Promise<PointHistoryPage> {
   const client = ensureSupabase();
   const userId = await getCurrentUserId();
+  const requestedLimit = options?.limit ?? DEFAULT_POINT_HISTORY_LIMIT;
+  const safeLimit = Math.max(
+    1,
+    Math.min(MAX_POINT_HISTORY_LIMIT, Math.floor(requestedLimit)),
+  );
+  const safeOffset = Math.max(0, Math.floor(options?.offset ?? 0));
 
   const { data, error } = await client
     .from("point_transactions")
     .select("id, amount, reason, created_at")
     .eq("group_id", groupId)
     .eq("user_id", userId)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(safeOffset, safeOffset + safeLimit);
 
   if (error) {
     throw new Error(
@@ -155,28 +212,38 @@ export async function listMyPointHistory(
   }
 
   const rows = data ?? [];
+  const hasMore = rows.length > safeLimit;
+  const visibleRows = hasMore ? rows.slice(0, safeLimit) : rows;
 
   // Extract submission IDs from reasons like "task_approved:{uuid}"
-  const submissionIds = rows
-    .map((row) => {
-      const reason = row.reason as string;
-      if (reason?.startsWith("task_approved:")) {
-        return reason.slice("task_approved:".length);
-      }
-      return null;
-    })
-    .filter((id): id is string => id !== null);
+  const submissionIds = Array.from(
+    new Set(
+      visibleRows
+        .map((row) => {
+          const reason = row.reason as string;
+          if (reason?.startsWith("task_approved:")) {
+            return reason.slice("task_approved:".length);
+          }
+          return null;
+        })
+        .filter((id): id is string => id !== null),
+    ),
+  );
 
   // Extract redemption IDs from reasons like "reward_redeemed:{uuid}"
-  const redemptionIds = rows
-    .map((row) => {
-      const reason = row.reason as string;
-      if (reason?.startsWith("reward_redeemed:")) {
-        return reason.slice("reward_redeemed:".length);
-      }
-      return null;
-    })
-    .filter((id): id is string => id !== null);
+  const redemptionIds = Array.from(
+    new Set(
+      visibleRows
+        .map((row) => {
+          const reason = row.reason as string;
+          if (reason?.startsWith("reward_redeemed:")) {
+            return reason.slice("reward_redeemed:".length);
+          }
+          return null;
+        })
+        .filter((id): id is string => id !== null),
+    ),
+  );
 
   // Batch-resolve task titles for those submissions
   const titlesBySubmissionId = new Map<string, string>();
@@ -215,7 +282,7 @@ export async function listMyPointHistory(
     }
   }
 
-  return rows.map((row) => {
+  const items = visibleRows.map((row) => {
     const reason = row.reason as string;
     let taskTitle: string | null = null;
     let rewardTitle: string | null = null;
@@ -236,13 +303,25 @@ export async function listMyPointHistory(
       createdAt: row.created_at as string,
     };
   });
+
+  return {
+    items,
+    hasMore,
+    nextOffset: safeOffset + items.length,
+  };
 }
 
 export async function getWeeklyGroupPointsLeaderboard(
   groupId: string,
 ): Promise<GroupPointsEntry[]> {
-  const client = ensureSupabase();
   const weekStartIso = getWeekStartIso();
+
+  const rpcLeaderboard = await tryGetLeaderboardFromRpc(groupId, weekStartIso);
+  if (rpcLeaderboard) {
+    return rpcLeaderboard;
+  }
+
+  const client = ensureSupabase();
 
   const { data, error } = await client
     .from("point_transactions")
@@ -288,6 +367,11 @@ export async function getWeeklyGroupPointsLeaderboard(
 export async function getGroupPointsLeaderboard(
   groupId: string,
 ): Promise<GroupPointsEntry[]> {
+  const rpcLeaderboard = await tryGetLeaderboardFromRpc(groupId);
+  if (rpcLeaderboard) {
+    return rpcLeaderboard;
+  }
+
   const client = ensureSupabase();
 
   const { data, error } = await client
