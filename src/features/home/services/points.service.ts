@@ -176,6 +176,31 @@ export async function getMyWeeklyPointsBalance(
   return (data ?? []).reduce((sum, row) => sum + (row.amount as number), 0);
 }
 
+export async function getMyWeeklyPointsEarned(
+  groupId: string,
+): Promise<number> {
+  const client = ensureSupabase();
+  const userId = await getCurrentUserId();
+  const weekStartIso = getWeekStartIso();
+
+  const { data, error } = await client
+    .from("point_transactions")
+    .select("amount")
+    .eq("group_id", groupId)
+    .eq("user_id", userId)
+    .gte("created_at", weekStartIso);
+
+  if (error) {
+    throw new Error(
+      "No se pudieron cargar tus puntos ganados esta semana. Verifica tabla/politicas de point_transactions.",
+    );
+  }
+
+  return (data ?? [])
+    .filter((row) => (row.amount as number) > 0)
+    .reduce((sum, row) => sum + (row.amount as number), 0);
+}
+
 export async function listMyPointHistory(
   groupId: string,
   limit = DEFAULT_POINT_HISTORY_LIMIT,
@@ -203,6 +228,7 @@ export async function listMyPointHistoryPage(
     .eq("group_id", groupId)
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
     .range(safeOffset, safeOffset + safeLimit);
 
   if (error) {

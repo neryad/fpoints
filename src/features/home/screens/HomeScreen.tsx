@@ -32,6 +32,7 @@ import {
   getGroupPointsLeaderboard,
   getMyPointsBalance,
   getMyWeeklyPointsBalance,
+  getMyWeeklyPointsEarned,
   getWeeklyGroupPointsLeaderboard,
   type GroupPointsEntry,
 } from "../services/points.service";
@@ -52,6 +53,7 @@ export function HomeScreen({ navigation }: Props) {
   const { activeGroupId, activeGroupName } = useAppSession();
   const [myPoints, setMyPoints] = useState(0);
   const [myWeeklyPoints, setMyWeeklyPoints] = useState(0);
+  const [myWeeklyPointsEarned, setMyWeeklyPointsEarned] = useState(0);
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [leaderboard, setLeaderboard] = useState<GroupPointsEntry[]>([]);
   const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<
@@ -70,7 +72,9 @@ export function HomeScreen({ navigation }: Props) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const prevRankRef = useRef<string | null>(null);
+  const prevRankRef = useRef<{ groupId: string; levelNumber: number } | null>(
+    null,
+  );
 
   function formatLocalDate(value: string) {
     const [year, month, day] = value.split("-").map(Number);
@@ -86,8 +90,12 @@ export function HomeScreen({ navigation }: Props) {
   }
 
   const weeklyGoalProgressPercent = useMemo(
-    () => Math.min(100, Math.round((myWeeklyPoints / WEEKLY_XP_GOAL) * 100)),
-    [myWeeklyPoints],
+    () =>
+      Math.min(
+        100,
+        Math.max(0, Math.round((myWeeklyPointsEarned / WEEKLY_XP_GOAL) * 100)),
+      ),
+    [myWeeklyPointsEarned],
   );
 
   const topWeeklyEntries = useMemo(
@@ -105,9 +113,11 @@ export function HomeScreen({ navigation }: Props) {
 
   const loadPoints = useCallback(async () => {
     if (!activeGroupId) {
+      prevRankRef.current = null;
       unstable_batchedUpdates(() => {
         setMyPoints(0);
         setMyWeeklyPoints(0);
+        setMyWeeklyPointsEarned(0);
         setMyUserId(null);
         setLeaderboard([]);
         setWeeklyLeaderboard([]);
@@ -130,15 +140,23 @@ export function HomeScreen({ navigation }: Props) {
       setError("");
       setIsLoading(true);
 
-      const [myBalance, myWeekBalance, ranking, weekRanking, userId, myXp] =
-        await Promise.all([
-          getMyPointsBalance(activeGroupId),
-          getMyWeeklyPointsBalance(activeGroupId),
-          getGroupPointsLeaderboard(activeGroupId),
-          getWeeklyGroupPointsLeaderboard(activeGroupId),
-          getCurrentUserIdForPoints(),
-          getMyXpSummary(activeGroupId),
-        ]);
+      const [
+        myBalance,
+        myWeekBalance,
+        myWeekEarned,
+        ranking,
+        weekRanking,
+        userId,
+        myXp,
+      ] = await Promise.all([
+        getMyPointsBalance(activeGroupId),
+        getMyWeeklyPointsBalance(activeGroupId),
+        getMyWeeklyPointsEarned(activeGroupId),
+        getGroupPointsLeaderboard(activeGroupId),
+        getWeeklyGroupPointsLeaderboard(activeGroupId),
+        getCurrentUserIdForPoints(),
+        getMyXpSummary(activeGroupId),
+      ]);
 
       let myStreak: StreakSummary | null = null;
       try {
@@ -150,6 +168,7 @@ export function HomeScreen({ navigation }: Props) {
       unstable_batchedUpdates(() => {
         setMyPoints(myBalance);
         setMyWeeklyPoints(myWeekBalance);
+        setMyWeeklyPointsEarned(myWeekEarned);
         setLeaderboard(ranking);
         setWeeklyLeaderboard(weekRanking);
         setMyUserId(userId);
@@ -157,17 +176,21 @@ export function HomeScreen({ navigation }: Props) {
         setXp(myXp);
       });
 
-      // Rank-up detection: only fires when rank improves within the same session.
-      if (
-        prevRankRef.current !== null &&
-        prevRankRef.current !== myXp.levelName
-      ) {
+      // Rank-up detection: only fires when rank improves within the same group.
+      const prev = prevRankRef.current;
+      const isSameGroup = prev !== null && prev.groupId === activeGroupId;
+      const hasLeveledUp = isSameGroup && myXp.currentLevel > prev.levelNumber;
+
+      if (hasLeveledUp) {
         Alert.alert(
           "¡Subiste de rango!",
           `Has alcanzado el rango ${myXp.levelName}. ¡Sigue asi!`,
         );
       }
-      prevRankRef.current = myXp.levelName;
+      prevRankRef.current = {
+        groupId: activeGroupId,
+        levelNumber: myXp.currentLevel,
+      };
     } catch (err) {
       setError(
         err instanceof Error
@@ -215,9 +238,9 @@ export function HomeScreen({ navigation }: Props) {
               />
             </View>
             <Text style={styles.xpMeta}>
-              {myWeeklyPoints >= WEEKLY_XP_GOAL
-                ? `Meta semanal alcanzada (${WEEKLY_XP_GOAL} XP). \u00a1Excelente!`
-                : `${myWeeklyPoints} / ${WEEKLY_XP_GOAL} XP meta semanal`}
+              {myWeeklyPointsEarned >= WEEKLY_XP_GOAL
+                ? `Meta semanal alcanzada (${WEEKLY_XP_GOAL} XP). Excelente.`
+                : `${myWeeklyPointsEarned} / ${WEEKLY_XP_GOAL} XP meta semanal`}
             </Text>
           </>
         )}

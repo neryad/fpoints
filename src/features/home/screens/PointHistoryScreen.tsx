@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -49,6 +49,7 @@ export function PointHistoryScreen({ navigation }: Props) {
   const [hasMore, setHasMore] = useState(false);
   const [nextOffset, setNextOffset] = useState(0);
   const [error, setError] = useState("");
+  const isLoadingMoreRef = useRef(false);
 
   const loadHistory = useCallback(async () => {
     if (!activeGroupId) {
@@ -81,13 +82,14 @@ export function PointHistoryScreen({ navigation }: Props) {
   }, [activeGroupId]);
 
   const loadMoreHistory = useCallback(async () => {
-    if (!activeGroupId || isLoading || isLoadingMore || !hasMore) {
+    if (!activeGroupId || isLoading || isLoadingMoreRef.current || !hasMore) {
       return;
     }
 
+    isLoadingMoreRef.current = true;
+    setIsLoadingMore(true);
     try {
       setError("");
-      setIsLoadingMore(true);
       const page = await listMyPointHistoryPage(activeGroupId, {
         limit: POINT_HISTORY_PAGE_SIZE,
         offset: nextOffset,
@@ -102,9 +104,10 @@ export function PointHistoryScreen({ navigation }: Props) {
           : "No se pudo cargar mas historial de puntos.",
       );
     } finally {
+      isLoadingMoreRef.current = false;
       setIsLoadingMore(false);
     }
-  }, [activeGroupId, hasMore, isLoading, isLoadingMore, nextOffset]);
+  }, [activeGroupId, hasMore, isLoading, nextOffset]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", loadHistory);
