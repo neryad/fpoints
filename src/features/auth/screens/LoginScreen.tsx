@@ -1,27 +1,29 @@
-import React, { useState } from 'react';
-import { Button, StyleSheet, Text, TextInput, View } from 'react-native';
-import type { NativeStackScreenProps } from '@react-navigation/native-stack';
-import { colors } from '../../../core/theme/colors';
-import { AuthStackParamList } from '../../../app/navigation/types';
-import { signInWithEmail } from '../services/auth.service';
+import React, { useState } from "react";
+import { Button, StyleSheet, Text, TextInput, View } from "react-native";
+import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { colors } from "../../../core/theme/colors";
+import { AuthStackParamList } from "../../../app/navigation/types";
+import { signInWithEmail } from "../services/auth.service";
 
-type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
+type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
 
 export function LoginScreen({ navigation }: Props) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   async function handleLogin() {
     try {
-      setError('');
+      setError("");
       setIsLoading(true);
 
       await signInWithEmail(email, password);
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : 'Ocurrió un error al iniciar sesión.';
+        err instanceof Error
+          ? err.message
+          : "Ocurrió un error al iniciar sesión.";
       setError(message);
     } finally {
       setIsLoading(false);
@@ -32,7 +34,9 @@ export function LoginScreen({ navigation }: Props) {
     <View style={styles.container}>
       <Text style={styles.title}>fpoints</Text>
       <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
-
+      <Text className="text-xl font-bold text-blue-500">
+        Welcome to Nativewind!
+      </Text>
       <TextInput
         style={styles.input}
         placeholder="Email"
@@ -53,7 +57,7 @@ export function LoginScreen({ navigation }: Props) {
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
       <Button
-        title={isLoading ? 'Ingresando...' : 'Login'}
+        title={isLoading ? "Ingresando..." : "Login"}
         onPress={handleLogin}
         disabled={isLoading}
       />
@@ -62,7 +66,7 @@ export function LoginScreen({ navigation }: Props) {
 
       <Button
         title="Go to Register"
-        onPress={() => navigation.navigate('Register')}
+        onPress={() => navigation.navigate("Register")}
       />
     </View>
   );
@@ -71,14 +75,14 @@ export function LoginScreen({ navigation }: Props) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     backgroundColor: colors.background,
     padding: 24,
   },
   title: {
     fontSize: 32,
-    fontWeight: '700',
+    fontWeight: "700",
     color: colors.text,
   },
   subtitle: {
@@ -87,7 +91,7 @@ const styles = StyleSheet.create({
     color: colors.muted,
   },
   input: {
-    width: '100%',
+    width: "100%",
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.border,
@@ -98,8 +102,8 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   errorText: {
-    width: '100%',
-    color: '#B42318',
+    width: "100%",
+    color: "#B42318",
     marginBottom: 12,
   },
   spacer: {
