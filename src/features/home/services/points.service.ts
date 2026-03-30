@@ -124,7 +124,23 @@ async function tryGetLeaderboardFromRpc(
     input_since: sinceIso ?? null,
   });
 
-  if (error || !data) {
+  if (error) {
+    console.warn("get_group_points_leaderboard RPC failed; using fallback", {
+      groupId,
+      sinceIso: sinceIso ?? null,
+      error,
+    });
+    return null;
+  }
+
+  if (!data) {
+    console.warn(
+      "get_group_points_leaderboard RPC returned no data; using fallback",
+      {
+        groupId,
+        sinceIso: sinceIso ?? null,
+      },
+    );
     return null;
   }
 
@@ -189,6 +205,7 @@ export async function getMyWeeklyPointsEarned(
     .select("amount")
     .eq("group_id", groupId)
     .eq("user_id", userId)
+    .gt("amount", 0)
     .gte("created_at", weekStartIso);
 
   if (error) {
@@ -197,9 +214,7 @@ export async function getMyWeeklyPointsEarned(
     );
   }
 
-  return (data ?? [])
-    .filter((row) => (row.amount as number) > 0)
-    .reduce((sum, row) => sum + (row.amount as number), 0);
+  return (data ?? []).reduce((sum, row) => sum + (row.amount as number), 0);
 }
 
 export async function listMyPointHistory(
