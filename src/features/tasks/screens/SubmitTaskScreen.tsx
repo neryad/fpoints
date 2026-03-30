@@ -16,6 +16,11 @@ export function SubmitTaskScreen({ route, navigation }: Props) {
   const [successMessage, setSuccessMessage] = useState("");
 
   async function handleSubmit() {
+    const urlTrimmed = proofImageUrl.trim();
+    if (urlTrimmed && !/^https?:\/\//i.test(urlTrimmed)) {
+      setError("La URL de prueba debe comenzar con http:// o https://");
+      return;
+    }
     try {
       setError("");
       setSuccessMessage("");

@@ -12,6 +12,10 @@ export function JoinGroupScreen() {
   const { selectGroup } = useAppSession();
 
   async function handleJoinGroup() {
+    if (!inviteCode.trim()) {
+      setError("El código de invitación es obligatorio.");
+      return;
+    }
     try {
       setError("");
       setSuccessMessage("");

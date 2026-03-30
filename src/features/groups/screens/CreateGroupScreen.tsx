@@ -12,6 +12,15 @@ export function CreateGroupScreen() {
 
   const { selectGroup } = useAppSession();
   async function handleCreateGroup() {
+    const trimmed = name.trim();
+    if (trimmed.length < 2) {
+      setError("El nombre debe tener al menos 2 caracteres.");
+      return;
+    }
+    if (trimmed.length > 50) {
+      setError("El nombre no puede superar los 50 caracteres.");
+      return;
+    }
     try {
       setError("");
       setSuccessMessage("");

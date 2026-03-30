@@ -10,9 +10,31 @@ type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
 export function LoginScreen({ navigation }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{
+    email?: string;
+    password?: string;
+  }>({});
   const { isLoading, error, signIn } = useAuth();
 
+  function validate(): boolean {
+    const errs: { email?: string; password?: string } = {};
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      errs.email = "El email es obligatorio.";
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      errs.email = "Ingresa un email válido.";
+    }
+    if (!password) {
+      errs.password = "La contraseña es obligatoria.";
+    } else if (password.length < 6) {
+      errs.password = "Mínimo 6 caracteres.";
+    }
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
   async function handleLogin() {
+    if (!validate()) return;
     await signIn(email, password);
   }
 
@@ -24,21 +46,36 @@ export function LoginScreen({ navigation }: Props) {
         Welcome to Nativewind!
       </Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, fieldErrors.email ? styles.inputInvalid : null]}
         placeholder="Email"
         autoCapitalize="none"
         keyboardType="email-address"
         value={email}
-        onChangeText={setEmail}
+        onChangeText={(t) => {
+          setEmail(t);
+          setFieldErrors((e) => ({ ...e, email: undefined }));
+        }}
       />
+      {fieldErrors.email ? (
+        <Text style={styles.fieldError}>{fieldErrors.email}</Text>
+      ) : null}
 
       <TextInput
-        style={styles.input}
+        style={[
+          styles.input,
+          fieldErrors.password ? styles.inputInvalid : null,
+        ]}
         placeholder="Password"
         secureTextEntry
         value={password}
-        onChangeText={setPassword}
+        onChangeText={(t) => {
+          setPassword(t);
+          setFieldErrors((e) => ({ ...e, password: undefined }));
+        }}
       />
+      {fieldErrors.password ? (
+        <Text style={styles.fieldError}>{fieldErrors.password}</Text>
+      ) : null}
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
@@ -91,6 +128,16 @@ const styles = StyleSheet.create({
     width: "100%",
     color: "#B42318",
     marginBottom: 12,
+  },
+  inputInvalid: {
+    borderColor: "#B42318",
+  },
+  fieldError: {
+    width: "100%",
+    color: "#B42318",
+    fontSize: 12,
+    marginTop: -8,
+    marginBottom: 6,
   },
   spacer: {
     height: 12,

@@ -79,14 +79,23 @@ export function ManageRewardsScreen({ navigation }: Props) {
   async function handleCreateReward() {
     if (!activeGroupId) return;
 
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) {
+      setError("El nombre del premio es obligatorio.");
+      return;
+    }
     const parsedCost = Number(costPoints);
+    if (!Number.isInteger(parsedCost) || parsedCost < 1) {
+      setError("El costo debe ser un número entero mayor a 0.");
+      return;
+    }
 
     try {
       setError("");
       setSuccessMessage("");
       setIsSaving(true);
       await createReward(activeGroupId, {
-        title,
+        title: trimmedTitle,
         costPoints: parsedCost,
       });
       setTitle("");
@@ -135,7 +144,16 @@ export function ManageRewardsScreen({ navigation }: Props) {
   async function handleSaveReward(item: Reward) {
     if (!activeGroupId) return;
 
+    const trimmedEditTitle = editTitle.trim();
+    if (!trimmedEditTitle) {
+      setError("El nombre del premio es obligatorio.");
+      return;
+    }
     const parsedCost = Number(editCostPoints);
+    if (!Number.isInteger(parsedCost) || parsedCost < 1) {
+      setError("El costo debe ser un número entero mayor a 0.");
+      return;
+    }
 
     try {
       setError("");
@@ -143,7 +161,7 @@ export function ManageRewardsScreen({ navigation }: Props) {
       setIsSaving(true);
 
       await updateReward(activeGroupId, item.id, {
-        title: editTitle,
+        title: trimmedEditTitle,
         costPoints: parsedCost,
       });
 

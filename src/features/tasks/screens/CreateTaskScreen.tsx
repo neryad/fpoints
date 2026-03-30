@@ -24,15 +24,38 @@ export function CreateTaskScreen({ navigation }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
+  const [fieldErrors, setFieldErrors] = useState<{
+    title?: string;
+    pointsValue?: string;
+  }>({});
+
+  function validate(): boolean {
+    const errs: { title?: string; pointsValue?: string } = {};
+    if (!title.trim()) {
+      errs.title = "El título es obligatorio.";
+    } else if (title.trim().length > 100) {
+      errs.title = "El título no puede superar los 100 caracteres.";
+    }
+    const parsed = parseInt(pointsValue, 10);
+    if (isNaN(parsed) || parsed < 1) {
+      errs.pointsValue = "Los puntos deben ser un número mayor a 0.";
+    } else if (parsed > 9999) {
+      errs.pointsValue = "Los puntos no pueden superar 9999.";
+    }
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  }
+
   async function handleCreate() {
     if (!activeGroupId) return;
+    if (!validate()) return;
     try {
       setError("");
       setIsLoading(true);
       await createTask(activeGroupId, {
         title,
         description,
-        pointsValue: parseInt(pointsValue, 10) || 10,
+        pointsValue: parseInt(pointsValue, 10),
         requiresProof,
       });
       navigation.goBack();
@@ -47,12 +70,18 @@ export function CreateTaskScreen({ navigation }: Props) {
     <View style={styles.container}>
       <Text style={styles.label}>Título *</Text>
       <TextInput
-        style={styles.input}
+        style={[styles.input, fieldErrors.title ? styles.inputInvalid : null]}
         placeholder="Ej: Lavar los platos"
         value={title}
-        onChangeText={setTitle}
+        onChangeText={(t) => {
+          setTitle(t);
+          setFieldErrors((e) => ({ ...e, title: undefined }));
+        }}
         editable={!isLoading}
       />
+      {fieldErrors.title ? (
+        <Text style={styles.fieldError}>{fieldErrors.title}</Text>
+      ) : null}
 
       <Text style={styles.label}>Descripción</Text>
       <TextInput
@@ -67,13 +96,22 @@ export function CreateTaskScreen({ navigation }: Props) {
 
       <Text style={styles.label}>Puntos</Text>
       <TextInput
-        style={styles.input}
+        style={[
+          styles.input,
+          fieldErrors.pointsValue ? styles.inputInvalid : null,
+        ]}
         placeholder="10"
         value={pointsValue}
-        onChangeText={setPointsValue}
+        onChangeText={(t) => {
+          setPointsValue(t);
+          setFieldErrors((e) => ({ ...e, pointsValue: undefined }));
+        }}
         editable={!isLoading}
         keyboardType="numeric"
       />
+      {fieldErrors.pointsValue ? (
+        <Text style={styles.fieldError}>{fieldErrors.pointsValue}</Text>
+      ) : null}
 
       <View style={styles.switchRow}>
         <Text style={styles.switchLabel}>Requiere prueba fotográfica</Text>
@@ -135,6 +173,15 @@ const styles = StyleSheet.create({
   errorText: {
     color: "#ef4444",
     marginTop: 12,
+    marginBottom: 8,
+  },
+  inputInvalid: {
+    borderColor: "#B42318",
+  },
+  fieldError: {
+    color: "#B42318",
+    fontSize: 12,
+    marginTop: 4,
     marginBottom: 8,
   },
 });
