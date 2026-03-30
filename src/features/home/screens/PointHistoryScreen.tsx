@@ -17,11 +17,22 @@ import {
 
 type Props = NativeStackScreenProps<HomeStackParamList, "PointHistory">;
 
-function formatReason(reason: string, taskTitle: string | null) {
+function formatReason(
+  reason: string,
+  taskTitle: string | null,
+  rewardTitle: string | null,
+) {
   if (reason.startsWith("task_approved:")) {
     return taskTitle ? `Tarea aprobada: ${taskTitle}` : "Tarea aprobada";
   }
+  if (reason.startsWith("reward_redeemed:")) {
+    return rewardTitle ? `Canje aprobado: ${rewardTitle}` : "Canje aprobado";
+  }
   return reason;
+}
+
+function formatAmount(value: number) {
+  return value > 0 ? `+${value}` : `${value}`;
 }
 
 function formatDate(value: string) {
@@ -87,9 +98,18 @@ export function PointHistoryScreen({ navigation }: Props) {
           <View style={styles.card}>
             <View style={styles.row}>
               <Text style={styles.reason}>
-                {formatReason(item.reason, item.taskTitle)}
+                {formatReason(item.reason, item.taskTitle, item.rewardTitle)}
               </Text>
-              <Text style={styles.amount}>+{item.amount}</Text>
+              <Text
+                style={[
+                  styles.amount,
+                  item.amount < 0
+                    ? styles.amountNegative
+                    : styles.amountPositive,
+                ]}
+              >
+                {formatAmount(item.amount)}
+              </Text>
             </View>
             <Text style={styles.date}>{formatDate(item.createdAt)}</Text>
           </View>
@@ -133,9 +153,14 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   amount: {
-    color: colors.primary,
     fontSize: 18,
     fontWeight: "700",
+  },
+  amountPositive: {
+    color: colors.primary,
+  },
+  amountNegative: {
+    color: "#B42318",
   },
   date: {
     marginTop: 8,
