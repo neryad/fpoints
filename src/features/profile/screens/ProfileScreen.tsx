@@ -60,17 +60,28 @@ export function ProfileScreen({ navigation }: Props) {
       });
 
       if (activeGroupId) {
-        const role = await getMyRoleInGroup(activeGroupId);
-        const [myXp, myStreak] = await Promise.all([
-          getMyXpSummary(activeGroupId),
-          getMyStreakSummary(activeGroupId),
-        ]);
-        unstable_batchedUpdates(() => {
-          setRole(role);
-          setCanConfigureGroup(role === "owner" || role === "sub_owner");
-          setXp(myXp);
-          setStreak(myStreak);
-        });
+        try {
+          const role = await getMyRoleInGroup(activeGroupId);
+          const [myXp, myStreak] = await Promise.all([
+            getMyXpSummary(activeGroupId),
+            getMyStreakSummary(activeGroupId),
+          ]);
+          unstable_batchedUpdates(() => {
+            setRole(role);
+            setCanConfigureGroup(role === "owner" || role === "sub_owner");
+            setXp(myXp);
+            setStreak(myStreak);
+          });
+        } catch (err) {
+          // If group data fails to load, clear those states to avoid showing stale values
+          unstable_batchedUpdates(() => {
+            setRole(null);
+            setCanConfigureGroup(false);
+            setXp(null);
+            setStreak(null);
+          });
+          throw err; // Re-throw to be caught by outer try/catch
+        }
       } else {
         unstable_batchedUpdates(() => {
           setCanConfigureGroup(false);
@@ -351,13 +362,20 @@ function isLocalAvatarToken(value: string) {
   return value.startsWith(LOCAL_AVATAR_TOKEN_PREFIX);
 }
 
-function parseLocalAvatarToken(value: string): { index: number } | null {
+function parseLocalAvatarToken(
+  value: string,
+): { role: RoleKey; index: number } | null {
   if (!isLocalAvatarToken(value)) return null;
   const parts = value.replace(LOCAL_AVATAR_TOKEN_PREFIX, "").split("/");
   if (parts.length !== 2) return null;
+  const roleStr = parts[0];
   const index = Number(parts[1]);
   if (!Number.isInteger(index) || index < 0) return null;
-  return { index };
+  // Validate role is a valid RoleKey
+  if (roleStr !== "member" && roleStr !== "owner" && roleStr !== "sub_owner") {
+    return null;
+  }
+  return { role: roleStr as RoleKey, index };
 }
 
 function buildLocalAvatarToken(roleKey: RoleKey, index: number) {
@@ -369,9 +387,10 @@ function getLocalAvatarSelection(
   userSeed: string,
   avatarUrl: string,
 ): { source: ImageSourcePropType; index: number; total: number } {
-  const roleKey = toRoleKey(role);
-  const options = LOCAL_AVATARS_BY_ROLE[roleKey];
   const parsed = parseLocalAvatarToken(avatarUrl);
+  // Use parsed role from token if available, otherwise derive from live role state
+  const roleKey = parsed !== null ? parsed.role : toRoleKey(role);
+  const options = LOCAL_AVATARS_BY_ROLE[roleKey];
   const index =
     parsed !== null
       ? parsed.index % options.length
