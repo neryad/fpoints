@@ -12,6 +12,10 @@ import { HomeStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
 import { colors } from "../../../core/theme/colors";
 import {
+  getMyStreakSummary,
+  type StreakSummary,
+} from "../../gamification/services/streak.service";
+import {
   getCurrentUserIdForPoints,
   getGroupPointsLeaderboard,
   getMyPointsBalance,
@@ -31,8 +35,27 @@ export function HomeScreen({ navigation }: Props) {
   const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<
     GroupPointsEntry[]
   >([]);
+  const [streak, setStreak] = useState<StreakSummary>({
+    currentStreak: 0,
+    lastActiveDate: null,
+    isActiveToday: false,
+    isAtRisk: false,
+    daysSinceLastActivity: null,
+    recent7Days: [],
+  });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+
+  function formatLocalDate(value: string) {
+    return new Date(value).toLocaleDateString();
+  }
+
+  function formatWeekday(dateKey: string) {
+    const [year, month, day] = dateKey.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
+    const dayLabel = date.toLocaleDateString(undefined, { weekday: "short" });
+    return dayLabel.slice(0, 2).toUpperCase();
+  }
 
   async function loadPoints() {
     if (!activeGroupId) {
@@ -41,6 +64,14 @@ export function HomeScreen({ navigation }: Props) {
       setMyUserId(null);
       setLeaderboard([]);
       setWeeklyLeaderboard([]);
+      setStreak({
+        currentStreak: 0,
+        lastActiveDate: null,
+        isActiveToday: false,
+        isAtRisk: false,
+        daysSinceLastActivity: null,
+        recent7Days: [],
+      });
       setIsLoading(false);
       return;
     }
@@ -49,13 +80,14 @@ export function HomeScreen({ navigation }: Props) {
       setError("");
       setIsLoading(true);
 
-      const [myBalance, myWeekBalance, ranking, weekRanking, userId] =
+      const [myBalance, myWeekBalance, ranking, weekRanking, userId, myStreak] =
         await Promise.all([
           getMyPointsBalance(activeGroupId),
           getMyWeeklyPointsBalance(activeGroupId),
           getGroupPointsLeaderboard(activeGroupId),
           getWeeklyGroupPointsLeaderboard(activeGroupId),
           getCurrentUserIdForPoints(),
+          getMyStreakSummary(activeGroupId),
         ]);
 
       setMyPoints(myBalance);
@@ -63,6 +95,7 @@ export function HomeScreen({ navigation }: Props) {
       setLeaderboard(ranking);
       setWeeklyLeaderboard(weekRanking);
       setMyUserId(userId);
+      setStreak(myStreak);
     } catch (err) {
       setError(
         err instanceof Error
@@ -100,6 +133,73 @@ export function HomeScreen({ navigation }: Props) {
           <ActivityIndicator size="small" color={colors.primary} />
         ) : (
           <Text style={styles.pointsValue}>{myWeeklyPoints}</Text>
+        )}
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardLabel}>Racha diaria</Text>
+        {isLoading ? (
+          <ActivityIndicator size="small" color={colors.primary} />
+        ) : (
+          <>
+            <Text style={styles.pointsValue}>{streak.currentStreak} dias</Text>
+            {streak.isActiveToday ? (
+              <Text style={styles.streakOkText}>Hoy ya sumaste actividad.</Text>
+            ) : streak.isAtRisk ? (
+              <Text style={styles.streakRiskText}>
+                Completa una actividad hoy para mantener la racha.
+              </Text>
+            ) : (
+              <Text style={styles.rowMeta}>
+                Tu racha se reinicio. Vamos por una nueva.
+              </Text>
+            )}
+            {streak.lastActiveDate ? (
+              <Text style={styles.rowMeta}>
+                Ultima actividad: {formatLocalDate(streak.lastActiveDate)}
+              </Text>
+            ) : (
+              <Text style={styles.rowMeta}>
+                Aun no tienes actividad contabilizada.
+              </Text>
+            )}
+
+            {streak.recent7Days.length > 0 ? (
+              <View style={styles.weekRow}>
+                {streak.recent7Days.map((day) => (
+                  <View
+                    key={day.dateKey}
+                    style={[
+                      styles.dayDot,
+                      day.isActive
+                        ? styles.dayDotActive
+                        : styles.dayDotInactive,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.dayDotText,
+                        day.isActive
+                          ? styles.dayDotTextActive
+                          : styles.dayDotTextInactive,
+                      ]}
+                    >
+                      {formatWeekday(day.dateKey)}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
+
+            {streak.isAtRisk ? (
+              <View style={styles.streakCtaWrap}>
+                <Button
+                  title="Completar tarea hoy"
+                  onPress={() => navigation.getParent()?.navigate("Tasks")}
+                />
+              </View>
+            ) : null}
+          </>
         )}
       </View>
 
@@ -222,5 +322,51 @@ const styles = StyleSheet.create({
     marginTop: 12,
     color: "#B42318",
     textAlign: "center",
+  },
+  streakOkText: {
+    color: "#0B6E4F",
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 6,
+  },
+  streakRiskText: {
+    color: "#B54708",
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 6,
+  },
+  weekRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 6,
+    marginTop: 12,
+  },
+  dayDot: {
+    flex: 1,
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingVertical: 7,
+    alignItems: "center",
+  },
+  dayDotActive: {
+    backgroundColor: "#E8F7F1",
+    borderColor: "#0B6E4F",
+  },
+  dayDotInactive: {
+    backgroundColor: colors.surface,
+    borderColor: colors.border,
+  },
+  dayDotText: {
+    fontSize: 10,
+    fontWeight: "700",
+  },
+  dayDotTextActive: {
+    color: "#0B6E4F",
+  },
+  dayDotTextInactive: {
+    color: colors.muted,
+  },
+  streakCtaWrap: {
+    marginTop: 12,
   },
 });
