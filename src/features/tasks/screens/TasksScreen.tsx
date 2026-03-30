@@ -23,7 +23,12 @@ export function TasksScreen({ navigation }: Props) {
   const [error, setError] = useState("");
 
   const loadTasks = useCallback(async () => {
-    if (!activeGroupId) return;
+    if (!activeGroupId) {
+      setTasks([]);
+      setError("");
+      setIsLoading(false);
+      return;
+    }
     try {
       setError("");
       setIsLoading(true);

@@ -41,6 +41,8 @@ export function ProfileScreen({ navigation }: Props) {
       if (activeGroupId) {
         const role = await getMyRoleInGroup(activeGroupId);
         setCanConfigureGroup(role === "owner" || role === "sub_owner");
+      } else {
+        setCanConfigureGroup(false);
       }
     } catch (err) {
       const message =
