@@ -16,6 +16,10 @@ import {
   type StreakSummary,
 } from "../../gamification/services/streak.service";
 import {
+  getMyXpSummary,
+  type XpSummary,
+} from "../../gamification/services/xp.service";
+import {
   getCurrentUserIdForPoints,
   getGroupPointsLeaderboard,
   getMyPointsBalance,
@@ -42,6 +46,15 @@ export function HomeScreen({ navigation }: Props) {
     isAtRisk: false,
     daysSinceLastActivity: null,
     recent7Days: [],
+  });
+  const [xp, setXp] = useState<XpSummary>({
+    totalXp: 0,
+    currentLevel: 1,
+    levelName: "F",
+    xpInCurrentLevel: 0,
+    xpNeededForNextLevel: 100,
+    progressPercent: 0,
+    isMaxLevel: false,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -72,6 +85,15 @@ export function HomeScreen({ navigation }: Props) {
         daysSinceLastActivity: null,
         recent7Days: [],
       });
+      setXp({
+        totalXp: 0,
+        currentLevel: 1,
+        levelName: "F",
+        xpInCurrentLevel: 0,
+        xpNeededForNextLevel: 100,
+        progressPercent: 0,
+        isMaxLevel: false,
+      });
       setIsLoading(false);
       return;
     }
@@ -80,15 +102,23 @@ export function HomeScreen({ navigation }: Props) {
       setError("");
       setIsLoading(true);
 
-      const [myBalance, myWeekBalance, ranking, weekRanking, userId, myStreak] =
-        await Promise.all([
-          getMyPointsBalance(activeGroupId),
-          getMyWeeklyPointsBalance(activeGroupId),
-          getGroupPointsLeaderboard(activeGroupId),
-          getWeeklyGroupPointsLeaderboard(activeGroupId),
-          getCurrentUserIdForPoints(),
-          getMyStreakSummary(activeGroupId),
-        ]);
+      const [
+        myBalance,
+        myWeekBalance,
+        ranking,
+        weekRanking,
+        userId,
+        myStreak,
+        myXp,
+      ] = await Promise.all([
+        getMyPointsBalance(activeGroupId),
+        getMyWeeklyPointsBalance(activeGroupId),
+        getGroupPointsLeaderboard(activeGroupId),
+        getWeeklyGroupPointsLeaderboard(activeGroupId),
+        getCurrentUserIdForPoints(),
+        getMyStreakSummary(activeGroupId),
+        getMyXpSummary(activeGroupId),
+      ]);
 
       setMyPoints(myBalance);
       setMyWeeklyPoints(myWeekBalance);
@@ -96,6 +126,7 @@ export function HomeScreen({ navigation }: Props) {
       setWeeklyLeaderboard(weekRanking);
       setMyUserId(userId);
       setStreak(myStreak);
+      setXp(myXp);
     } catch (err) {
       setError(
         err instanceof Error
@@ -199,6 +230,37 @@ export function HomeScreen({ navigation }: Props) {
                 />
               </View>
             ) : null}
+          </>
+        )}
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardLabel}>Tu nivel</Text>
+        {isLoading ? (
+          <ActivityIndicator size="small" color={colors.primary} />
+        ) : (
+          <>
+            <View style={styles.levelRow}>
+              <Text style={styles.levelBadge}>{xp.levelName}</Text>
+              <Text style={styles.levelName}>Rango {xp.levelName}</Text>
+              <Text style={styles.xpTotal}>{xp.totalXp} XP</Text>
+            </View>
+            <View style={styles.progressTrack}>
+              <View
+                style={[
+                  styles.progressFill,
+                  { width: `${xp.progressPercent}%` },
+                ]}
+              />
+            </View>
+            {xp.isMaxLevel ? (
+              <Text style={styles.xpMeta}>Nivel maximo alcanzado.</Text>
+            ) : (
+              <Text style={styles.xpMeta}>
+                {xp.xpInCurrentLevel} / {xp.xpNeededForNextLevel} XP para el
+                siguiente nivel
+              </Text>
+            )}
           </>
         )}
       </View>
@@ -368,5 +430,50 @@ const styles = StyleSheet.create({
   },
   streakCtaWrap: {
     marginTop: 12,
+  },
+  levelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 10,
+  },
+  levelBadge: {
+    fontSize: 20,
+    fontWeight: "900",
+    color: colors.primaryText,
+    backgroundColor: colors.primary,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    textAlign: "center",
+    lineHeight: 38,
+    overflow: "hidden",
+  },
+  levelName: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  xpTotal: {
+    fontSize: 13,
+    color: colors.muted,
+    fontWeight: "600",
+  },
+  progressTrack: {
+    height: 10,
+    backgroundColor: colors.border,
+    borderRadius: 5,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: 10,
+    backgroundColor: colors.primary,
+    borderRadius: 5,
+  },
+  xpMeta: {
+    marginTop: 8,
+    fontSize: 12,
+    color: colors.muted,
   },
 });
