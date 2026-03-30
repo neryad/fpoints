@@ -23,6 +23,7 @@ export type PointHistoryEntry = {
   amount: number;
   reason: string;
   taskTitle: string | null;
+  rewardTitle: string | null;
   createdAt: string;
 };
 
@@ -166,6 +167,17 @@ export async function listMyPointHistory(
     })
     .filter((id): id is string => id !== null);
 
+  // Extract redemption IDs from reasons like "reward_redeemed:{uuid}"
+  const redemptionIds = rows
+    .map((row) => {
+      const reason = row.reason as string;
+      if (reason?.startsWith("reward_redeemed:")) {
+        return reason.slice("reward_redeemed:".length);
+      }
+      return null;
+    })
+    .filter((id): id is string => id !== null);
+
   // Batch-resolve task titles for those submissions
   const titlesBySubmissionId = new Map<string, string>();
   if (submissionIds.length > 0) {
@@ -186,18 +198,41 @@ export async function listMyPointHistory(
     }
   }
 
+  // Resolve reward titles for redemption movements.
+  const titlesByRedemptionId = new Map<string, string>();
+  if (redemptionIds.length > 0) {
+    const { data: redemptionData } = await client
+      .from("reward_redemptions")
+      .select("id, reward_title")
+      .in("id", redemptionIds);
+
+    for (const redemption of redemptionData ?? []) {
+      const redemptionId = redemption.id as string;
+      const rewardTitle = (redemption.reward_title as string | null) ?? null;
+      if (rewardTitle) {
+        titlesByRedemptionId.set(redemptionId, rewardTitle);
+      }
+    }
+  }
+
   return rows.map((row) => {
     const reason = row.reason as string;
     let taskTitle: string | null = null;
+    let rewardTitle: string | null = null;
     if (reason?.startsWith("task_approved:")) {
       const submissionId = reason.slice("task_approved:".length);
       taskTitle = titlesBySubmissionId.get(submissionId) ?? null;
+    }
+    if (reason?.startsWith("reward_redeemed:")) {
+      const redemptionId = reason.slice("reward_redeemed:".length);
+      rewardTitle = titlesByRedemptionId.get(redemptionId) ?? null;
     }
     return {
       id: row.id as string,
       amount: row.amount as number,
       reason,
       taskTitle,
+      rewardTitle,
       createdAt: row.created_at as string,
     };
   });
