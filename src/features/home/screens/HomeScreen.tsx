@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Button,
   ScrollView,
   StyleSheet,
@@ -30,6 +31,8 @@ import {
 
 type Props = NativeStackScreenProps<HomeStackParamList, "HomeDashboard">;
 
+const WEEKLY_XP_GOAL = 200;
+
 export function HomeScreen({ navigation }: Props) {
   const { activeGroupId, activeGroupName } = useAppSession();
   const [myPoints, setMyPoints] = useState(0);
@@ -58,6 +61,8 @@ export function HomeScreen({ navigation }: Props) {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+
+  const prevRankRef = useRef<string | null>(null);
 
   function formatLocalDate(value: string) {
     return new Date(value).toLocaleDateString();
@@ -127,6 +132,18 @@ export function HomeScreen({ navigation }: Props) {
       setMyUserId(userId);
       setStreak(myStreak);
       setXp(myXp);
+
+      // Rank-up detection: only fires when rank improves within the same session.
+      if (
+        prevRankRef.current !== null &&
+        prevRankRef.current !== myXp.levelName
+      ) {
+        Alert.alert(
+          "¡Subiste de rango!",
+          `Has alcanzado el rango ${myXp.levelName}. ¡Sigue asi!`,
+        );
+      }
+      prevRankRef.current = myXp.levelName;
     } catch (err) {
       setError(
         err instanceof Error
@@ -163,7 +180,24 @@ export function HomeScreen({ navigation }: Props) {
         {isLoading ? (
           <ActivityIndicator size="small" color={colors.primary} />
         ) : (
-          <Text style={styles.pointsValue}>{myWeeklyPoints}</Text>
+          <>
+            <Text style={styles.pointsValue}>{myWeeklyPoints}</Text>
+            <View style={styles.progressTrack}>
+              <View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: `${Math.min(100, Math.round((myWeeklyPoints / WEEKLY_XP_GOAL) * 100))}%`,
+                  },
+                ]}
+              />
+            </View>
+            <Text style={styles.xpMeta}>
+              {myWeeklyPoints >= WEEKLY_XP_GOAL
+                ? `Meta semanal alcanzada (${WEEKLY_XP_GOAL} XP). \u00a1Excelente!`
+                : `${myWeeklyPoints} / ${WEEKLY_XP_GOAL} XP meta semanal`}
+            </Text>
+          </>
         )}
       </View>
 
