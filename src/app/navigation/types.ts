@@ -27,8 +27,16 @@ export type ProfileStackParamList = {
   GroupSettings: undefined;
 };
 
+export type RewardsStackParamList = {
+  RewardsList: undefined;
+  ManageRewards: undefined;
+  MyRedemptions: undefined;
+  RewardApprovals: undefined;
+};
+
 export type MainTabParamList = {
   Home: undefined;
   Tasks: undefined;
+  Rewards: undefined;
   Profile: undefined;
 };
