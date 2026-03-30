@@ -56,8 +56,10 @@ export function AppSessionProvider({ children }: AppSessionProviderProps) {
         if (!mounted) return;
         setIsAuthenticated(false);
       } finally {
-        if (!mounted) return;
-        setIsBootstrapping(false);
+        if (mounted) {
+          setIsBootstrapping(false);
+        }
+      }
       }
     })();
 
