@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -11,11 +11,13 @@ import { HomeStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
 import { colors } from "../../../core/theme/colors";
 import {
-  listMyPointHistory,
+  listMyPointHistoryPage,
   type PointHistoryEntry,
 } from "../services/points.service";
 
 type Props = NativeStackScreenProps<HomeStackParamList, "PointHistory">;
+
+const POINT_HISTORY_PAGE_SIZE = 80;
 
 function formatReason(
   reason: string,
@@ -43,11 +45,17 @@ export function PointHistoryScreen({ navigation }: Props) {
   const { activeGroupId } = useAppSession();
   const [history, setHistory] = useState<PointHistoryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const [nextOffset, setNextOffset] = useState(0);
   const [error, setError] = useState("");
+  const isLoadingMoreRef = useRef(false);
 
   const loadHistory = useCallback(async () => {
     if (!activeGroupId) {
       setHistory([]);
+      setHasMore(false);
+      setNextOffset(0);
       setIsLoading(false);
       return;
     }
@@ -55,8 +63,13 @@ export function PointHistoryScreen({ navigation }: Props) {
     try {
       setError("");
       setIsLoading(true);
-      const data = await listMyPointHistory(activeGroupId);
-      setHistory(data);
+      const page = await listMyPointHistoryPage(activeGroupId, {
+        limit: POINT_HISTORY_PAGE_SIZE,
+        offset: 0,
+      });
+      setHistory(page.items);
+      setHasMore(page.hasMore);
+      setNextOffset(page.nextOffset);
     } catch (err) {
       setError(
         err instanceof Error
@@ -67,6 +80,34 @@ export function PointHistoryScreen({ navigation }: Props) {
       setIsLoading(false);
     }
   }, [activeGroupId]);
+
+  const loadMoreHistory = useCallback(async () => {
+    if (!activeGroupId || isLoading || isLoadingMoreRef.current || !hasMore) {
+      return;
+    }
+
+    isLoadingMoreRef.current = true;
+    setIsLoadingMore(true);
+    try {
+      setError("");
+      const page = await listMyPointHistoryPage(activeGroupId, {
+        limit: POINT_HISTORY_PAGE_SIZE,
+        offset: nextOffset,
+      });
+      setHistory((prev) => [...prev, ...page.items]);
+      setHasMore(page.hasMore);
+      setNextOffset(page.nextOffset);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "No se pudo cargar mas historial de puntos.",
+      );
+    } finally {
+      isLoadingMoreRef.current = false;
+      setIsLoadingMore(false);
+    }
+  }, [activeGroupId, hasMore, isLoading, nextOffset]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", loadHistory);
@@ -88,12 +129,18 @@ export function PointHistoryScreen({ navigation }: Props) {
         <Text style={styles.infoText}>
           Todavia no tienes movimientos de puntos.
         </Text>
-      ) : null}
+      ) : (
+        <Text style={styles.captionText}>
+          Mostrando {history.length} movimientos.
+        </Text>
+      )}
 
       <FlatList
         data={history}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
+        onEndReached={loadMoreHistory}
+        onEndReachedThreshold={0.35}
         renderItem={({ item }) => (
           <View style={styles.card}>
             <View style={styles.row}>
@@ -114,6 +161,19 @@ export function PointHistoryScreen({ navigation }: Props) {
             <Text style={styles.date}>{formatDate(item.createdAt)}</Text>
           </View>
         )}
+        ListFooterComponent={
+          isLoadingMore ? (
+            <ActivityIndicator
+              style={styles.loadingMore}
+              size="small"
+              color={colors.primary}
+            />
+          ) : hasMore ? (
+            <Text style={styles.captionText}>Desliza para cargar mas...</Text>
+          ) : history.length > 0 ? (
+            <Text style={styles.captionText}>Fin del historial.</Text>
+          ) : null
+        }
       />
     </View>
   );
@@ -171,6 +231,16 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: colors.muted,
     marginTop: 24,
+  },
+  captionText: {
+    textAlign: "center",
+    color: colors.muted,
+    fontSize: 12,
+    marginBottom: 10,
+  },
+  loadingMore: {
+    marginTop: 8,
+    marginBottom: 14,
   },
   errorText: {
     textAlign: "center",

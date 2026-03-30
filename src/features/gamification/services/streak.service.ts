@@ -58,7 +58,9 @@ function startOfToday() {
 
 function diffDays(from: Date, to: Date) {
   const msPerDay = 1000 * 60 * 60 * 24;
-  return Math.floor((to.getTime() - from.getTime()) / msPerDay);
+  const fromUtc = Date.UTC(from.getFullYear(), from.getMonth(), from.getDate());
+  const toUtc = Date.UTC(to.getFullYear(), to.getMonth(), to.getDate());
+  return Math.floor((toUtc - fromUtc) / msPerDay);
 }
 
 function buildStreakSummary(dateKeys: string[]): StreakSummary {

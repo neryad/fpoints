@@ -1,10 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
+  Alert,
   Button,
   ScrollView,
   StyleSheet,
   Text,
+  unstable_batchedUpdates,
   View,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -16,38 +24,62 @@ import {
   type StreakSummary,
 } from "../../gamification/services/streak.service";
 import {
+  getMyXpSummary,
+  type XpSummary,
+} from "../../gamification/services/xp.service";
+import {
   getCurrentUserIdForPoints,
   getGroupPointsLeaderboard,
   getMyPointsBalance,
   getMyWeeklyPointsBalance,
+  getMyWeeklyPointsEarned,
   getWeeklyGroupPointsLeaderboard,
   type GroupPointsEntry,
 } from "../services/points.service";
 
 type Props = NativeStackScreenProps<HomeStackParamList, "HomeDashboard">;
 
+const WEEKLY_XP_GOAL = 200;
+const DEFAULT_STREAK_SUMMARY: StreakSummary = {
+  currentStreak: 0,
+  lastActiveDate: null,
+  isActiveToday: false,
+  isAtRisk: false,
+  daysSinceLastActivity: null,
+  recent7Days: [],
+};
+
 export function HomeScreen({ navigation }: Props) {
   const { activeGroupId, activeGroupName } = useAppSession();
   const [myPoints, setMyPoints] = useState(0);
   const [myWeeklyPoints, setMyWeeklyPoints] = useState(0);
+  const [myWeeklyPointsEarned, setMyWeeklyPointsEarned] = useState(0);
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [leaderboard, setLeaderboard] = useState<GroupPointsEntry[]>([]);
   const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<
     GroupPointsEntry[]
   >([]);
-  const [streak, setStreak] = useState<StreakSummary>({
-    currentStreak: 0,
-    lastActiveDate: null,
-    isActiveToday: false,
-    isAtRisk: false,
-    daysSinceLastActivity: null,
-    recent7Days: [],
+  const [streak, setStreak] = useState<StreakSummary>(DEFAULT_STREAK_SUMMARY);
+  const [xp, setXp] = useState<XpSummary>({
+    totalXp: 0,
+    currentLevel: 1,
+    levelName: "F",
+    xpInCurrentLevel: 0,
+    xpNeededForNextLevel: 100,
+    progressPercent: 0,
+    isMaxLevel: false,
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const prevRankRef = useRef<{ groupId: string; levelNumber: number } | null>(
+    null,
+  );
+
   function formatLocalDate(value: string) {
-    return new Date(value).toLocaleDateString();
+    const [year, month, day] = value.split("-").map(Number);
+    const localDate = new Date(year, month - 1, day);
+    return localDate.toLocaleDateString();
   }
 
   function formatWeekday(dateKey: string) {
@@ -57,20 +89,48 @@ export function HomeScreen({ navigation }: Props) {
     return dayLabel.slice(0, 2).toUpperCase();
   }
 
-  async function loadPoints() {
+  const weeklyGoalProgressPercent = useMemo(
+    () =>
+      Math.min(
+        100,
+        Math.max(0, Math.round((myWeeklyPointsEarned / WEEKLY_XP_GOAL) * 100)),
+      ),
+    [myWeeklyPointsEarned],
+  );
+
+  const topWeeklyEntries = useMemo(
+    () => weeklyLeaderboard.slice(0, 3),
+    [weeklyLeaderboard],
+  );
+
+  const handleGoToTasks = useCallback(() => {
+    navigation.getParent()?.navigate("Tasks");
+  }, [navigation]);
+
+  const handleGoToHistory = useCallback(() => {
+    navigation.navigate("PointHistory");
+  }, [navigation]);
+
+  const loadPoints = useCallback(async () => {
     if (!activeGroupId) {
-      setMyPoints(0);
-      setMyWeeklyPoints(0);
-      setMyUserId(null);
-      setLeaderboard([]);
-      setWeeklyLeaderboard([]);
-      setStreak({
-        currentStreak: 0,
-        lastActiveDate: null,
-        isActiveToday: false,
-        isAtRisk: false,
-        daysSinceLastActivity: null,
-        recent7Days: [],
+      prevRankRef.current = null;
+      unstable_batchedUpdates(() => {
+        setMyPoints(0);
+        setMyWeeklyPoints(0);
+        setMyWeeklyPointsEarned(0);
+        setMyUserId(null);
+        setLeaderboard([]);
+        setWeeklyLeaderboard([]);
+        setStreak(DEFAULT_STREAK_SUMMARY);
+        setXp({
+          totalXp: 0,
+          currentLevel: 1,
+          levelName: "F",
+          xpInCurrentLevel: 0,
+          xpNeededForNextLevel: 100,
+          progressPercent: 0,
+          isMaxLevel: false,
+        });
       });
       setIsLoading(false);
       return;
@@ -80,22 +140,57 @@ export function HomeScreen({ navigation }: Props) {
       setError("");
       setIsLoading(true);
 
-      const [myBalance, myWeekBalance, ranking, weekRanking, userId, myStreak] =
-        await Promise.all([
-          getMyPointsBalance(activeGroupId),
-          getMyWeeklyPointsBalance(activeGroupId),
-          getGroupPointsLeaderboard(activeGroupId),
-          getWeeklyGroupPointsLeaderboard(activeGroupId),
-          getCurrentUserIdForPoints(),
-          getMyStreakSummary(activeGroupId),
-        ]);
+      const [
+        myBalance,
+        myWeekBalance,
+        myWeekEarned,
+        ranking,
+        weekRanking,
+        userId,
+        myXp,
+      ] = await Promise.all([
+        getMyPointsBalance(activeGroupId),
+        getMyWeeklyPointsBalance(activeGroupId),
+        getMyWeeklyPointsEarned(activeGroupId),
+        getGroupPointsLeaderboard(activeGroupId),
+        getWeeklyGroupPointsLeaderboard(activeGroupId),
+        getCurrentUserIdForPoints(),
+        getMyXpSummary(activeGroupId),
+      ]);
 
-      setMyPoints(myBalance);
-      setMyWeeklyPoints(myWeekBalance);
-      setLeaderboard(ranking);
-      setWeeklyLeaderboard(weekRanking);
-      setMyUserId(userId);
-      setStreak(myStreak);
+      let myStreak: StreakSummary | null = null;
+      try {
+        myStreak = await getMyStreakSummary(activeGroupId);
+      } catch (streakError) {
+        console.warn("No se pudo cargar la racha del usuario", streakError);
+      }
+
+      unstable_batchedUpdates(() => {
+        setMyPoints(myBalance);
+        setMyWeeklyPoints(myWeekBalance);
+        setMyWeeklyPointsEarned(myWeekEarned);
+        setLeaderboard(ranking);
+        setWeeklyLeaderboard(weekRanking);
+        setMyUserId(userId);
+        setStreak(myStreak ?? DEFAULT_STREAK_SUMMARY);
+        setXp(myXp);
+      });
+
+      // Rank-up detection: only fires when rank improves within the same group.
+      const prev = prevRankRef.current;
+      const isSameGroup = prev !== null && prev.groupId === activeGroupId;
+      const hasLeveledUp = isSameGroup && myXp.currentLevel > prev.levelNumber;
+
+      if (hasLeveledUp) {
+        Alert.alert(
+          "¡Subiste de rango!",
+          `Has alcanzado el rango ${myXp.levelName}. ¡Sigue asi!`,
+        );
+      }
+      prevRankRef.current = {
+        groupId: activeGroupId,
+        levelNumber: myXp.currentLevel,
+      };
     } catch (err) {
       setError(
         err instanceof Error
@@ -105,11 +200,11 @@ export function HomeScreen({ navigation }: Props) {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [activeGroupId]);
 
   useEffect(() => {
     loadPoints();
-  }, [activeGroupId]);
+  }, [loadPoints]);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -132,7 +227,22 @@ export function HomeScreen({ navigation }: Props) {
         {isLoading ? (
           <ActivityIndicator size="small" color={colors.primary} />
         ) : (
-          <Text style={styles.pointsValue}>{myWeeklyPoints}</Text>
+          <>
+            <Text style={styles.pointsValue}>{myWeeklyPoints}</Text>
+            <View style={styles.progressTrack}>
+              <View
+                style={[
+                  styles.progressFill,
+                  { width: `${weeklyGoalProgressPercent}%` },
+                ]}
+              />
+            </View>
+            <Text style={styles.xpMeta}>
+              {myWeeklyPointsEarned >= WEEKLY_XP_GOAL
+                ? `Meta semanal alcanzada (${WEEKLY_XP_GOAL} XP). Excelente.`
+                : `${myWeeklyPointsEarned} / ${WEEKLY_XP_GOAL} XP meta semanal`}
+            </Text>
+          </>
         )}
       </View>
 
@@ -193,61 +303,64 @@ export function HomeScreen({ navigation }: Props) {
 
             {streak.isAtRisk ? (
               <View style={styles.streakCtaWrap}>
-                <Button
-                  title="Completar tarea hoy"
-                  onPress={() => navigation.getParent()?.navigate("Tasks")}
-                />
+                <Button title="Completar tarea hoy" onPress={handleGoToTasks} />
               </View>
             ) : null}
           </>
         )}
       </View>
 
+      <View style={styles.card}>
+        <Text style={styles.cardLabel}>Tu nivel</Text>
+        {isLoading ? (
+          <ActivityIndicator size="small" color={colors.primary} />
+        ) : (
+          <>
+            <View style={styles.levelRow}>
+              <Text style={styles.levelBadge}>{xp.levelName}</Text>
+              <Text style={styles.levelName}>Rango {xp.levelName}</Text>
+              <Text style={styles.xpTotal}>{xp.totalXp} XP</Text>
+            </View>
+            <View style={styles.progressTrack}>
+              <View
+                style={[
+                  styles.progressFill,
+                  { width: `${xp.progressPercent}%` },
+                ]}
+              />
+            </View>
+            {xp.isMaxLevel ? (
+              <Text style={styles.xpMeta}>Nivel maximo alcanzado.</Text>
+            ) : (
+              <Text style={styles.xpMeta}>
+                {xp.xpInCurrentLevel} / {xp.xpNeededForNextLevel} XP para el
+                siguiente nivel
+              </Text>
+            )}
+          </>
+        )}
+      </View>
+
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-      <View style={styles.card}>
-        <Text style={styles.cardLabel}>Ranking del grupo</Text>
-        {isLoading ? (
-          <Text style={styles.rowMeta}>Cargando...</Text>
-        ) : leaderboard.length === 0 ? (
-          <Text style={styles.rowMeta}>Aun no hay puntos registrados.</Text>
-        ) : (
-          leaderboard.map((entry, index) => (
-            <View key={entry.userId} style={styles.row}>
-              <Text style={styles.rowTitle}>
-                #{index + 1}{" "}
-                {entry.userId === myUserId ? "Tu" : entry.displayName}
-              </Text>
-              <Text style={styles.rowPoints}>{entry.points} pts</Text>
-            </View>
-          ))
-        )}
-      </View>
+      <RankingSection
+        title="Ranking del grupo"
+        isLoading={isLoading}
+        emptyMessage="Aun no hay puntos registrados."
+        entries={leaderboard}
+        myUserId={myUserId}
+      />
 
-      <View style={styles.card}>
-        <Text style={styles.cardLabel}>Top semanal</Text>
-        {isLoading ? (
-          <Text style={styles.rowMeta}>Cargando...</Text>
-        ) : weeklyLeaderboard.length === 0 ? (
-          <Text style={styles.rowMeta}>Sin puntos esta semana.</Text>
-        ) : (
-          weeklyLeaderboard.slice(0, 3).map((entry, index) => (
-            <View key={entry.userId} style={styles.row}>
-              <Text style={styles.rowTitle}>
-                #{index + 1}{" "}
-                {entry.userId === myUserId ? "Tu" : entry.displayName}
-              </Text>
-              <Text style={styles.rowPoints}>{entry.points} pts</Text>
-            </View>
-          ))
-        )}
-      </View>
+      <RankingSection
+        title="Top semanal"
+        isLoading={isLoading}
+        emptyMessage="Sin puntos esta semana."
+        entries={topWeeklyEntries}
+        myUserId={myUserId}
+      />
 
       <View style={styles.refreshWrap}>
-        <Button
-          title="Ver historial de puntos"
-          onPress={() => navigation.navigate("PointHistory")}
-        />
+        <Button title="Ver historial de puntos" onPress={handleGoToHistory} />
       </View>
 
       <View style={styles.refreshWrap}>
@@ -256,6 +369,69 @@ export function HomeScreen({ navigation }: Props) {
     </ScrollView>
   );
 }
+
+type RankingSectionProps = {
+  title: string;
+  isLoading: boolean;
+  emptyMessage: string;
+  entries: GroupPointsEntry[];
+  myUserId: string | null;
+};
+
+const RankingSection = React.memo(function RankingSection({
+  title,
+  isLoading,
+  emptyMessage,
+  entries,
+  myUserId,
+}: RankingSectionProps) {
+  return (
+    <View style={styles.card}>
+      <Text style={styles.cardLabel}>{title}</Text>
+      {isLoading ? (
+        <Text style={styles.rowMeta}>Cargando...</Text>
+      ) : entries.length === 0 ? (
+        <Text style={styles.rowMeta}>{emptyMessage}</Text>
+      ) : (
+        entries.map((entry, index) => (
+          <RankingRow
+            key={entry.userId}
+            index={index}
+            userId={entry.userId}
+            displayName={entry.displayName}
+            points={entry.points}
+            myUserId={myUserId}
+          />
+        ))
+      )}
+    </View>
+  );
+});
+
+type RankingRowProps = {
+  index: number;
+  userId: string;
+  displayName: string;
+  points: number;
+  myUserId: string | null;
+};
+
+const RankingRow = React.memo(function RankingRow({
+  index,
+  userId,
+  displayName,
+  points,
+  myUserId,
+}: RankingRowProps) {
+  return (
+    <View style={styles.row}>
+      <Text style={styles.rowTitle}>
+        #{index + 1} {userId === myUserId ? "Tu" : displayName}
+      </Text>
+      <Text style={styles.rowPoints}>{points} pts</Text>
+    </View>
+  );
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -368,5 +544,50 @@ const styles = StyleSheet.create({
   },
   streakCtaWrap: {
     marginTop: 12,
+  },
+  levelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 10,
+  },
+  levelBadge: {
+    fontSize: 20,
+    fontWeight: "900",
+    color: colors.primaryText,
+    backgroundColor: colors.primary,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    textAlign: "center",
+    lineHeight: 38,
+    overflow: "hidden",
+  },
+  levelName: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: "700",
+    color: colors.text,
+  },
+  xpTotal: {
+    fontSize: 13,
+    color: colors.muted,
+    fontWeight: "600",
+  },
+  progressTrack: {
+    height: 10,
+    backgroundColor: colors.border,
+    borderRadius: 5,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: 10,
+    backgroundColor: colors.primary,
+    borderRadius: 5,
+  },
+  xpMeta: {
+    marginTop: 8,
+    fontSize: 12,
+    color: colors.muted,
   },
 });
