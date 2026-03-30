@@ -37,8 +37,10 @@ export function HomeScreen({ navigation }: Props) {
   async function loadPoints() {
     if (!activeGroupId) {
       setMyPoints(0);
+      setMyWeeklyPoints(0);
       setMyUserId(null);
       setLeaderboard([]);
+      setWeeklyLeaderboard([]);
       setIsLoading(false);
       return;
     }
