@@ -39,6 +39,14 @@ import {
 type Props = NativeStackScreenProps<HomeStackParamList, "HomeDashboard">;
 
 const WEEKLY_XP_GOAL = 200;
+const DEFAULT_STREAK_SUMMARY: StreakSummary = {
+  currentStreak: 0,
+  lastActiveDate: null,
+  isActiveToday: false,
+  isAtRisk: false,
+  daysSinceLastActivity: null,
+  recent7Days: [],
+};
 
 export function HomeScreen({ navigation }: Props) {
   const { activeGroupId, activeGroupName } = useAppSession();
@@ -49,14 +57,7 @@ export function HomeScreen({ navigation }: Props) {
   const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<
     GroupPointsEntry[]
   >([]);
-  const [streak, setStreak] = useState<StreakSummary>({
-    currentStreak: 0,
-    lastActiveDate: null,
-    isActiveToday: false,
-    isAtRisk: false,
-    daysSinceLastActivity: null,
-    recent7Days: [],
-  });
+  const [streak, setStreak] = useState<StreakSummary>(DEFAULT_STREAK_SUMMARY);
   const [xp, setXp] = useState<XpSummary>({
     totalXp: 0,
     currentLevel: 1,
@@ -72,7 +73,9 @@ export function HomeScreen({ navigation }: Props) {
   const prevRankRef = useRef<string | null>(null);
 
   function formatLocalDate(value: string) {
-    return new Date(value).toLocaleDateString();
+    const [year, month, day] = value.split("-").map(Number);
+    const localDate = new Date(year, month - 1, day);
+    return localDate.toLocaleDateString();
   }
 
   function formatWeekday(dateKey: string) {
@@ -108,14 +111,7 @@ export function HomeScreen({ navigation }: Props) {
         setMyUserId(null);
         setLeaderboard([]);
         setWeeklyLeaderboard([]);
-        setStreak({
-          currentStreak: 0,
-          lastActiveDate: null,
-          isActiveToday: false,
-          isAtRisk: false,
-          daysSinceLastActivity: null,
-          recent7Days: [],
-        });
+        setStreak(DEFAULT_STREAK_SUMMARY);
         setXp({
           totalXp: 0,
           currentLevel: 1,
@@ -134,23 +130,22 @@ export function HomeScreen({ navigation }: Props) {
       setError("");
       setIsLoading(true);
 
-      const [
-        myBalance,
-        myWeekBalance,
-        ranking,
-        weekRanking,
-        userId,
-        myStreak,
-        myXp,
-      ] = await Promise.all([
-        getMyPointsBalance(activeGroupId),
-        getMyWeeklyPointsBalance(activeGroupId),
-        getGroupPointsLeaderboard(activeGroupId),
-        getWeeklyGroupPointsLeaderboard(activeGroupId),
-        getCurrentUserIdForPoints(),
-        getMyStreakSummary(activeGroupId),
-        getMyXpSummary(activeGroupId),
-      ]);
+      const [myBalance, myWeekBalance, ranking, weekRanking, userId, myXp] =
+        await Promise.all([
+          getMyPointsBalance(activeGroupId),
+          getMyWeeklyPointsBalance(activeGroupId),
+          getGroupPointsLeaderboard(activeGroupId),
+          getWeeklyGroupPointsLeaderboard(activeGroupId),
+          getCurrentUserIdForPoints(),
+          getMyXpSummary(activeGroupId),
+        ]);
+
+      let myStreak: StreakSummary | null = null;
+      try {
+        myStreak = await getMyStreakSummary(activeGroupId);
+      } catch (streakError) {
+        console.warn("No se pudo cargar la racha del usuario", streakError);
+      }
 
       unstable_batchedUpdates(() => {
         setMyPoints(myBalance);
@@ -158,7 +153,7 @@ export function HomeScreen({ navigation }: Props) {
         setLeaderboard(ranking);
         setWeeklyLeaderboard(weekRanking);
         setMyUserId(userId);
-        setStreak(myStreak);
+        setStreak(myStreak ?? DEFAULT_STREAK_SUMMARY);
         setXp(myXp);
       });
 
