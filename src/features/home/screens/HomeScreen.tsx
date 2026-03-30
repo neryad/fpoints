@@ -1,4 +1,10 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -6,6 +12,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  unstable_batchedUpdates,
   View,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -75,29 +82,49 @@ export function HomeScreen({ navigation }: Props) {
     return dayLabel.slice(0, 2).toUpperCase();
   }
 
-  async function loadPoints() {
+  const weeklyGoalProgressPercent = useMemo(
+    () => Math.min(100, Math.round((myWeeklyPoints / WEEKLY_XP_GOAL) * 100)),
+    [myWeeklyPoints],
+  );
+
+  const topWeeklyEntries = useMemo(
+    () => weeklyLeaderboard.slice(0, 3),
+    [weeklyLeaderboard],
+  );
+
+  const handleGoToTasks = useCallback(() => {
+    navigation.getParent()?.navigate("Tasks");
+  }, [navigation]);
+
+  const handleGoToHistory = useCallback(() => {
+    navigation.navigate("PointHistory");
+  }, [navigation]);
+
+  const loadPoints = useCallback(async () => {
     if (!activeGroupId) {
-      setMyPoints(0);
-      setMyWeeklyPoints(0);
-      setMyUserId(null);
-      setLeaderboard([]);
-      setWeeklyLeaderboard([]);
-      setStreak({
-        currentStreak: 0,
-        lastActiveDate: null,
-        isActiveToday: false,
-        isAtRisk: false,
-        daysSinceLastActivity: null,
-        recent7Days: [],
-      });
-      setXp({
-        totalXp: 0,
-        currentLevel: 1,
-        levelName: "F",
-        xpInCurrentLevel: 0,
-        xpNeededForNextLevel: 100,
-        progressPercent: 0,
-        isMaxLevel: false,
+      unstable_batchedUpdates(() => {
+        setMyPoints(0);
+        setMyWeeklyPoints(0);
+        setMyUserId(null);
+        setLeaderboard([]);
+        setWeeklyLeaderboard([]);
+        setStreak({
+          currentStreak: 0,
+          lastActiveDate: null,
+          isActiveToday: false,
+          isAtRisk: false,
+          daysSinceLastActivity: null,
+          recent7Days: [],
+        });
+        setXp({
+          totalXp: 0,
+          currentLevel: 1,
+          levelName: "F",
+          xpInCurrentLevel: 0,
+          xpNeededForNextLevel: 100,
+          progressPercent: 0,
+          isMaxLevel: false,
+        });
       });
       setIsLoading(false);
       return;
@@ -125,13 +152,15 @@ export function HomeScreen({ navigation }: Props) {
         getMyXpSummary(activeGroupId),
       ]);
 
-      setMyPoints(myBalance);
-      setMyWeeklyPoints(myWeekBalance);
-      setLeaderboard(ranking);
-      setWeeklyLeaderboard(weekRanking);
-      setMyUserId(userId);
-      setStreak(myStreak);
-      setXp(myXp);
+      unstable_batchedUpdates(() => {
+        setMyPoints(myBalance);
+        setMyWeeklyPoints(myWeekBalance);
+        setLeaderboard(ranking);
+        setWeeklyLeaderboard(weekRanking);
+        setMyUserId(userId);
+        setStreak(myStreak);
+        setXp(myXp);
+      });
 
       // Rank-up detection: only fires when rank improves within the same session.
       if (
@@ -153,11 +182,11 @@ export function HomeScreen({ navigation }: Props) {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [activeGroupId]);
 
   useEffect(() => {
     loadPoints();
-  }, [activeGroupId]);
+  }, [loadPoints]);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -186,9 +215,7 @@ export function HomeScreen({ navigation }: Props) {
               <View
                 style={[
                   styles.progressFill,
-                  {
-                    width: `${Math.min(100, Math.round((myWeeklyPoints / WEEKLY_XP_GOAL) * 100))}%`,
-                  },
+                  { width: `${weeklyGoalProgressPercent}%` },
                 ]}
               />
             </View>
@@ -258,10 +285,7 @@ export function HomeScreen({ navigation }: Props) {
 
             {streak.isAtRisk ? (
               <View style={styles.streakCtaWrap}>
-                <Button
-                  title="Completar tarea hoy"
-                  onPress={() => navigation.getParent()?.navigate("Tasks")}
-                />
+                <Button title="Completar tarea hoy" onPress={handleGoToTasks} />
               </View>
             ) : null}
           </>
@@ -301,49 +325,24 @@ export function HomeScreen({ navigation }: Props) {
 
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-      <View style={styles.card}>
-        <Text style={styles.cardLabel}>Ranking del grupo</Text>
-        {isLoading ? (
-          <Text style={styles.rowMeta}>Cargando...</Text>
-        ) : leaderboard.length === 0 ? (
-          <Text style={styles.rowMeta}>Aun no hay puntos registrados.</Text>
-        ) : (
-          leaderboard.map((entry, index) => (
-            <View key={entry.userId} style={styles.row}>
-              <Text style={styles.rowTitle}>
-                #{index + 1}{" "}
-                {entry.userId === myUserId ? "Tu" : entry.displayName}
-              </Text>
-              <Text style={styles.rowPoints}>{entry.points} pts</Text>
-            </View>
-          ))
-        )}
-      </View>
+      <RankingSection
+        title="Ranking del grupo"
+        isLoading={isLoading}
+        emptyMessage="Aun no hay puntos registrados."
+        entries={leaderboard}
+        myUserId={myUserId}
+      />
 
-      <View style={styles.card}>
-        <Text style={styles.cardLabel}>Top semanal</Text>
-        {isLoading ? (
-          <Text style={styles.rowMeta}>Cargando...</Text>
-        ) : weeklyLeaderboard.length === 0 ? (
-          <Text style={styles.rowMeta}>Sin puntos esta semana.</Text>
-        ) : (
-          weeklyLeaderboard.slice(0, 3).map((entry, index) => (
-            <View key={entry.userId} style={styles.row}>
-              <Text style={styles.rowTitle}>
-                #{index + 1}{" "}
-                {entry.userId === myUserId ? "Tu" : entry.displayName}
-              </Text>
-              <Text style={styles.rowPoints}>{entry.points} pts</Text>
-            </View>
-          ))
-        )}
-      </View>
+      <RankingSection
+        title="Top semanal"
+        isLoading={isLoading}
+        emptyMessage="Sin puntos esta semana."
+        entries={topWeeklyEntries}
+        myUserId={myUserId}
+      />
 
       <View style={styles.refreshWrap}>
-        <Button
-          title="Ver historial de puntos"
-          onPress={() => navigation.navigate("PointHistory")}
-        />
+        <Button title="Ver historial de puntos" onPress={handleGoToHistory} />
       </View>
 
       <View style={styles.refreshWrap}>
@@ -352,6 +351,69 @@ export function HomeScreen({ navigation }: Props) {
     </ScrollView>
   );
 }
+
+type RankingSectionProps = {
+  title: string;
+  isLoading: boolean;
+  emptyMessage: string;
+  entries: GroupPointsEntry[];
+  myUserId: string | null;
+};
+
+const RankingSection = React.memo(function RankingSection({
+  title,
+  isLoading,
+  emptyMessage,
+  entries,
+  myUserId,
+}: RankingSectionProps) {
+  return (
+    <View style={styles.card}>
+      <Text style={styles.cardLabel}>{title}</Text>
+      {isLoading ? (
+        <Text style={styles.rowMeta}>Cargando...</Text>
+      ) : entries.length === 0 ? (
+        <Text style={styles.rowMeta}>{emptyMessage}</Text>
+      ) : (
+        entries.map((entry, index) => (
+          <RankingRow
+            key={entry.userId}
+            index={index}
+            userId={entry.userId}
+            displayName={entry.displayName}
+            points={entry.points}
+            myUserId={myUserId}
+          />
+        ))
+      )}
+    </View>
+  );
+});
+
+type RankingRowProps = {
+  index: number;
+  userId: string;
+  displayName: string;
+  points: number;
+  myUserId: string | null;
+};
+
+const RankingRow = React.memo(function RankingRow({
+  index,
+  userId,
+  displayName,
+  points,
+  myUserId,
+}: RankingRowProps) {
+  return (
+    <View style={styles.row}>
+      <Text style={styles.rowTitle}>
+        #{index + 1} {userId === myUserId ? "Tu" : displayName}
+      </Text>
+      <Text style={styles.rowPoints}>{points} pts</Text>
+    </View>
+  );
+});
 
 const styles = StyleSheet.create({
   container: {

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Button,
@@ -8,6 +8,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  unstable_batchedUpdates,
   View,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
@@ -50,27 +51,33 @@ export function ProfileScreen({ navigation }: Props) {
       setError("");
       setIsLoadingProfile(true);
       const profile = await getMyProfile();
-      setProfileId(profile.id);
-      setName(profile.name ?? "");
-      setEmail(profile.email);
-      setAvatarUrl(profile.avatarUrl ?? "");
-      setAvatarImageFailed(false);
+      unstable_batchedUpdates(() => {
+        setProfileId(profile.id);
+        setName(profile.name ?? "");
+        setEmail(profile.email);
+        setAvatarUrl(profile.avatarUrl ?? "");
+        setAvatarImageFailed(false);
+      });
 
       if (activeGroupId) {
         const role = await getMyRoleInGroup(activeGroupId);
-        setRole(role);
-        setCanConfigureGroup(role === "owner" || role === "sub_owner");
         const [myXp, myStreak] = await Promise.all([
           getMyXpSummary(activeGroupId),
           getMyStreakSummary(activeGroupId),
         ]);
-        setXp(myXp);
-        setStreak(myStreak);
+        unstable_batchedUpdates(() => {
+          setRole(role);
+          setCanConfigureGroup(role === "owner" || role === "sub_owner");
+          setXp(myXp);
+          setStreak(myStreak);
+        });
       } else {
-        setCanConfigureGroup(false);
-        setRole(null);
-        setXp(null);
-        setStreak(null);
+        unstable_batchedUpdates(() => {
+          setCanConfigureGroup(false);
+          setRole(null);
+          setXp(null);
+          setStreak(null);
+        });
       }
     } catch (err) {
       const message =
@@ -87,18 +94,20 @@ export function ProfileScreen({ navigation }: Props) {
     loadProfile();
   }, [loadProfile]);
 
-  async function handleSaveProfile() {
+  const handleSaveProfile = useCallback(async () => {
     try {
       setError("");
       setSuccessMessage("");
       setIsSaving(true);
       const profile = await saveMyProfile({ name, avatarUrl });
-      setProfileId(profile.id);
-      setName(profile.name ?? "");
-      setEmail(profile.email);
-      setAvatarUrl(profile.avatarUrl ?? "");
-      setAvatarImageFailed(false);
-      setSuccessMessage("Perfil guardado correctamente.");
+      unstable_batchedUpdates(() => {
+        setProfileId(profile.id);
+        setName(profile.name ?? "");
+        setEmail(profile.email);
+        setAvatarUrl(profile.avatarUrl ?? "");
+        setAvatarImageFailed(false);
+        setSuccessMessage("Perfil guardado correctamente.");
+      });
     } catch (err) {
       const message =
         err instanceof Error
@@ -108,9 +117,9 @@ export function ProfileScreen({ navigation }: Props) {
     } finally {
       setIsSaving(false);
     }
-  }
+  }, [avatarUrl, name]);
 
-  async function handleLogout() {
+  const handleLogout = useCallback(async () => {
     try {
       setError("");
       setIsLoading(true);
@@ -124,9 +133,9 @@ export function ProfileScreen({ navigation }: Props) {
     } finally {
       setIsLoading(false);
     }
-  }
+  }, []);
 
-  function handleNextLocalAvatar() {
+  const handleNextLocalAvatar = useCallback(() => {
     const roleKey = toRoleKey(role);
     const options = LOCAL_AVATARS_BY_ROLE[roleKey];
     const current = getLocalAvatarSelection(
@@ -138,18 +147,35 @@ export function ProfileScreen({ navigation }: Props) {
     setAvatarUrl(buildLocalAvatarToken(roleKey, nextIndex));
     setAvatarImageFailed(false);
     setSuccessMessage("Avatar local seleccionado. Guarda para confirmar.");
-  }
+  }, [avatarUrl, email, name, profileId, role]);
 
-  const trimmedAvatarUrl = avatarUrl.trim();
-  const localAvatar = getLocalAvatarSelection(
-    role,
-    profileId || email || name,
-    trimmedAvatarUrl,
+  const trimmedAvatarUrl = useMemo(() => avatarUrl.trim(), [avatarUrl]);
+
+  const localAvatar = useMemo(
+    () =>
+      getLocalAvatarSelection(
+        role,
+        profileId || email || name,
+        trimmedAvatarUrl,
+      ),
+    [role, profileId, email, name, trimmedAvatarUrl],
   );
-  const shouldUseRemoteAvatar =
-    trimmedAvatarUrl.length > 0 &&
-    !avatarImageFailed &&
-    !isLocalAvatarToken(trimmedAvatarUrl);
+
+  const shouldUseRemoteAvatar = useMemo(
+    () =>
+      trimmedAvatarUrl.length > 0 &&
+      !avatarImageFailed &&
+      !isLocalAvatarToken(trimmedAvatarUrl),
+    [trimmedAvatarUrl, avatarImageFailed],
+  );
+
+  const handleAvatarImageError = useCallback(() => {
+    setAvatarImageFailed(true);
+  }, []);
+
+  const handleGoToGroupSettings = useCallback(() => {
+    navigation.navigate("GroupSettings");
+  }, [navigation]);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -161,7 +187,7 @@ export function ProfileScreen({ navigation }: Props) {
               source={{ uri: trimmedAvatarUrl }}
               style={styles.avatarImage}
               resizeMode="cover"
-              onError={() => setAvatarImageFailed(true)}
+              onError={handleAvatarImageError}
             />
           ) : (
             <Image
@@ -261,7 +287,7 @@ export function ProfileScreen({ navigation }: Props) {
           <View style={styles.actionSpacer}>
             <Button
               title="Configuracion del grupo"
-              onPress={() => navigation.navigate("GroupSettings")}
+              onPress={handleGoToGroupSettings}
             />
           </View>
         ) : null}
