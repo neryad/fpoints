@@ -97,11 +97,12 @@ function mergeDisplayNames(
 
 function getWeekStartIso() {
   const now = new Date();
-  const day = now.getDay();
+  const day = now.getUTCDay();
   const diffToMonday = (day + 6) % 7;
-  now.setDate(now.getDate() - diffToMonday);
-  now.setHours(0, 0, 0, 0);
-  return now.toISOString();
+  const weekStart = new Date(now);
+  weekStart.setUTCDate(now.getUTCDate() - diffToMonday);
+  weekStart.setUTCHours(0, 0, 0, 0);
+  return weekStart.toISOString();
 }
 
 function mapLeaderboardRpcRows(rows: LeaderboardRpcRow[]): GroupPointsEntry[] {
