@@ -59,9 +59,12 @@ export function AppSessionProvider({ children }: AppSessionProviderProps) {
         if (mounted) {
           setIsBootstrapping(false);
         }
-      }
-      }
-    })();
+       } finally {
+         if (mounted) {
+           setIsBootstrapping(false);
+         }
+       }
+     })();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
