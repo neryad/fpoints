@@ -3,31 +3,17 @@ import { Button, StyleSheet, Text, TextInput, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { colors } from "../../../core/theme/colors";
 import { AuthStackParamList } from "../../../app/navigation/types";
-import { signInWithEmail } from "../services/auth.service";
+import { useAuth } from "../hooks/useAuth";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
 
 export function LoginScreen({ navigation }: Props) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const { isLoading, error, signIn } = useAuth();
 
   async function handleLogin() {
-    try {
-      setError("");
-      setIsLoading(true);
-
-      await signInWithEmail(email, password);
-    } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Ocurrió un error al iniciar sesión.";
-      setError(message);
-    } finally {
-      setIsLoading(false);
-    }
+    await signIn(email, password);
   }
 
   return (

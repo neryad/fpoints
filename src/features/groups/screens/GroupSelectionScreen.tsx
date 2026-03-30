@@ -1,46 +1,16 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Button, Pressable, StyleSheet, Text, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
 import { colors } from "../../../core/theme/colors";
 import { GroupStackParamList } from "../../../app/navigation/types";
-import { listMyGroups } from "../services/groups.service";
+import { useGroups } from "../hooks/useGroups";
 
 type Props = NativeStackScreenProps<GroupStackParamList, "GroupSelection">;
 
-type GroupListItem = {
-  id: string;
-  name: string;
-  invite_code: string;
-  my_role?: string;
-};
-
 export function GroupSelectionScreen({ navigation }: Props) {
   const { selectGroup } = useAppSession();
-  const [groups, setGroups] = useState<GroupListItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  async function loadGroups() {
-    try {
-      setError("");
-      setIsLoading(true);
-      const data = await listMyGroups();
-      setGroups(data);
-    } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Ocurrió un error al cargar grupos.";
-      setError(message);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    loadGroups();
-  }, []);
+  const { groups, isLoading, error, reload } = useGroups();
 
   return (
     <View style={styles.container}>
@@ -76,7 +46,7 @@ export function GroupSelectionScreen({ navigation }: Props) {
 
       <View style={styles.spacer} />
 
-      <Button title="Reload Groups" onPress={loadGroups} />
+      <Button title="Reload Groups" onPress={reload} />
 
       <View style={styles.spacer} />
 

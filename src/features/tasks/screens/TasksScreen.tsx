@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   Button,
   FlatList,
@@ -11,40 +11,18 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { colors } from "../../../core/theme/colors";
 import { TasksStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
-import { listGroupTasks } from "../services/tasks.service";
-import type { Task } from "../types";
+import { useTasks } from "../hooks/useTasks";
 
 type Props = NativeStackScreenProps<TasksStackParamList, "TasksList">;
 
 export function TasksScreen({ navigation }: Props) {
   const { activeGroupId } = useAppSession();
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const loadTasks = useCallback(async () => {
-    if (!activeGroupId) {
-      setTasks([]);
-      setError("");
-      setIsLoading(false);
-      return;
-    }
-    try {
-      setError("");
-      setIsLoading(true);
-      const data = await listGroupTasks(activeGroupId);
-      setTasks(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error al cargar tareas.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [activeGroupId]);
+  const { tasks, isLoading, error, reload } = useTasks(activeGroupId);
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener("focus", loadTasks);
+    const unsubscribe = navigation.addListener("focus", reload);
     return unsubscribe;
-  }, [navigation, loadTasks]);
+  }, [navigation, reload]);
 
   return (
     <View style={styles.container}>
