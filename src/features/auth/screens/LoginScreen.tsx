@@ -1,7 +1,14 @@
 import React, { useState } from "react";
-import { Button, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { colors } from "../../../core/theme/colors";
+import { theme } from "../../../core/theme";
 import { AuthStackParamList } from "../../../app/navigation/types";
 import { useAuth } from "../hooks/useAuth";
 
@@ -40,57 +47,78 @@ export function LoginScreen({ navigation }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>fpoints</Text>
-      <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
-      <Text className="text-xl font-bold text-blue-500">
-        Welcome to Nativewind!
-      </Text>
-      <TextInput
-        style={[styles.input, fieldErrors.email ? styles.inputInvalid : null]}
-        placeholder="Email"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        value={email}
-        onChangeText={(t) => {
-          setEmail(t);
-          setFieldErrors((e) => ({ ...e, email: undefined }));
-        }}
-      />
-      {fieldErrors.email ? (
-        <Text style={styles.fieldError}>{fieldErrors.email}</Text>
-      ) : null}
+      <View style={styles.header}>
+        <Text style={styles.title}>fpoints</Text>
+        <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
+      </View>
 
-      <TextInput
-        style={[
-          styles.input,
-          fieldErrors.password ? styles.inputInvalid : null,
-        ]}
-        placeholder="Password"
-        secureTextEntry
-        value={password}
-        onChangeText={(t) => {
-          setPassword(t);
-          setFieldErrors((e) => ({ ...e, password: undefined }));
-        }}
-      />
-      {fieldErrors.password ? (
-        <Text style={styles.fieldError}>{fieldErrors.password}</Text>
-      ) : null}
+      <View style={styles.form}>
+        <View>
+          <TextInput
+            style={[
+              styles.input,
+              fieldErrors.email ? styles.inputInvalid : null,
+            ]}
+            placeholder="Email"
+            placeholderTextColor={theme.colors.muted}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            value={email}
+            onChangeText={(t) => {
+              setEmail(t);
+              setFieldErrors((e) => ({ ...e, email: undefined }));
+            }}
+          />
+          {fieldErrors.email ? (
+            <Text style={styles.fieldError}>{fieldErrors.email}</Text>
+          ) : null}
+        </View>
 
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+        <View>
+          <TextInput
+            style={[
+              styles.input,
+              fieldErrors.password ? styles.inputInvalid : null,
+            ]}
+            placeholder="Password"
+            placeholderTextColor={theme.colors.muted}
+            secureTextEntry
+            value={password}
+            onChangeText={(t) => {
+              setPassword(t);
+              setFieldErrors((e) => ({ ...e, password: undefined }));
+            }}
+          />
+          {fieldErrors.password ? (
+            <Text style={styles.fieldError}>{fieldErrors.password}</Text>
+          ) : null}
+        </View>
 
-      <Button
-        title={isLoading ? "Ingresando..." : "Login"}
-        onPress={handleLogin}
-        disabled={isLoading}
-      />
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-      <View style={styles.spacer} />
+        <Pressable
+          style={({ pressed }) => [
+            styles.btnPrimary,
+            isLoading && styles.btnDisabled,
+            pressed && !isLoading && styles.btnPressed,
+          ]}
+          onPress={handleLogin}
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <ActivityIndicator color={theme.colors.textInverse} />
+          ) : (
+            <Text style={styles.btnPrimaryText}>Ingresar</Text>
+          )}
+        </Pressable>
 
-      <Button
-        title="Go to Register"
-        onPress={() => navigation.navigate("Register")}
-      />
+        <Pressable
+          style={styles.btnSecondary}
+          onPress={() => navigation.navigate("Register")}
+        >
+          <Text style={styles.btnSecondaryText}>Crear cuenta</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -100,46 +128,87 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.background,
-    padding: 24,
+    backgroundColor: theme.colors.background,
+    padding: theme.spacing[6],
+  },
+  header: {
+    width: "100%",
+    marginBottom: theme.spacing[6],
+  },
+  form: {
+    width: "100%",
+    gap: theme.spacing[3],
   },
   title: {
-    fontSize: 32,
-    fontWeight: "700",
-    color: colors.text,
+    fontSize: theme.fontSize.xl,
+    fontWeight: theme.fontWeight.semibold,
+    lineHeight: theme.lineHeight.lg,
+    color: theme.colors.primary,
   },
   subtitle: {
-    marginTop: 8,
-    marginBottom: 20,
-    color: colors.muted,
+    marginTop: theme.spacing[2],
+    color: theme.colors.muted,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
   },
   input: {
     width: "100%",
-    backgroundColor: colors.surface,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 12,
-    color: colors.text,
-  },
-  errorText: {
-    width: "100%",
-    color: "#B42318",
-    marginBottom: 12,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: theme.spacing[4],
+    paddingVertical: theme.spacing[3],
+    color: theme.colors.text,
+    fontSize: theme.fontSize.base,
   },
   inputInvalid: {
-    borderColor: "#B42318",
+    borderColor: theme.colors.error,
   },
   fieldError: {
+    color: theme.colors.error,
+    fontSize: theme.fontSize.xs,
+    lineHeight: theme.lineHeight.xs,
+    marginTop: -theme.spacing[2],
+  },
+  errorText: {
+    color: theme.colors.error,
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
+  },
+  btnPrimary: {
     width: "100%",
-    color: "#B42318",
-    fontSize: 12,
-    marginTop: -8,
-    marginBottom: 6,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.radius.md,
+    paddingVertical: theme.spacing[3],
+    marginTop: theme.spacing[2],
+    minHeight: theme.layout.minTouchTarget,
+  },
+  btnPrimaryText: {
+    color: theme.colors.textInverse,
+    fontSize: theme.fontSize.base,
+    fontWeight: theme.fontWeight.medium,
+  },
+  btnDisabled: {
+    opacity: 0.6,
+  },
+  btnPressed: {
+    opacity: 0.85,
+  },
+  btnSecondary: {
+    width: "100%",
+    alignItems: "center",
+    paddingVertical: theme.spacing[3],
+    marginTop: theme.spacing[2],
+  },
+  btnSecondaryText: {
+    color: theme.colors.primary,
+    fontSize: theme.fontSize.sm,
+    fontWeight: theme.fontWeight.medium,
   },
   spacer: {
-    height: 12,
+    height: theme.spacing[3],
   },
 });

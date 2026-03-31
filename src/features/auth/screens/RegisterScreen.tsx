@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Button, StyleSheet, Text, TextInput, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { colors } from "../../../core/theme/colors";
+import { theme } from "../../../core/theme";
 import { AuthStackParamList } from "../../../app/navigation/types";
 import { useAuth } from "../hooks/useAuth";
 
@@ -110,52 +110,60 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.background,
-    padding: 24,
+    backgroundColor: theme.colors.background,
+    padding: theme.spacing[6],
   },
   title: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: colors.text,
+    fontSize: theme.fontSize.xl,
+    fontWeight: theme.fontWeight.bold,
+    lineHeight: theme.lineHeight.lg,
+    color: theme.colors.textStrong,
   },
   subtitle: {
-    marginTop: 8,
-    marginBottom: 20,
-    color: colors.muted,
+    marginTop: theme.spacing[2],
+    marginBottom: theme.spacing[5],
+    color: theme.colors.muted,
     textAlign: "center",
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
   },
   input: {
     width: "100%",
-    backgroundColor: colors.surface,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 12,
-    color: colors.text,
+    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    paddingHorizontal: theme.spacing[3],
+    paddingVertical: theme.spacing[3],
+    marginBottom: theme.spacing[3],
+    color: theme.colors.text,
   },
   errorText: {
     width: "100%",
-    color: "#B42318",
-    marginBottom: 12,
+    color: theme.colors.error,
+    marginBottom: theme.spacing[3],
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
   },
   successText: {
     width: "100%",
-    color: "#0B6E4F",
-    marginBottom: 12,
+    color: theme.colors.success,
+    marginBottom: theme.spacing[3],
+    fontSize: theme.fontSize.sm,
+    lineHeight: theme.lineHeight.sm,
   },
   inputInvalid: {
-    borderColor: "#B42318",
+    borderColor: theme.colors.error,
   },
   fieldError: {
     width: "100%",
-    color: "#B42318",
-    fontSize: 12,
-    marginTop: -8,
-    marginBottom: 6,
+    color: theme.colors.error,
+    fontSize: theme.fontSize.xs,
+    lineHeight: theme.lineHeight.xs,
+    marginTop: -theme.spacing[2],
+    marginBottom: theme.spacing[2],
   },
   spacer: {
-    height: 12,
+    height: theme.spacing[3],
   },
 });
