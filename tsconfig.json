@@ -2,11 +2,8 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    "baseUrl": "."
+    "baseUrl": ".",
+    "types": []
   },
-  "include": [
-    "src",
-    "App.js",
-    "nativewind-env.d.ts"
-  ]
+  "include": ["src", "App.js", "nativewind-env.d.ts"]
 }

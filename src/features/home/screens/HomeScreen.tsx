@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -10,7 +16,7 @@ import {
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { HomeStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
-import { theme } from "../../../core/theme";
+import { useTheme } from "../../../core/theme/ThemeProvider";
 import {
   getMyStreakSummary,
   type StreakSummary,
@@ -28,6 +34,7 @@ import {
   getWeeklyGroupPointsLeaderboard,
   type GroupPointsEntry,
 } from "../services/points.service";
+import { Theme } from "src/core/theme";
 
 type Props = NativeStackScreenProps<HomeStackParamList, "HomeDashboard">;
 
@@ -41,13 +48,249 @@ const DEFAULT_STREAK_SUMMARY: StreakSummary = {
   recent7Days: [],
 };
 
+// --- Styles ---
+
+function createStyles(theme: Theme) {
+  return StyleSheet.create({
+    container: {
+      padding: theme.spacing[6],
+      backgroundColor: theme.colors.background,
+      minHeight: "100%",
+    },
+    header: {
+      alignItems: "center",
+      marginBottom: theme.spacing[6],
+      marginTop: theme.spacing[2],
+    },
+    groupName: {
+      color: theme.colors.muted,
+      fontSize: theme.fontSize.sm,
+      fontWeight: theme.fontWeight.medium,
+      marginBottom: theme.spacing[1],
+    },
+    heroTitle: {
+      fontSize: theme.fontSize.lg,
+      fontWeight: theme.fontWeight.bold,
+      color: theme.colors.text,
+      marginBottom: theme.spacing[1],
+    },
+    heroPoints: {
+      fontSize: 48,
+      fontWeight: theme.fontWeight.bold,
+      color: theme.colors.primary,
+      marginBottom: theme.spacing[1],
+    },
+    card: {
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: theme.radius.lg,
+      padding: theme.spacing[5],
+      marginBottom: theme.spacing[4],
+      shadowColor: "#000",
+      shadowOpacity: 0.04,
+      shadowRadius: 8,
+      shadowOffset: { width: 0, height: 2 },
+    },
+    cardLabel: {
+      fontSize: theme.fontSize.sm,
+      color: theme.colors.muted,
+      fontWeight: theme.fontWeight.medium,
+      marginBottom: theme.spacing[2],
+    },
+    xpMeta: {
+      marginTop: theme.spacing[2],
+      fontSize: theme.fontSize.xs,
+      color: theme.colors.muted,
+      textAlign: "center",
+    },
+    streakRow: {
+      alignItems: "center",
+      marginBottom: theme.spacing[2],
+    },
+    streakNumber: {
+      fontSize: 36,
+      fontWeight: theme.fontWeight.bold,
+      color: theme.colors.primary,
+    },
+    streakFire: {
+      fontSize: 28,
+    },
+    streakOkText: {
+      color: theme.colors.success,
+      fontSize: theme.fontSize.xs,
+      fontWeight: theme.fontWeight.semibold,
+      marginBottom: theme.spacing[1],
+      textAlign: "center",
+    },
+    streakRiskText: {
+      color: theme.colors.warning,
+      fontSize: theme.fontSize.xs,
+      fontWeight: theme.fontWeight.semibold,
+      marginBottom: theme.spacing[1],
+      textAlign: "center",
+    },
+    weekRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginTop: theme.spacing[2],
+      marginBottom: theme.spacing[1],
+      gap: theme.spacing[1],
+    },
+    dayDot: {
+      flex: 1,
+      borderRadius: theme.radius.md,
+      borderWidth: 1,
+      paddingVertical: theme.spacing[1],
+      alignItems: "center",
+      marginHorizontal: 1,
+    },
+    dayDotActive: {
+      backgroundColor: theme.colors.successSoft,
+      borderColor: theme.colors.success,
+    },
+    dayDotInactive: {
+      backgroundColor: theme.colors.surface,
+      borderColor: theme.colors.border,
+    },
+    dayDotText: {
+      fontSize: theme.fontSize.xxs,
+      fontWeight: theme.fontWeight.bold,
+    },
+    dayDotTextActive: {
+      color: theme.colors.success,
+    },
+    dayDotTextInactive: {
+      color: theme.colors.muted,
+    },
+    levelRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: theme.spacing[2],
+      marginBottom: theme.spacing[2],
+    },
+    levelBadge: {
+      fontSize: theme.fontSize.lg,
+      fontWeight: theme.fontWeight.bold,
+      color: theme.colors.primaryText,
+      backgroundColor: theme.colors.primary,
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      textAlign: "center",
+      lineHeight: 38,
+      overflow: "hidden",
+      marginRight: theme.spacing[2],
+    },
+    levelName: {
+      flex: 1,
+      fontSize: theme.fontSize.base,
+      fontWeight: theme.fontWeight.semibold,
+      color: theme.colors.text,
+    },
+    xpTotal: {
+      fontSize: theme.fontSize.xs,
+      color: theme.colors.muted,
+      fontWeight: theme.fontWeight.medium,
+    },
+    progressTrack: {
+      height: 12,
+      backgroundColor: theme.colors.border,
+      borderRadius: theme.radius.full,
+      overflow: "hidden",
+      width: "100%",
+    },
+    progressFill: {
+      height: 12,
+      borderRadius: theme.radius.full,
+    },
+    rankingRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      paddingVertical: theme.spacing[2],
+      position: "relative",
+    },
+    rankingName: {
+      fontSize: theme.fontSize.sm,
+      color: theme.colors.text,
+      fontWeight: theme.fontWeight.medium,
+    },
+    rankingPoints: {
+      fontSize: theme.fontSize.sm,
+      color: theme.colors.primary,
+      fontWeight: theme.fontWeight.bold,
+    },
+    divider: {
+      position: "absolute",
+      left: 0,
+      right: 0,
+      bottom: 0,
+      height: 1,
+      backgroundColor: theme.colors.divider,
+      opacity: 0.5,
+    },
+    actionsRow: {
+      flexDirection: "row",
+      gap: theme.spacing[3],
+      marginTop: theme.spacing[5],
+      marginBottom: theme.spacing[2],
+    },
+    buttonPrimary: {
+      backgroundColor: theme.colors.primary,
+      borderRadius: theme.radius.md,
+      paddingVertical: theme.spacing[3],
+      alignItems: "center",
+      justifyContent: "center",
+      marginHorizontal: theme.spacing[1],
+    },
+    buttonPrimaryText: {
+      color: theme.colors.textInverse,
+      fontWeight: theme.fontWeight.bold,
+      fontSize: theme.fontSize.base,
+    },
+    buttonSecondary: {
+      backgroundColor: theme.colors.surfaceMuted,
+      borderRadius: theme.radius.md,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      paddingVertical: theme.spacing[3],
+      alignItems: "center",
+      justifyContent: "center",
+      marginHorizontal: theme.spacing[1],
+    },
+    buttonSecondaryText: {
+      color: theme.colors.primary,
+      fontWeight: theme.fontWeight.bold,
+      fontSize: theme.fontSize.base,
+    },
+    buttonDisabled: {
+      opacity: 0.5,
+    },
+    buttonPressed: {
+      opacity: 0.7,
+    },
+    rowMeta: {
+      fontSize: theme.fontSize.xs,
+      color: theme.colors.muted,
+      textAlign: "center",
+    },
+    errorText: {
+      marginTop: theme.spacing[4],
+      color: theme.colors.error,
+      textAlign: "center",
+      fontSize: theme.fontSize.sm,
+      fontWeight: theme.fontWeight.medium,
+    },
+  });
+}
+
 // --- Reusable UI Components ---
+
 function Card({ children, style }: { children: React.ReactNode; style?: any }) {
-  return (
-    <View style={[styles.card, style]}>
-      {children}
-    </View>
-  );
+  const theme = useTheme();
+  const styles = createStyles(theme);
+  return <View style={[styles.card, style]}>{children}</View>;
 }
 
 function PrimaryButton({
@@ -61,6 +304,8 @@ function PrimaryButton({
   disabled?: boolean;
   style?: any;
 }) {
+  const theme = useTheme();
+  const styles = createStyles(theme);
   return (
     <Pressable
       style={({ pressed }) => [
@@ -88,6 +333,8 @@ function SecondaryButton({
   disabled?: boolean;
   style?: any;
 }) {
+  const theme = useTheme();
+  const styles = createStyles(theme);
   return (
     <Pressable
       style={({ pressed }) => [
@@ -115,6 +362,8 @@ function ProgressBar({
   trackColor?: string;
   style?: any;
 }) {
+  const theme = useTheme();
+  const styles = createStyles(theme);
   return (
     <View
       style={[
@@ -136,14 +385,91 @@ function ProgressBar({
   );
 }
 
+// --- RankingRow ---
+
+type RankingRowProps = {
+  index: number;
+  userId: string;
+  displayName: string;
+  points: number;
+  myUserId: string | null;
+};
+
+const RankingRow = React.memo(function RankingRow({
+  index,
+  userId,
+  displayName,
+  points,
+  myUserId,
+}: RankingRowProps) {
+  const theme = useTheme();
+  const styles = createStyles(theme);
+  return (
+    <View style={styles.rankingRow}>
+      <Text style={styles.rankingName}>
+        #{index + 1} {userId === myUserId ? "Tu" : displayName}
+      </Text>
+      <Text style={styles.rankingPoints}>{points} pts</Text>
+    </View>
+  );
+});
+
+// --- RankingSection ---
+
+type RankingSectionProps = {
+  title: string;
+  isLoading: boolean;
+  emptyMessage: string;
+  entries: GroupPointsEntry[];
+  myUserId: string | null;
+};
+
+const RankingSection = React.memo(function RankingSection({
+  title,
+  isLoading,
+  emptyMessage,
+  entries,
+  myUserId,
+}: RankingSectionProps) {
+  const theme = useTheme();
+  const styles = createStyles(theme);
+  return (
+    <View style={styles.card}>
+      <Text style={styles.cardLabel}>{title}</Text>
+      {isLoading ? (
+        <Text style={styles.rowMeta}>Cargando...</Text>
+      ) : entries.length === 0 ? (
+        <Text style={styles.rowMeta}>{emptyMessage}</Text>
+      ) : (
+        entries.map((entry, index) => (
+          <RankingRow
+            key={entry.userId}
+            index={index}
+            userId={entry.userId}
+            displayName={entry.displayName}
+            points={entry.points}
+            myUserId={myUserId}
+          />
+        ))
+      )}
+    </View>
+  );
+});
+
+// --- HomeScreen ---
+
 export function HomeScreen({ navigation }: Props) {
+  const theme = useTheme();
+  const styles = createStyles(theme);
   const { activeGroupId, activeGroupName } = useAppSession();
   const [myPoints, setMyPoints] = useState(0);
   const [myWeeklyPoints, setMyWeeklyPoints] = useState(0);
   const [myWeeklyPointsEarned, setMyWeeklyPointsEarned] = useState(0);
   const [myUserId, setMyUserId] = useState<string | null>(null);
   const [leaderboard, setLeaderboard] = useState<GroupPointsEntry[]>([]);
-  const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<GroupPointsEntry[]>([]);
+  const [weeklyLeaderboard, setWeeklyLeaderboard] = useState<
+    GroupPointsEntry[]
+  >([]);
   const [streak, setStreak] = useState<StreakSummary>(DEFAULT_STREAK_SUMMARY);
   const [xp, setXp] = useState<XpSummary>({
     totalXp: 0,
@@ -156,19 +482,23 @@ export function HomeScreen({ navigation }: Props) {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const prevRankRef = useRef<{ groupId: string; levelNumber: number } | null>(null);
+  const prevRankRef = useRef<{ groupId: string; levelNumber: number } | null>(
+    null,
+  );
 
   function formatLocalDate(value: string) {
     const [year, month, day] = value.split("-").map(Number);
     const localDate = new Date(year, month - 1, day);
     return localDate.toLocaleDateString();
   }
+
   function formatWeekday(dateKey: string) {
     const [year, month, day] = dateKey.split("-").map(Number);
     const date = new Date(year, month - 1, day);
     const dayLabel = date.toLocaleDateString(undefined, { weekday: "short" });
     return dayLabel.slice(0, 2).toUpperCase();
   }
+
   const weeklyGoalProgressPercent = useMemo(
     () =>
       Math.min(
@@ -177,16 +507,20 @@ export function HomeScreen({ navigation }: Props) {
       ),
     [myWeeklyPointsEarned],
   );
+
   const topWeeklyEntries = useMemo(
     () => weeklyLeaderboard.slice(0, 3),
     [weeklyLeaderboard],
   );
+
   const handleGoToTasks = useCallback(() => {
     navigation.getParent()?.navigate("Tasks");
   }, [navigation]);
+
   const handleGoToHistory = useCallback(() => {
     navigation.navigate("PointHistory");
   }, [navigation]);
+
   const loadPoints = useCallback(async () => {
     if (!activeGroupId) {
       prevRankRef.current = null;
@@ -243,7 +577,6 @@ export function HomeScreen({ navigation }: Props) {
       setMyUserId(userId);
       setStreak(myStreak ?? DEFAULT_STREAK_SUMMARY);
       setXp(myXp);
-      // Rank-up detection
       const prev = prevRankRef.current;
       const isSameGroup = prev !== null && prev.groupId === activeGroupId;
       const hasLeveledUp = isSameGroup && myXp.currentLevel > prev.levelNumber;
@@ -264,6 +597,7 @@ export function HomeScreen({ navigation }: Props) {
       setIsLoading(false);
     }
   }, [activeGroupId]);
+
   useEffect(() => {
     loadPoints();
   }, [loadPoints]);
@@ -290,7 +624,10 @@ export function HomeScreen({ navigation }: Props) {
               progress={weeklyGoalProgressPercent}
               color={theme.colors.primary}
               trackColor={theme.colors.border}
-              style={{ marginTop: theme.spacing[3], marginBottom: theme.spacing[2] }}
+              style={{
+                marginTop: theme.spacing[3],
+                marginBottom: theme.spacing[2],
+              }}
             />
             <Text style={styles.xpMeta}>
               {myWeeklyPointsEarned >= WEEKLY_XP_GOAL
@@ -315,7 +652,9 @@ export function HomeScreen({ navigation }: Props) {
               </Text>
             </View>
             {streak.isActiveToday ? (
-              <Text style={styles.streakOkText}>¡Hoy ya sumaste actividad!</Text>
+              <Text style={styles.streakOkText}>
+                ¡Hoy ya sumaste actividad!
+              </Text>
             ) : streak.isAtRisk ? (
               <Text style={styles.streakRiskText}>
                 ¡Completa una actividad hoy para mantener la racha!
@@ -361,7 +700,10 @@ export function HomeScreen({ navigation }: Props) {
               </View>
             ) : null}
             {streak.isAtRisk ? (
-              <PrimaryButton onPress={handleGoToTasks} style={{ marginTop: theme.spacing[3] }}>
+              <PrimaryButton
+                onPress={handleGoToTasks}
+                style={{ marginTop: theme.spacing[3] }}
+              >
                 Completar tarea hoy
               </PrimaryButton>
             ) : null}
@@ -385,13 +727,17 @@ export function HomeScreen({ navigation }: Props) {
               progress={xp.progressPercent}
               color={theme.colors.success}
               trackColor={theme.colors.border}
-              style={{ marginTop: theme.spacing[2], marginBottom: theme.spacing[1] }}
+              style={{
+                marginTop: theme.spacing[2],
+                marginBottom: theme.spacing[1],
+              }}
             />
             {xp.isMaxLevel ? (
               <Text style={styles.xpMeta}>Nivel máximo alcanzado.</Text>
             ) : (
               <Text style={styles.xpMeta}>
-                {xp.xpInCurrentLevel} / {xp.xpNeededForNextLevel} XP para el siguiente nivel
+                {xp.xpInCurrentLevel} / {xp.xpNeededForNextLevel} XP para el
+                siguiente nivel
               </Text>
             )}
           </>
@@ -425,313 +771,17 @@ export function HomeScreen({ navigation }: Props) {
         <PrimaryButton onPress={handleGoToHistory} style={{ flex: 1 }}>
           Ver historial
         </PrimaryButton>
-        <SecondaryButton onPress={loadPoints} disabled={isLoading} style={{ flex: 1 }}>
+        <SecondaryButton
+          onPress={loadPoints}
+          disabled={isLoading}
+          style={{ flex: 1 }}
+        >
           Recargar
         </SecondaryButton>
       </View>
 
       {/* ERROR */}
-      {error ? (
-        <Text style={styles.errorText}>{error}</Text>
-      ) : null}
+      {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </ScrollView>
   );
 }
-
-type RankingSectionProps = {
-  title: string;
-  isLoading: boolean;
-  emptyMessage: string;
-  entries: GroupPointsEntry[];
-  myUserId: string | null;
-};
-
-const RankingSection = React.memo(function RankingSection({
-  title,
-  isLoading,
-  emptyMessage,
-  entries,
-  myUserId,
-}: RankingSectionProps) {
-  return (
-    <View style={styles.card}>
-      <Text style={styles.cardLabel}>{title}</Text>
-      {isLoading ? (
-        <Text style={styles.rowMeta}>Cargando...</Text>
-      ) : entries.length === 0 ? (
-        <Text style={styles.rowMeta}>{emptyMessage}</Text>
-      ) : (
-        entries.map((entry, index) => (
-          <RankingRow
-            key={entry.userId}
-            index={index}
-            userId={entry.userId}
-            displayName={entry.displayName}
-            points={entry.points}
-            myUserId={myUserId}
-          />
-        ))
-      )}
-    </View>
-  );
-});
-
-type RankingRowProps = {
-  index: number;
-  userId: string;
-  displayName: string;
-  points: number;
-  myUserId: string | null;
-};
-
-
-const RankingRow = React.memo(function RankingRow({
-  index,
-  userId,
-  displayName,
-  points,
-  myUserId,
-}: RankingRowProps) {
-  return (
-    <View style={styles.rankingRow}>
-      <Text style={styles.rankingName}>
-        #{index + 1} {userId === myUserId ? "Tu" : displayName}
-      </Text>
-      <Text style={styles.rankingPoints}>{points} pts</Text>
-    </View>
-  );
-});
-
-// --- Styles ---
-const styles = StyleSheet.create({
-  container: {
-    padding: theme.spacing[6],
-    backgroundColor: theme.colors.background,
-    minHeight: "100%",
-  },
-  header: {
-    alignItems: "center",
-    marginBottom: theme.spacing[6],
-    marginTop: theme.spacing[2],
-  },
-  groupName: {
-    color: theme.colors.muted,
-    fontSize: theme.fontSize.sm,
-    fontWeight: theme.fontWeight.medium,
-    marginBottom: theme.spacing[1],
-  },
-  heroTitle: {
-    fontSize: theme.fontSize.lg,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.text,
-    marginBottom: theme.spacing[1],
-  },
-  heroPoints: {
-    fontSize: 48,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.primary,
-    marginBottom: theme.spacing[1],
-  },
-  card: {
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.lg,
-    padding: theme.spacing[5],
-    marginBottom: theme.spacing[4],
-    shadowColor: '#000',
-    shadowOpacity: 0.04,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  cardLabel: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.muted,
-    fontWeight: theme.fontWeight.medium,
-    marginBottom: theme.spacing[2],
-  },
-  xpMeta: {
-    marginTop: theme.spacing[2],
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.muted,
-    textAlign: "center",
-  },
-  streakRow: {
-    alignItems: "center",
-    marginBottom: theme.spacing[2],
-  },
-  streakNumber: {
-    fontSize: 36,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.primary,
-  },
-  streakFire: {
-    fontSize: 28,
-  },
-  streakOkText: {
-    color: theme.colors.success,
-    fontSize: theme.fontSize.xs,
-    fontWeight: theme.fontWeight.semibold,
-    marginBottom: theme.spacing[1],
-    textAlign: "center",
-  },
-  streakRiskText: {
-    color: theme.colors.warning,
-    fontSize: theme.fontSize.xs,
-    fontWeight: theme.fontWeight.semibold,
-    marginBottom: theme.spacing[1],
-    textAlign: "center",
-  },
-  weekRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: theme.spacing[2],
-    marginBottom: theme.spacing[1],
-    gap: theme.spacing[1],
-  },
-  dayDot: {
-    flex: 1,
-    borderRadius: theme.radius.md,
-    borderWidth: 1,
-    paddingVertical: theme.spacing[1],
-    alignItems: "center",
-    marginHorizontal: 1,
-  },
-  dayDotActive: {
-    backgroundColor: theme.colors.successSoft,
-    borderColor: theme.colors.success,
-  },
-  dayDotInactive: {
-    backgroundColor: theme.colors.surface,
-    borderColor: theme.colors.border,
-  },
-  dayDotText: {
-    fontSize: theme.fontSize.xxs,
-    fontWeight: theme.fontWeight.bold,
-  },
-  dayDotTextActive: {
-    color: theme.colors.success,
-  },
-  dayDotTextInactive: {
-    color: theme.colors.muted,
-  },
-  levelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: theme.spacing[2],
-    marginBottom: theme.spacing[2],
-  },
-  levelBadge: {
-    fontSize: theme.fontSize.lg,
-    fontWeight: theme.fontWeight.bold,
-    color: theme.colors.primaryText,
-    backgroundColor: theme.colors.primary,
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    textAlign: "center",
-    lineHeight: 38,
-    overflow: "hidden",
-    marginRight: theme.spacing[2],
-  },
-  levelName: {
-    flex: 1,
-    fontSize: theme.fontSize.base,
-    fontWeight: theme.fontWeight.semibold,
-    color: theme.colors.text,
-  },
-  xpTotal: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.muted,
-    fontWeight: theme.fontWeight.medium,
-  },
-  progressTrack: {
-    height: 12,
-    backgroundColor: theme.colors.border,
-    borderRadius: theme.radius.full,
-    overflow: "hidden",
-    width: "100%",
-  },
-  progressFill: {
-    height: 12,
-    borderRadius: theme.radius.full,
-  },
-  rankingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: theme.spacing[2],
-    position: "relative",
-  },
-  rankingName: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.text,
-    fontWeight: theme.fontWeight.medium,
-  },
-  rankingPoints: {
-    fontSize: theme.fontSize.sm,
-    color: theme.colors.primary,
-    fontWeight: theme.fontWeight.bold,
-  },
-  divider: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 1,
-    backgroundColor: theme.colors.divider,
-    opacity: 0.5,
-  },
-  actionsRow: {
-    flexDirection: "row",
-    gap: theme.spacing[3],
-    marginTop: theme.spacing[5],
-    marginBottom: theme.spacing[2],
-  },
-  buttonPrimary: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.radius.md,
-    paddingVertical: theme.spacing[3],
-    alignItems: "center",
-    justifyContent: "center",
-    marginHorizontal: theme.spacing[1],
-  },
-  buttonPrimaryText: {
-    color: theme.colors.textInverse,
-    fontWeight: theme.fontWeight.bold,
-    fontSize: theme.fontSize.base,
-  },
-  buttonSecondary: {
-    backgroundColor: theme.colors.surfaceMuted,
-    borderRadius: theme.radius.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    paddingVertical: theme.spacing[3],
-    alignItems: "center",
-    justifyContent: "center",
-    marginHorizontal: theme.spacing[1],
-  },
-  buttonSecondaryText: {
-    color: theme.colors.primary,
-    fontWeight: theme.fontWeight.bold,
-    fontSize: theme.fontSize.base,
-  },
-  buttonDisabled: {
-    opacity: 0.5,
-  },
-  buttonPressed: {
-    opacity: 0.7,
-  },
-  rowMeta: {
-    fontSize: theme.fontSize.xs,
-    color: theme.colors.muted,
-    textAlign: "center",
-  },
-  errorText: {
-    marginTop: theme.spacing[4],
-    color: theme.colors.error,
-    textAlign: "center",
-    fontSize: theme.fontSize.sm,
-    fontWeight: theme.fontWeight.medium,
-  },
-});
