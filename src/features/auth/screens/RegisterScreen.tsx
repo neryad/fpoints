@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import { Button, StyleSheet, Text, TextInput, View } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { theme } from "../../../core/theme";
+import { useTheme } from "../../../core/theme/ThemeProvider";
 import { AuthStackParamList } from "../../../app/navigation/types";
 import { useAuth } from "../hooks/useAuth";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Register">;
 
 export function RegisterScreen({ navigation }: Props) {
+  const theme = useTheme();
+  const styles = makeStyles(theme);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -105,65 +107,64 @@ export function RegisterScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.background,
-    padding: theme.spacing[6],
-  },
-  title: {
-    fontSize: theme.fontSize.xl,
-    fontWeight: theme.fontWeight.bold,
-    lineHeight: theme.lineHeight.lg,
-    color: theme.colors.textStrong,
-  },
-  subtitle: {
-    marginTop: theme.spacing[2],
-    marginBottom: theme.spacing[5],
-    color: theme.colors.muted,
-    textAlign: "center",
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
-  },
-  input: {
-    width: "100%",
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.md,
-    paddingHorizontal: theme.spacing[3],
-    paddingVertical: theme.spacing[3],
-    marginBottom: theme.spacing[3],
-    color: theme.colors.text,
-  },
-  errorText: {
-    width: "100%",
-    color: theme.colors.error,
-    marginBottom: theme.spacing[3],
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
-  },
-  successText: {
-    width: "100%",
-    color: theme.colors.success,
-    marginBottom: theme.spacing[3],
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
-  },
-  inputInvalid: {
-    borderColor: theme.colors.error,
-  },
-  fieldError: {
-    width: "100%",
-    color: theme.colors.error,
-    fontSize: theme.fontSize.xs,
-    lineHeight: theme.lineHeight.xs,
-    marginTop: -theme.spacing[2],
-    marginBottom: theme.spacing[2],
-  },
-  spacer: {
-    height: theme.spacing[3],
-  },
-});
+function makeStyles(t: ReturnType<typeof useTheme>) {
+  const { colors, spacing, fontSize, fontWeight, lineHeight, radius } = t;
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.background,
+      padding: spacing[6],
+    },
+    title: {
+      fontSize: fontSize.xl,
+      fontWeight: fontWeight.bold,
+      lineHeight: lineHeight.lg,
+      color: colors.textStrong,
+    },
+    subtitle: {
+      marginTop: spacing[2],
+      marginBottom: spacing[5],
+      color: colors.muted,
+      textAlign: "center",
+      fontSize: fontSize.sm,
+      lineHeight: lineHeight.sm,
+    },
+    input: {
+      width: "100%",
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing[3],
+      paddingVertical: spacing[3],
+      marginBottom: spacing[3],
+      color: colors.text,
+    },
+    errorText: {
+      width: "100%",
+      color: colors.error,
+      marginBottom: spacing[3],
+      fontSize: fontSize.sm,
+      lineHeight: lineHeight.sm,
+    },
+    successText: {
+      width: "100%",
+      color: colors.success,
+      marginBottom: spacing[3],
+      fontSize: fontSize.sm,
+      lineHeight: lineHeight.sm,
+    },
+    inputInvalid: { borderColor: colors.error },
+    fieldError: {
+      width: "100%",
+      color: colors.error,
+      fontSize: fontSize.xs,
+      lineHeight: lineHeight.xs,
+      marginTop: -spacing[2],
+      marginBottom: spacing[2],
+    },
+    spacer: { height: spacing[3] },
+  });
+}

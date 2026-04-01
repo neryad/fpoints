@@ -1,5 +1,6 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useTheme } from "../../core/theme/ThemeProvider";
 import { RewardsStackParamList } from "./types";
 import { RewardsScreen } from "../../features/rewards/screens/RewardsScreen";
 import { ManageRewardsScreen } from "../../features/rewards/screens/ManageRewardsScreen";
@@ -9,8 +10,15 @@ import { RewardApprovalsScreen } from "../../features/rewards/screens/RewardAppr
 const Stack = createNativeStackNavigator<RewardsStackParamList>();
 
 export function RewardsNavigator() {
+  const { colors } = useTheme();
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.surface },
+        headerTintColor: colors.textStrong,
+        headerShadowVisible: false,
+      }}
+    >
       <Stack.Screen
         name="RewardsList"
         component={RewardsScreen}

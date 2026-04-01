@@ -8,11 +8,98 @@ import {
   View,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { theme } from "../../../core/theme";
 import { AuthStackParamList } from "../../../app/navigation/types";
+import { useTheme } from "../../../core/theme/ThemeProvider";
 import { useAuth } from "../hooks/useAuth";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
+
+function makeStyles(t: ReturnType<typeof useTheme>) {
+  const { colors, spacing, fontSize, fontWeight, lineHeight, radius, layout } = t;
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.background,
+      padding: spacing[6],
+    },
+    header: {
+      width: "100%",
+      marginBottom: spacing[6],
+    },
+    form: {
+      width: "100%",
+      gap: spacing[3],
+    },
+    title: {
+      fontSize: fontSize.xl,
+      fontWeight: fontWeight.semibold,
+      lineHeight: lineHeight.lg,
+      color: colors.primary,
+    },
+    subtitle: {
+      marginTop: spacing[2],
+      color: colors.muted,
+      fontSize: fontSize.sm,
+      lineHeight: lineHeight.sm,
+    },
+    input: {
+      width: "100%",
+      backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      paddingHorizontal: spacing[4],
+      paddingVertical: spacing[3],
+      color: colors.text,
+      fontSize: fontSize.base,
+    },
+    inputInvalid: {
+      borderColor: colors.error,
+    },
+    fieldError: {
+      color: colors.error,
+      fontSize: fontSize.xs,
+      lineHeight: lineHeight.xs,
+      marginTop: -spacing[2],
+    },
+    errorText: {
+      color: colors.error,
+      fontSize: fontSize.sm,
+      lineHeight: lineHeight.sm,
+    },
+    btnPrimary: {
+      width: "100%",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primary,
+      borderRadius: radius.md,
+      paddingVertical: spacing[3],
+      marginTop: spacing[2],
+      minHeight: layout.minTouchTarget,
+    },
+    btnPrimaryText: {
+      color: colors.textInverse,
+      fontSize: fontSize.base,
+      fontWeight: fontWeight.medium,
+    },
+    btnDisabled: { opacity: 0.6 },
+    btnPressed: { opacity: 0.85 },
+    btnSecondary: {
+      width: "100%",
+      alignItems: "center",
+      paddingVertical: spacing[3],
+      marginTop: spacing[2],
+    },
+    btnSecondaryText: {
+      color: colors.primary,
+      fontSize: fontSize.sm,
+      fontWeight: fontWeight.medium,
+    },
+    spacer: { height: spacing[3] },
+  });
+}
 
 export function LoginScreen({ navigation }: Props) {
   const [email, setEmail] = useState("");
@@ -21,6 +108,8 @@ export function LoginScreen({ navigation }: Props) {
     email?: string;
     password?: string;
   }>({});
+  const theme = useTheme();
+  const styles = makeStyles(theme);
   const { isLoading, error, signIn } = useAuth();
 
   function validate(): boolean {
@@ -123,92 +212,4 @@ export function LoginScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.background,
-    padding: theme.spacing[6],
-  },
-  header: {
-    width: "100%",
-    marginBottom: theme.spacing[6],
-  },
-  form: {
-    width: "100%",
-    gap: theme.spacing[3],
-  },
-  title: {
-    fontSize: theme.fontSize.xl,
-    fontWeight: theme.fontWeight.semibold,
-    lineHeight: theme.lineHeight.lg,
-    color: theme.colors.primary,
-  },
-  subtitle: {
-    marginTop: theme.spacing[2],
-    color: theme.colors.muted,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
-  },
-  input: {
-    width: "100%",
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    borderRadius: theme.radius.md,
-    paddingHorizontal: theme.spacing[4],
-    paddingVertical: theme.spacing[3],
-    color: theme.colors.text,
-    fontSize: theme.fontSize.base,
-  },
-  inputInvalid: {
-    borderColor: theme.colors.error,
-  },
-  fieldError: {
-    color: theme.colors.error,
-    fontSize: theme.fontSize.xs,
-    lineHeight: theme.lineHeight.xs,
-    marginTop: -theme.spacing[2],
-  },
-  errorText: {
-    color: theme.colors.error,
-    fontSize: theme.fontSize.sm,
-    lineHeight: theme.lineHeight.sm,
-  },
-  btnPrimary: {
-    width: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.radius.md,
-    paddingVertical: theme.spacing[3],
-    marginTop: theme.spacing[2],
-    minHeight: theme.layout.minTouchTarget,
-  },
-  btnPrimaryText: {
-    color: theme.colors.textInverse,
-    fontSize: theme.fontSize.base,
-    fontWeight: theme.fontWeight.medium,
-  },
-  btnDisabled: {
-    opacity: 0.6,
-  },
-  btnPressed: {
-    opacity: 0.85,
-  },
-  btnSecondary: {
-    width: "100%",
-    alignItems: "center",
-    paddingVertical: theme.spacing[3],
-    marginTop: theme.spacing[2],
-  },
-  btnSecondaryText: {
-    color: theme.colors.primary,
-    fontSize: theme.fontSize.sm,
-    fontWeight: theme.fontWeight.medium,
-  },
-  spacer: {
-    height: theme.spacing[3],
-  },
-});
+

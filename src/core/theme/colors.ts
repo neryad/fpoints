@@ -109,3 +109,46 @@ export const colors = {
 } as const;
 
 export type Colors = typeof colors;
+
+export const darkColors: Colors = {
+  // Core surfaces
+  background: "#0F0E13",
+  backgroundElevated: "#1A1921",
+  surface: "#1F1E26",
+  surfaceMuted: "#17161D",
+  border: "#2E2C38",
+  divider: "#3A3845",
+
+  // Content
+  text: palette.neutral[200],
+  textStrong: palette.neutral[50],
+  muted: palette.neutral[400],
+  inverseText: palette.neutral[600],
+  textPrimary: palette.neutral[50],
+  textSecondary: palette.neutral[400],
+  textInverse: palette.neutral[600],
+
+  // Brand
+  primary: palette.primary[400],
+  primaryHover: palette.primary[300],
+  primarySoft: "rgba(110, 93, 205, 0.18)",
+  primaryText: "#FFFFFF",
+
+  // Status
+  success: palette.success[400],
+  successSoft: "rgba(38, 183, 101, 0.15)",
+  warning: palette.warning[400],
+  warningSoft: "rgba(229, 115, 10, 0.15)",
+  error: palette.error[400],
+  errorSoft: "rgba(179, 38, 30, 0.15)",
+  info: palette.info[400],
+  infoSoft: "rgba(47, 118, 232, 0.15)",
+
+  // Domain
+  reward: palette.reward[400],
+  rewardSoft: "rgba(245, 158, 11, 0.15)",
+
+  // Overlays
+  overlay: "rgba(0, 0, 0, 0.6)",
+  scrim: "rgba(0, 0, 0, 0.8)",
+};

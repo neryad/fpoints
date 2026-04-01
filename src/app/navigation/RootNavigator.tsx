@@ -4,14 +4,15 @@ import { AuthNavigator } from "./AuthNavigator";
 import { GroupNavigator } from "./GroupNavigator";
 import { MainTabsNavigator } from "./MainTabsNavigator";
 import { useAppSession } from "../providers/AppSessionProvider";
-import { colors } from "../../core/theme";
+import { useTheme } from "../../core/theme/ThemeProvider";
 
 export function RootNavigator() {
   const { hasActiveGroup, isAuthenticated, isBootstrapping } = useAppSession();
+  const { colors } = useTheme();
 
   if (isBootstrapping) {
     return (
-      <View style={styles.loadingContainer}>
+      <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -32,6 +33,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: colors.background,
   },
 });
