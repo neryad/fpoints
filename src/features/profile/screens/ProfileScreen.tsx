@@ -514,6 +514,7 @@ function makeStyles(theme: ReturnType<typeof useTheme>) {
 
 export function ProfileScreen({ navigation }: Props) {
   const theme = useTheme();
+  const { themeOverride, setThemeOverride } = theme;
   const s = makeStyles(theme);
   const { clearGroup, activeGroupId, activeGroupName } = useAppSession();
 
@@ -809,6 +810,42 @@ export function ProfileScreen({ navigation }: Props) {
             <Text style={s.btnSecondaryText}>Configuración del grupo</Text>
           </Pressable>
         ) : null}
+      </View>
+
+      {/* ── Apariencia ── */}
+      <View style={s.card}>
+        <Text style={s.cardLabel}>Apariencia</Text>
+        <View style={{ flexDirection: "row", gap: theme.spacing[2] }}>
+          {(["Sistema", "Claro", "Oscuro"] as const).map((label) => {
+            const val: "light" | "dark" | null =
+              label === "Sistema" ? null : label === "Claro" ? "light" : "dark";
+            const isActive = themeOverride === val;
+            return (
+              <Pressable
+                key={label}
+                style={({ pressed }) => [
+                  s.btnSecondary,
+                  { flex: 1, justifyContent: "center" },
+                  isActive && {
+                    backgroundColor: theme.colors.primary,
+                    borderColor: theme.colors.primary,
+                  },
+                  pressed && { opacity: 0.7 },
+                ]}
+                onPress={() => setThemeOverride(val)}
+              >
+                <Text
+                  style={[
+                    s.btnSecondaryText,
+                    isActive && { color: theme.colors.primaryText },
+                  ]}
+                >
+                  {label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
 
       {/* ── Sesión ── */}
