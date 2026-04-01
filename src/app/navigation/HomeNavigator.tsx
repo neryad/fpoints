@@ -13,7 +13,7 @@ export function HomeNavigator() {
       <Stack.Screen
         name="HomeDashboard"
         component={HomeScreen}
-        options={{ title: "Home" }}
+        options={{ title: "Home" , headerShown: false }}
       />
       <Stack.Screen
         name="PointHistory"
