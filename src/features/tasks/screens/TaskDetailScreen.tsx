@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,6 +10,7 @@ import {
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { TasksStackParamList } from "../../../app/navigation/types";
 import { useTheme } from "../../../core/theme/ThemeProvider";
+import { ConfirmDialog } from "../../../components/shared/ConfirmDialog";
 import {
   getMyRoleInGroup,
   getTask,
@@ -279,6 +279,10 @@ export function TaskDetailScreen({ route, navigation }: Props) {
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [dialog, setDialog] = useState<null | {
+    title: string; message: string; confirmText: string;
+    destructive?: boolean; onConfirm: () => void;
+  }>(null);
 
   const loadTaskData = useCallback(async () => {
     try {
@@ -304,31 +308,27 @@ export function TaskDetailScreen({ route, navigation }: Props) {
   const handleReview = useCallback(
     (submissionId: string, status: "approved" | "rejected") => {
       const label = status === "approved" ? "aprobar" : "rechazar";
-      Alert.alert(
-        "Confirmar",
-        `¿Seguro que quieres ${label} esta entrega?`,
-        [
-          { text: "Cancelar", style: "cancel" },
-          {
-            text: status === "approved" ? "Aprobar" : "Rechazar",
-            style: status === "rejected" ? "destructive" : "default",
-            onPress: async () => {
-              try {
-                setError("");
-                setReviewingId(submissionId);
-                await reviewTaskSubmission(submissionId, status);
-                await loadTaskData();
-              } catch (err) {
-                setError(
-                  err instanceof Error ? err.message : "Error al revisar el envío."
-                );
-              } finally {
-                setReviewingId(null);
-              }
-            },
-          },
-        ]
-      );
+      setDialog({
+        title: "Confirmar",
+        message: `¿Seguro que quieres ${label} esta entrega?`,
+        confirmText: status === "approved" ? "Aprobar" : "Rechazar",
+        destructive: status === "rejected",
+        onConfirm: async () => {
+          setDialog(null);
+          try {
+            setError("");
+            setReviewingId(submissionId);
+            await reviewTaskSubmission(submissionId, status);
+            await loadTaskData();
+          } catch (err) {
+            setError(
+              err instanceof Error ? err.message : "Error al revisar el envío."
+            );
+          } finally {
+            setReviewingId(null);
+          }
+        },
+      });
     },
     [loadTaskData]
   );
@@ -367,6 +367,15 @@ export function TaskDetailScreen({ route, navigation }: Props) {
 
   return (
     <ScrollView contentContainerStyle={s.scrollContent}>
+      <ConfirmDialog
+        visible={dialog !== null}
+        title={dialog?.title ?? ""}
+        message={dialog?.message ?? ""}
+        confirmText={dialog?.confirmText ?? ""}
+        destructive={dialog?.destructive}
+        onConfirm={() => dialog?.onConfirm()}
+        onCancel={() => setDialog(null)}
+      />
 
       {/* ── Hero ── */}
       <View style={s.hero}>

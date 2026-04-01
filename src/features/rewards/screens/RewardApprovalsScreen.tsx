@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Pressable,
   StyleSheet,
@@ -12,6 +11,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RewardsStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
 import { useTheme } from "../../../core/theme/ThemeProvider";
+import { ConfirmDialog } from "../../../components/shared/ConfirmDialog";
 import { getUserDisplayNames } from "../../tasks/services/tasks.service";
 import {
   canManageRewards,
@@ -175,6 +175,10 @@ export function RewardApprovalsScreen({ navigation }: Props) {
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [dialog, setDialog] = useState<null | {
+    title: string; message: string; confirmText: string;
+    destructive?: boolean; onConfirm: () => void;
+  }>(null);
 
   const loadData = useCallback(async () => {
     if (!activeGroupId) {
@@ -218,37 +222,33 @@ export function RewardApprovalsScreen({ navigation }: Props) {
   const handleReview = useCallback(
     (item: RewardRedemption, status: "approved" | "rejected") => {
       const label = status === "approved" ? "aprobar" : "rechazar";
-      Alert.alert(
-        "Confirmar",
-        `¿Seguro que quieres ${label} este canje?`,
-        [
-          { text: "Cancelar", style: "cancel" },
-          {
-            text: status === "approved" ? "Aprobar" : "Rechazar",
-            style: status === "rejected" ? "destructive" : "default",
-            onPress: async () => {
-              try {
-                setError("");
-                setSuccessMessage("");
-                setReviewingId(item.id);
-                await reviewRewardRedemption(item.id, status);
-                setSuccessMessage(
-                  status === "approved"
-                    ? "Canje aprobado y puntos descontados."
-                    : "Canje rechazado.",
-                );
-                await loadData();
-              } catch (err) {
-                setError(
-                  err instanceof Error ? err.message : "No se pudo revisar el canje.",
-                );
-              } finally {
-                setReviewingId(null);
-              }
-            },
-          },
-        ],
-      );
+      setDialog({
+        title: "Confirmar",
+        message: `¿Seguro que quieres ${label} este canje?`,
+        confirmText: status === "approved" ? "Aprobar" : "Rechazar",
+        destructive: status === "rejected",
+        onConfirm: async () => {
+          setDialog(null);
+          try {
+            setError("");
+            setSuccessMessage("");
+            setReviewingId(item.id);
+            await reviewRewardRedemption(item.id, status);
+            setSuccessMessage(
+              status === "approved"
+                ? "Canje aprobado y puntos descontados."
+                : "Canje rechazado.",
+            );
+            await loadData();
+          } catch (err) {
+            setError(
+              err instanceof Error ? err.message : "No se pudo revisar el canje.",
+            );
+          } finally {
+            setReviewingId(null);
+          }
+        },
+      });
     },
     [loadData],
   );
@@ -282,6 +282,15 @@ export function RewardApprovalsScreen({ navigation }: Props) {
 
   return (
     <View style={s.container}>
+      <ConfirmDialog
+        visible={dialog !== null}
+        title={dialog?.title ?? ""}
+        message={dialog?.message ?? ""}
+        confirmText={dialog?.confirmText ?? ""}
+        destructive={dialog?.destructive}
+        onConfirm={() => dialog?.onConfirm()}
+        onCancel={() => setDialog(null)}
+      />
       {error ? <Text style={s.errorText}>{error}</Text> : null}
       {successMessage ? <Text style={s.successText}>{successMessage}</Text> : null}
 

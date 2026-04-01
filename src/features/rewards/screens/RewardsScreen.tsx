@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Pressable,
   StyleSheet,
@@ -14,6 +13,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RewardsStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
 import { useTheme } from "../../../core/theme/ThemeProvider";
+import { ConfirmDialog } from "../../../components/shared/ConfirmDialog";
 import { getMyPointsBalance } from "../../home/services/points.service";
 import {
   canManageRewards,
@@ -226,6 +226,10 @@ export function RewardsScreen({ navigation }: Props) {
   const [redeemingId, setRedeemingId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [dialog, setDialog] = useState<null | {
+    title: string; message: string; confirmText: string;
+    destructive?: boolean; onConfirm: () => void;
+  }>(null);
 
   const loadData = useCallback(async () => {
     if (!activeGroupId) {
@@ -264,32 +268,28 @@ export function RewardsScreen({ navigation }: Props) {
   const handleRedeem = useCallback(
     (reward: Reward) => {
       if (!activeGroupId) return;
-      Alert.alert(
-        "Confirmar canje",
-        `¿Solicitar canje de "${reward.title}" por ${reward.costPoints} puntos?`,
-        [
-          { text: "Cancelar", style: "cancel" },
-          {
-            text: "Solicitar",
-            onPress: async () => {
-              try {
-                setError("");
-                setSuccessMessage("");
-                setRedeemingId(reward.id);
-                await requestRewardRedemption(activeGroupId, reward);
-                setSuccessMessage("Solicitud enviada. Esperando aprobación.");
-                await loadData();
-              } catch (err) {
-                setError(
-                  err instanceof Error ? err.message : "No se pudo solicitar el canje."
-                );
-              } finally {
-                setRedeemingId(null);
-              }
-            },
-          },
-        ]
-      );
+      setDialog({
+        title: "Confirmar canje",
+        message: `¿Solicitar canje de "${reward.title}" por ${reward.costPoints} puntos?`,
+        confirmText: "Solicitar",
+        onConfirm: async () => {
+          setDialog(null);
+          try {
+            setError("");
+            setSuccessMessage("");
+            setRedeemingId(reward.id);
+            await requestRewardRedemption(activeGroupId, reward);
+            setSuccessMessage("Solicitud enviada. Esperando aprobación.");
+            await loadData();
+          } catch (err) {
+            setError(
+              err instanceof Error ? err.message : "No se pudo solicitar el canje."
+            );
+          } finally {
+            setRedeemingId(null);
+          }
+        },
+      });
     },
     [activeGroupId, loadData]
   );
@@ -308,6 +308,15 @@ export function RewardsScreen({ navigation }: Props) {
 
   return (
     <View style={s.container}>
+      <ConfirmDialog
+        visible={dialog !== null}
+        title={dialog?.title ?? ""}
+        message={dialog?.message ?? ""}
+        confirmText={dialog?.confirmText ?? ""}
+        destructive={dialog?.destructive}
+        onConfirm={() => dialog?.onConfirm()}
+        onCancel={() => setDialog(null)}
+      />
 
       {/* Balance */}
       <View style={s.balanceCard}>

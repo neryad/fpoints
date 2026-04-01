@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   FlatList,
   Pressable,
   StyleSheet,
@@ -13,6 +12,7 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { TasksStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
 import { useTheme } from "../../../core/theme/ThemeProvider";
+import { ConfirmDialog } from "../../../components/shared/ConfirmDialog";
 import {
   getMyRoleInGroup,
   getUserDisplayNames,
@@ -203,6 +203,10 @@ export function ApprovalsScreen({ navigation }: Props) {
   const [taskFilter, setTaskFilter] = useState("");
   const [userFilter, setUserFilter] = useState("");
   const [proofFilter, setProofFilter] = useState<ProofFilter>("all");
+  const [dialog, setDialog] = useState<null | {
+    title: string; message: string; confirmText: string;
+    destructive?: boolean; onConfirm: () => void;
+  }>(null);
 
   const loadPending = useCallback(async () => {
     if (!activeGroupId) { setPending([]); setIsLoading(false); return; }
@@ -236,25 +240,25 @@ export function ApprovalsScreen({ navigation }: Props) {
   const handleReview = useCallback(
     (item: PendingApprovalItem, status: "approved" | "rejected") => {
       const label = status === "approved" ? "aprobar" : "rechazar";
-      Alert.alert("Confirmar", `¿Seguro que quieres ${label} esta entrega?`, [
-        { text: "Cancelar", style: "cancel" },
-        {
-          text: status === "approved" ? "Aprobar" : "Rechazar",
-          style: status === "rejected" ? "destructive" : "default",
-          onPress: async () => {
-            try {
-              setError("");
-              setReviewingId(item.submission.id);
-              await reviewTaskSubmission(item.submission.id, status);
-              await loadPending();
-            } catch (err) {
-              setError(err instanceof Error ? err.message : "No se pudo completar la revisión.");
-            } finally {
-              setReviewingId(null);
-            }
-          },
+      setDialog({
+        title: "Confirmar",
+        message: `¿Seguro que quieres ${label} esta entrega?`,
+        confirmText: status === "approved" ? "Aprobar" : "Rechazar",
+        destructive: status === "rejected",
+        onConfirm: async () => {
+          setDialog(null);
+          try {
+            setError("");
+            setReviewingId(item.submission.id);
+            await reviewTaskSubmission(item.submission.id, status);
+            await loadPending();
+          } catch (err) {
+            setError(err instanceof Error ? err.message : "No se pudo completar la revisión.");
+          } finally {
+            setReviewingId(null);
+          }
         },
-      ]);
+      });
     },
     [loadPending],
   );
@@ -293,6 +297,15 @@ export function ApprovalsScreen({ navigation }: Props) {
 
   return (
     <View style={s.container}>
+      <ConfirmDialog
+        visible={dialog !== null}
+        title={dialog?.title ?? ""}
+        message={dialog?.message ?? ""}
+        confirmText={dialog?.confirmText ?? ""}
+        destructive={dialog?.destructive}
+        onConfirm={() => dialog?.onConfirm()}
+        onCancel={() => setDialog(null)}
+      />
       {error ? <Text style={s.errorText}>{error}</Text> : null}
 
       <TextInput
