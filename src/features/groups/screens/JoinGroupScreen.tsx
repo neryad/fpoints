@@ -1,110 +1,132 @@
-import React, { useState } from "react";
-import { Button, StyleSheet, Text, TextInput, View } from "react-native";
-import { colors } from "../../../core/theme/colors";
+import React, { useCallback, useState } from "react";
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { useTheme } from "../../../core/theme/ThemeProvider";
 import { joinGroupByCode } from "../services/groups.service";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
 
+function makeStyles(theme: ReturnType<typeof useTheme>) {
+  const { colors, spacing, fontSize, fontWeight, radius } = theme;
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      justifyContent: "center",
+      backgroundColor: colors.background,
+      padding: spacing[6],             // 24
+    },
+    title: {
+      fontSize: fontSize.xl,           // 22
+      fontWeight: fontWeight.bold,
+      color: colors.textStrong,
+      textAlign: "center",
+      marginBottom: spacing[1],
+    },
+    subtitle: {
+      fontSize: fontSize.sm,
+      color: colors.muted,
+      textAlign: "center",
+      marginBottom: spacing[5],
+    },
+    input: {
+      backgroundColor: colors.surface,
+      borderWidth: 0.5,
+      borderColor: colors.border,
+      borderRadius: radius.sm,
+      paddingHorizontal: spacing[3],
+      paddingVertical: spacing[3],
+      fontSize: fontSize.base,         // 16 — más grande para código
+      fontWeight: fontWeight.bold,
+      color: colors.text,
+      textAlign: "center",
+      letterSpacing: 4,
+      marginBottom: spacing[3],
+    },
+    errorText: {
+      fontSize: fontSize.xs,
+      color: colors.error,
+      textAlign: "center",
+      marginBottom: spacing[3],
+    },
+    successText: {
+      fontSize: fontSize.xs,
+      color: colors.success,
+      textAlign: "center",
+      marginBottom: spacing[3],
+    },
+    btnPrimary: {
+      backgroundColor: colors.primary,
+      borderRadius: radius.md,
+      paddingVertical: spacing[4],
+      alignItems: "center",
+    },
+    btnPrimaryText: {
+      fontSize: fontSize.base,
+      fontWeight: fontWeight.bold,
+      color: colors.primaryText,
+    },
+    btnDisabled: { opacity: 0.4 },
+  });
+}
+
 export function JoinGroupScreen() {
+  const theme = useTheme();
+  const s = makeStyles(theme);
+  const { selectGroup } = useAppSession();
+
   const [inviteCode, setInviteCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const { selectGroup } = useAppSession();
 
-  async function handleJoinGroup() {
-    if (!inviteCode.trim()) {
-      setError("El código de invitación es obligatorio.");
-      return;
-    }
+  const handleJoin = useCallback(async () => {
+    if (!inviteCode.trim()) { setError("El código de invitación es obligatorio."); return; }
     try {
       setError("");
       setSuccessMessage("");
       setIsLoading(true);
-
-      const group = await joinGroupByCode(inviteCode);
-      setSuccessMessage("Te uniste al grupo correctamente.");
+      const group = await joinGroupByCode(inviteCode.trim());
+      setSuccessMessage("¡Te uniste al grupo correctamente!");
       setInviteCode("");
       selectGroup(group.id, group.name);
     } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Ocurrió un error al unirse al grupo.";
-      setError(message);
+      setError(err instanceof Error ? err.message : "Ocurrió un error al unirse al grupo.");
     } finally {
       setIsLoading(false);
     }
-  }
+  }, [inviteCode, selectGroup]);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Join Group</Text>
-      <Text style={styles.subtitle}>
-        Ingresa el código de invitación del grupo.
-      </Text>
+    <View style={s.container}>
+      <Text style={s.title}>Unirse a un grupo</Text>
+      <Text style={s.subtitle}>Ingresa el código de invitación del grupo.</Text>
 
       <TextInput
-        style={styles.input}
-        placeholder="Invite code"
+        style={s.input}
+        placeholder="CÓDIGO"
+        placeholderTextColor={theme.colors.muted}
         autoCapitalize="characters"
+        autoCorrect={false}
         editable={!isLoading}
         value={inviteCode}
         onChangeText={setInviteCode}
-        onSubmitEditing={handleJoinGroup}
+        onSubmitEditing={handleJoin}
       />
 
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
-      {successMessage ? (
-        <Text style={styles.successText}>{successMessage}</Text>
-      ) : null}
+      {error ? <Text style={s.errorText}>{error}</Text> : null}
+      {successMessage ? <Text style={s.successText}>{successMessage}</Text> : null}
 
-      <Button
-        title={isLoading ? "Joining group..." : "Join Group"}
-        onPress={handleJoinGroup}
+      <Pressable
+        style={({ pressed }) => [s.btnPrimary, isLoading && s.btnDisabled, pressed && !isLoading && { opacity: 0.8 }]}
+        onPress={handleJoin}
         disabled={isLoading}
-      />
+      >
+        <Text style={s.btnPrimaryText}>{isLoading ? "Uniéndose..." : "Unirse al grupo"}</Text>
+      </Pressable>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    backgroundColor: colors.background,
-    padding: 24,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: "700",
-    color: colors.text,
-    textAlign: "center",
-  },
-  subtitle: {
-    marginTop: 8,
-    marginBottom: 20,
-    color: colors.muted,
-    textAlign: "center",
-  },
-  input: {
-    width: "100%",
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 12,
-    color: colors.text,
-  },
-  errorText: {
-    color: "#B42318",
-    marginBottom: 12,
-    textAlign: "center",
-  },
-  successText: {
-    color: "#0B6E4F",
-    marginBottom: 12,
-    textAlign: "center",
-  },
-});

@@ -12,6 +12,7 @@ import {
   View,
   Pressable,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { HomeStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
@@ -770,6 +771,7 @@ export function HomeScreen({ navigation }: Props) {
   }, [loadData]);
 
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={["top"]}>
     <ScrollView contentContainerStyle={s.container}>
       <Header
         groupName={activeGroupName}
@@ -803,5 +805,6 @@ export function HomeScreen({ navigation }: Props) {
 
       {error ? <Text style={s.errorText}>{error}</Text> : null}
     </ScrollView>
+    </SafeAreaView>
   );
 }
