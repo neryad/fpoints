@@ -1,7 +1,10 @@
-import React, { useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -17,199 +20,185 @@ type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
 function makeStyles(t: ReturnType<typeof useTheme>) {
   const { colors, spacing, fontSize, fontWeight, lineHeight, radius, layout } = t;
   return StyleSheet.create({
-    container: {
-      flex: 1,
+    flex: { flex: 1, backgroundColor: colors.background },
+    scrollContent: {
+      flexGrow: 1,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: colors.background,
-      padding: spacing[6],
+      padding: spacing[6],             // 24
     },
     header: {
       width: "100%",
-      marginBottom: spacing[6],
+      marginBottom: spacing[6],        // 24
+    },
+    appName: {
+      fontSize: 34,
+      fontWeight: fontWeight.bold,     // "700"
+      color: colors.primary,
+      marginBottom: spacing[1],        // 4
+    },
+    subtitle: {
+      fontSize: fontSize.sm,           // 14
+      color: colors.muted,
+      lineHeight: lineHeight.sm,
     },
     form: {
       width: "100%",
-      gap: spacing[3],
+      gap: spacing[3],                 // 12
     },
-    title: {
-      fontSize: fontSize.xl,
-      fontWeight: fontWeight.semibold,
-      lineHeight: lineHeight.lg,
-      color: colors.primary,
-    },
-    subtitle: {
-      marginTop: spacing[2],
-      color: colors.muted,
-      fontSize: fontSize.sm,
-      lineHeight: lineHeight.sm,
-    },
+    fieldWrap: { width: "100%" },
     input: {
       width: "100%",
       backgroundColor: colors.surface,
-      borderWidth: 1,
+      borderWidth: 0.5,
       borderColor: colors.border,
-      borderRadius: radius.md,
-      paddingHorizontal: spacing[4],
-      paddingVertical: spacing[3],
+      borderRadius: radius.md,         // 12
+      paddingHorizontal: spacing[4],   // 16
+      paddingVertical: spacing[3],     // 12
       color: colors.text,
-      fontSize: fontSize.base,
+      fontSize: fontSize.base,         // 16
     },
     inputInvalid: {
       borderColor: colors.error,
+      borderWidth: 1,
     },
     fieldError: {
       color: colors.error,
-      fontSize: fontSize.xs,
-      lineHeight: lineHeight.xs,
-      marginTop: -spacing[2],
+      fontSize: fontSize.xs,           // 12
+      marginTop: spacing[1],           // 4
     },
     errorText: {
       color: colors.error,
-      fontSize: fontSize.sm,
-      lineHeight: lineHeight.sm,
+      fontSize: fontSize.sm,           // 14
     },
     btnPrimary: {
       width: "100%",
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: colors.primary,
-      borderRadius: radius.md,
-      paddingVertical: spacing[3],
-      marginTop: spacing[2],
-      minHeight: layout.minTouchTarget,
+      borderRadius: radius.md,         // 12
+      paddingVertical: spacing[3],     // 12
+      marginTop: spacing[2],           // 8
+      minHeight: layout.minTouchTarget, // 48
     },
     btnPrimaryText: {
-      color: colors.textInverse,
-      fontSize: fontSize.base,
-      fontWeight: fontWeight.medium,
+      color: colors.primaryText,
+      fontSize: fontSize.base,         // 16
+      fontWeight: fontWeight.semibold, // "600"
     },
-    btnDisabled: { opacity: 0.6 },
-    btnPressed: { opacity: 0.85 },
+    btnDisabled: { opacity: 0.5 },
     btnSecondary: {
       width: "100%",
       alignItems: "center",
-      paddingVertical: spacing[3],
-      marginTop: spacing[2],
+      paddingVertical: spacing[3],     // 12
+      marginTop: spacing[1],           // 4
     },
     btnSecondaryText: {
       color: colors.primary,
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.medium,
+      fontSize: fontSize.sm,           // 14
+      fontWeight: fontWeight.medium,   // "500"
     },
-    spacer: { height: spacing[3] },
   });
 }
 
 export function LoginScreen({ navigation }: Props) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [fieldErrors, setFieldErrors] = useState<{
-    email?: string;
-    password?: string;
-  }>({});
   const theme = useTheme();
-  const styles = makeStyles(theme);
+  const s = makeStyles(theme);
   const { isLoading, error, signIn } = useAuth();
 
-  function validate(): boolean {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+
+  const validate = useCallback((): boolean => {
     const errs: { email?: string; password?: string } = {};
-    const trimmedEmail = email.trim();
-    if (!trimmedEmail) {
-      errs.email = "El email es obligatorio.";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      errs.email = "Ingresa un email válido.";
-    }
-    if (!password) {
-      errs.password = "La contraseña es obligatoria.";
-    } else if (password.length < 6) {
-      errs.password = "Mínimo 6 caracteres.";
-    }
+    const trimmed = email.trim();
+    if (!trimmed) errs.email = "El email es obligatorio.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) errs.email = "Ingresa un email válido.";
+    if (!password) errs.password = "La contraseña es obligatoria.";
+    else if (password.length < 6) errs.password = "Mínimo 6 caracteres.";
     setFieldErrors(errs);
     return Object.keys(errs).length === 0;
-  }
+  }, [email, password]);
 
-  async function handleLogin() {
+  const handleLogin = useCallback(async () => {
     if (!validate()) return;
-    await signIn(email, password);
-  }
+    await signIn(email.trim(), password);
+  }, [validate, signIn, email, password]);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>fpoints</Text>
-        <Text style={styles.subtitle}>Inicia sesión para continuar</Text>
-      </View>
-
-      <View style={styles.form}>
-        <View>
-          <TextInput
-            style={[
-              styles.input,
-              fieldErrors.email ? styles.inputInvalid : null,
-            ]}
-            placeholder="Email"
-            placeholderTextColor={theme.colors.muted}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            value={email}
-            onChangeText={(t) => {
-              setEmail(t);
-              setFieldErrors((e) => ({ ...e, email: undefined }));
-            }}
-          />
-          {fieldErrors.email ? (
-            <Text style={styles.fieldError}>{fieldErrors.email}</Text>
-          ) : null}
+    <KeyboardAvoidingView
+      style={s.flex}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView
+        contentContainerStyle={s.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Header */}
+        <View style={s.header}>
+          <Text style={s.appName}>fpoints</Text>
+          <Text style={s.subtitle}>Inicia sesión para continuar</Text>
         </View>
 
-        <View>
-          <TextInput
-            style={[
-              styles.input,
-              fieldErrors.password ? styles.inputInvalid : null,
+        {/* Form */}
+        <View style={s.form}>
+          <View style={s.fieldWrap}>
+            <TextInput
+              style={[s.input, fieldErrors.email && s.inputInvalid]}
+              placeholder="Email"
+              placeholderTextColor={theme.colors.muted}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              textContentType="emailAddress"
+              autoCorrect={false}
+              value={email}
+              onChangeText={(t) => { setEmail(t); setFieldErrors((e) => ({ ...e, email: undefined })); }}
+              editable={!isLoading}
+            />
+            {fieldErrors.email ? <Text style={s.fieldError}>{fieldErrors.email}</Text> : null}
+          </View>
+
+          <View style={s.fieldWrap}>
+            <TextInput
+              style={[s.input, fieldErrors.password && s.inputInvalid]}
+              placeholder="Contraseña"
+              placeholderTextColor={theme.colors.muted}
+              secureTextEntry
+              textContentType="password"
+              value={password}
+              onChangeText={(t) => { setPassword(t); setFieldErrors((e) => ({ ...e, password: undefined })); }}
+              onSubmitEditing={handleLogin}
+              editable={!isLoading}
+            />
+            {fieldErrors.password ? <Text style={s.fieldError}>{fieldErrors.password}</Text> : null}
+          </View>
+
+          {error ? <Text style={s.errorText}>{error}</Text> : null}
+
+          <Pressable
+            style={({ pressed }) => [
+              s.btnPrimary,
+              isLoading && s.btnDisabled,
+              pressed && !isLoading && { opacity: 0.8 },
             ]}
-            placeholder="Password"
-            placeholderTextColor={theme.colors.muted}
-            secureTextEntry
-            value={password}
-            onChangeText={(t) => {
-              setPassword(t);
-              setFieldErrors((e) => ({ ...e, password: undefined }));
-            }}
-          />
-          {fieldErrors.password ? (
-            <Text style={styles.fieldError}>{fieldErrors.password}</Text>
-          ) : null}
+            onPress={handleLogin}
+            disabled={isLoading}
+          >
+            {isLoading
+              ? <ActivityIndicator color={theme.colors.primaryText} />
+              : <Text style={s.btnPrimaryText}>Ingresar</Text>
+            }
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [s.btnSecondary, pressed && { opacity: 0.7 }]}
+            onPress={() => navigation.navigate("Register")}
+          >
+            <Text style={s.btnSecondaryText}>¿No tienes cuenta? Regístrate</Text>
+          </Pressable>
         </View>
-
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-        <Pressable
-          style={({ pressed }) => [
-            styles.btnPrimary,
-            isLoading && styles.btnDisabled,
-            pressed && !isLoading && styles.btnPressed,
-          ]}
-          onPress={handleLogin}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator color={theme.colors.textInverse} />
-          ) : (
-            <Text style={styles.btnPrimaryText}>Ingresar</Text>
-          )}
-        </Pressable>
-
-        <Pressable
-          style={styles.btnSecondary}
-          onPress={() => navigation.navigate("Register")}
-        >
-          <Text style={styles.btnSecondaryText}>Crear cuenta</Text>
-        </Pressable>
-      </View>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
-
-

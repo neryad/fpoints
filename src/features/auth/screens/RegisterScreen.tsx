@@ -1,170 +1,226 @@
-import React, { useState } from "react";
-import { Button, StyleSheet, Text, TextInput, View } from "react-native";
+import React, { useCallback, useState } from "react";
+import {
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
-import { useTheme } from "../../../core/theme/ThemeProvider";
 import { AuthStackParamList } from "../../../app/navigation/types";
+import { useTheme } from "../../../core/theme/ThemeProvider";
 import { useAuth } from "../hooks/useAuth";
 
 type Props = NativeStackScreenProps<AuthStackParamList, "Register">;
 
-export function RegisterScreen({ navigation }: Props) {
-  const theme = useTheme();
-  const styles = makeStyles(theme);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-  const [fieldErrors, setFieldErrors] = useState<{
-    email?: string;
-    password?: string;
-  }>({});
-  const { isLoading, error, signUp } = useAuth();
-
-  function validate(): boolean {
-    const errs: { email?: string; password?: string } = {};
-    const trimmedEmail = email.trim();
-    if (!trimmedEmail) {
-      errs.email = "El email es obligatorio.";
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      errs.email = "Ingresa un email válido.";
-    }
-    if (!password) {
-      errs.password = "La contraseña es obligatoria.";
-    } else if (password.length < 6) {
-      errs.password = "Mínimo 6 caracteres.";
-    }
-    setFieldErrors(errs);
-    return Object.keys(errs).length === 0;
-  }
-
-  async function handleRegister() {
-    setSuccessMessage("");
-    if (!validate()) return;
-    const success = await signUp(email, password);
-    if (success) {
-      setSuccessMessage(
-        "Cuenta creada correctamente. Ahora puedes iniciar sesión.",
-      );
-    }
-  }
-
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Crear cuenta</Text>
-      <Text style={styles.subtitle}>Regístrate para empezar</Text>
-
-      <TextInput
-        style={[styles.input, fieldErrors.email ? styles.inputInvalid : null]}
-        placeholder="Email"
-        autoCapitalize="none"
-        keyboardType="email-address"
-        textContentType="emailAddress"
-        editable={!isLoading}
-        value={email}
-        onChangeText={(t) => {
-          setEmail(t);
-          setFieldErrors((e) => ({ ...e, email: undefined }));
-        }}
-      />
-      {fieldErrors.email ? (
-        <Text style={styles.fieldError}>{fieldErrors.email}</Text>
-      ) : null}
-
-      <TextInput
-        style={[
-          styles.input,
-          fieldErrors.password ? styles.inputInvalid : null,
-        ]}
-        placeholder="Password"
-        secureTextEntry
-        textContentType="password"
-        editable={!isLoading}
-        value={password}
-        onChangeText={(t) => {
-          setPassword(t);
-          setFieldErrors((e) => ({ ...e, password: undefined }));
-        }}
-        onSubmitEditing={handleRegister}
-      />
-      {fieldErrors.password ? (
-        <Text style={styles.fieldError}>{fieldErrors.password}</Text>
-      ) : null}
-
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
-      {successMessage ? (
-        <Text style={styles.successText}>{successMessage}</Text>
-      ) : null}
-
-      <Button
-        title={isLoading ? "Creando cuenta..." : "Register"}
-        onPress={handleRegister}
-        disabled={isLoading}
-      />
-
-      <View style={styles.spacer} />
-
-      <Button title="Back to Login" onPress={() => navigation.goBack()} />
-    </View>
-  );
-}
-
 function makeStyles(t: ReturnType<typeof useTheme>) {
-  const { colors, spacing, fontSize, fontWeight, lineHeight, radius } = t;
+  const { colors, spacing, fontSize, fontWeight, lineHeight, radius, layout } = t;
   return StyleSheet.create({
-    container: {
-      flex: 1,
+    flex: { flex: 1, backgroundColor: colors.background },
+    scrollContent: {
+      flexGrow: 1,
       alignItems: "center",
       justifyContent: "center",
-      backgroundColor: colors.background,
-      padding: spacing[6],
+      padding: spacing[6],             // 24
+    },
+    header: {
+      width: "100%",
+      marginBottom: spacing[6],        // 24
     },
     title: {
-      fontSize: fontSize.xl,
-      fontWeight: fontWeight.bold,
-      lineHeight: lineHeight.lg,
+      fontSize: fontSize.xl,           // 22
+      fontWeight: fontWeight.bold,     // "700"
       color: colors.textStrong,
+      marginBottom: spacing[1],        // 4
     },
     subtitle: {
-      marginTop: spacing[2],
-      marginBottom: spacing[5],
+      fontSize: fontSize.sm,           // 14
       color: colors.muted,
-      textAlign: "center",
-      fontSize: fontSize.sm,
       lineHeight: lineHeight.sm,
     },
+    form: {
+      width: "100%",
+      gap: spacing[3],                 // 12
+    },
+    fieldWrap: { width: "100%" },
     input: {
       width: "100%",
       backgroundColor: colors.surface,
-      borderWidth: 1,
+      borderWidth: 0.5,
       borderColor: colors.border,
-      borderRadius: radius.md,
-      paddingHorizontal: spacing[3],
-      paddingVertical: spacing[3],
-      marginBottom: spacing[3],
+      borderRadius: radius.md,         // 12
+      paddingHorizontal: spacing[4],   // 16
+      paddingVertical: spacing[3],     // 12
       color: colors.text,
+      fontSize: fontSize.base,         // 16
+    },
+    inputInvalid: {
+      borderColor: colors.error,
+      borderWidth: 1,
+    },
+    fieldError: {
+      color: colors.error,
+      fontSize: fontSize.xs,           // 12
+      marginTop: spacing[1],           // 4
     },
     errorText: {
-      width: "100%",
       color: colors.error,
-      marginBottom: spacing[3],
-      fontSize: fontSize.sm,
-      lineHeight: lineHeight.sm,
+      fontSize: fontSize.sm,           // 14
+    },
+    successCard: {
+      width: "100%",
+      backgroundColor: colors.successSoft,
+      borderRadius: radius.md,         // 12
+      padding: spacing[3],             // 12
     },
     successText: {
-      width: "100%",
       color: colors.success,
-      marginBottom: spacing[3],
-      fontSize: fontSize.sm,
+      fontSize: fontSize.sm,           // 14
       lineHeight: lineHeight.sm,
     },
-    inputInvalid: { borderColor: colors.error },
-    fieldError: {
+    btnPrimary: {
       width: "100%",
-      color: colors.error,
-      fontSize: fontSize.xs,
-      lineHeight: lineHeight.xs,
-      marginTop: -spacing[2],
-      marginBottom: spacing[2],
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.primary,
+      borderRadius: radius.md,         // 12
+      paddingVertical: spacing[3],     // 12
+      marginTop: spacing[2],           // 8
+      minHeight: layout.minTouchTarget, // 48
     },
-    spacer: { height: spacing[3] },
+    btnPrimaryText: {
+      color: colors.primaryText,
+      fontSize: fontSize.base,         // 16
+      fontWeight: fontWeight.semibold, // "600"
+    },
+    btnDisabled: { opacity: 0.5 },
+    btnSecondary: {
+      width: "100%",
+      alignItems: "center",
+      paddingVertical: spacing[3],     // 12
+      marginTop: spacing[1],           // 4
+    },
+    btnSecondaryText: {
+      color: colors.primary,
+      fontSize: fontSize.sm,           // 14
+      fontWeight: fontWeight.medium,   // "500"
+    },
   });
+}
+
+export function RegisterScreen({ navigation }: Props) {
+  const theme = useTheme();
+  const s = makeStyles(theme);
+  const { isLoading, error, signUp } = useAuth();
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+
+  const validate = useCallback((): boolean => {
+    const errs: { email?: string; password?: string } = {};
+    const trimmed = email.trim();
+    if (!trimmed) errs.email = "El email es obligatorio.";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) errs.email = "Ingresa un email válido.";
+    if (!password) errs.password = "La contraseña es obligatoria.";
+    else if (password.length < 6) errs.password = "Mínimo 6 caracteres.";
+    setFieldErrors(errs);
+    return Object.keys(errs).length === 0;
+  }, [email, password]);
+
+  const handleRegister = useCallback(async () => {
+    setSuccessMessage("");
+    if (!validate()) return;
+    const success = await signUp(email.trim(), password);
+    if (success) {
+      setSuccessMessage("Cuenta creada. Ahora puedes iniciar sesión.");
+    }
+  }, [validate, signUp, email, password]);
+
+  return (
+    <KeyboardAvoidingView
+      style={s.flex}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView
+        contentContainerStyle={s.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Header */}
+        <View style={s.header}>
+          <Text style={s.title}>Crear cuenta</Text>
+          <Text style={s.subtitle}>Regístrate para empezar</Text>
+        </View>
+
+        {/* Form */}
+        <View style={s.form}>
+          <View style={s.fieldWrap}>
+            <TextInput
+              style={[s.input, fieldErrors.email && s.inputInvalid]}
+              placeholder="Email"
+              placeholderTextColor={theme.colors.muted}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              textContentType="emailAddress"
+              autoCorrect={false}
+              value={email}
+              onChangeText={(t) => { setEmail(t); setFieldErrors((e) => ({ ...e, email: undefined })); }}
+              editable={!isLoading}
+            />
+            {fieldErrors.email ? <Text style={s.fieldError}>{fieldErrors.email}</Text> : null}
+          </View>
+
+          <View style={s.fieldWrap}>
+            <TextInput
+              style={[s.input, fieldErrors.password && s.inputInvalid]}
+              placeholder="Contraseña"
+              placeholderTextColor={theme.colors.muted}
+              secureTextEntry
+              textContentType="newPassword"
+              value={password}
+              onChangeText={(t) => { setPassword(t); setFieldErrors((e) => ({ ...e, password: undefined })); }}
+              onSubmitEditing={handleRegister}
+              editable={!isLoading}
+            />
+            {fieldErrors.password ? <Text style={s.fieldError}>{fieldErrors.password}</Text> : null}
+          </View>
+
+          {error ? <Text style={s.errorText}>{error}</Text> : null}
+
+          {successMessage ? (
+            <View style={s.successCard}>
+              <Text style={s.successText}>{successMessage}</Text>
+            </View>
+          ) : null}
+
+          <Pressable
+            style={({ pressed }) => [
+              s.btnPrimary,
+              isLoading && s.btnDisabled,
+              pressed && !isLoading && { opacity: 0.8 },
+            ]}
+            onPress={handleRegister}
+            disabled={isLoading}
+          >
+            {isLoading
+              ? <ActivityIndicator color={theme.colors.primaryText} />
+              : <Text style={s.btnPrimaryText}>Crear cuenta</Text>
+            }
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [s.btnSecondary, pressed && { opacity: 0.7 }]}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={s.btnSecondaryText}>¿Ya tienes cuenta? Inicia sesión</Text>
+          </Pressable>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
+  );
 }
