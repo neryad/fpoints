@@ -5,8 +5,12 @@ import React, {
   useMemo,
   useState,
 } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "../../core/supabase/client";
 import { ensureCurrentUserRow } from "../../features/auth/services/auth.service";
+
+const STORAGE_KEY_GROUP_ID = "active_group_id";
+const STORAGE_KEY_GROUP_NAME = "active_group_name";
 
 type AppSessionContextValue = {
   isAuthenticated: boolean;
@@ -46,11 +50,20 @@ export function AppSessionProvider({ children }: AppSessionProviderProps) {
 
     (async () => {
       try {
-        const { data } = await supabase.auth.getSession();
+        const [{ data }, savedGroupId, savedGroupName] = await Promise.all([
+          supabase.auth.getSession(),
+          AsyncStorage.getItem(STORAGE_KEY_GROUP_ID),
+          AsyncStorage.getItem(STORAGE_KEY_GROUP_NAME),
+        ]);
         if (!mounted) return;
         setIsAuthenticated(Boolean(data.session));
         if (data.session) {
           await ensureCurrentUserRow();
+          if (savedGroupId && savedGroupName) {
+            setActiveGroupId(savedGroupId);
+            setActiveGroupName(savedGroupName);
+            setHasActiveGroup(true);
+          }
         }
       } catch {
         if (!mounted) return;
@@ -82,6 +95,7 @@ export function AppSessionProvider({ children }: AppSessionProviderProps) {
           setHasActiveGroup(false);
           setActiveGroupId(null);
           setActiveGroupName(null);
+          AsyncStorage.multiRemove([STORAGE_KEY_GROUP_ID, STORAGE_KEY_GROUP_NAME]).catch(() => {});
         }
       },
     );
@@ -105,16 +119,22 @@ export function AppSessionProvider({ children }: AppSessionProviderProps) {
         setHasActiveGroup(false);
         setActiveGroupId(null);
         setActiveGroupName(null);
+        AsyncStorage.multiRemove([STORAGE_KEY_GROUP_ID, STORAGE_KEY_GROUP_NAME]).catch(() => {});
       },
       selectGroup: (groupId: string, groupName: string) => {
         setActiveGroupId(groupId);
         setActiveGroupName(groupName);
         setHasActiveGroup(true);
+        AsyncStorage.multiSet([
+          [STORAGE_KEY_GROUP_ID, groupId],
+          [STORAGE_KEY_GROUP_NAME, groupName],
+        ]).catch(() => {});
       },
       clearGroup: () => {
         setHasActiveGroup(false);
         setActiveGroupId(null);
         setActiveGroupName(null);
+        AsyncStorage.multiRemove([STORAGE_KEY_GROUP_ID, STORAGE_KEY_GROUP_NAME]).catch(() => {});
       },
     }),
     [
