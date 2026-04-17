@@ -206,7 +206,7 @@ function makeStyles(colors: C, spacing: S, radius: R, fontSize: F, fontWeight: W
     },
     card: {
       backgroundColor: colors.surface,
-      borderWidth: 1,
+      borderWidth: 0.5,
       borderColor: colors.border,
       borderRadius: radius.lg,
       padding: spacing[4] - 2,

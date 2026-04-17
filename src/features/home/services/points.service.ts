@@ -1,4 +1,5 @@
-import { supabase } from "../../../core/supabase/client";
+import { ensureSupabase } from "../../../core/supabase/client";
+import { getCurrentUserId } from "../../../core/supabase/auth";
 
 type PointTransactionRow = {
   user_id: string;
@@ -41,25 +42,6 @@ export type PointHistoryPage = {
 
 const DEFAULT_POINT_HISTORY_LIMIT = 120;
 const MAX_POINT_HISTORY_LIMIT = 300;
-
-function ensureSupabase() {
-  if (!supabase) {
-    throw new Error(
-      "Supabase no esta configurado. Revisa EXPO_PUBLIC_SUPABASE_URL y EXPO_PUBLIC_SUPABASE_ANON_KEY.",
-    );
-  }
-  return supabase;
-}
-
-async function getCurrentUserId() {
-  const client = ensureSupabase();
-  const { data, error } = await client.auth.getUser();
-
-  if (error) throw error;
-  if (!data.user) throw new Error("No hay usuario autenticado.");
-
-  return data.user.id;
-}
 
 function aggregatePoints(rows: PointTransactionRow[]): GroupPointsEntry[] {
   const totalsByUser = new Map<string, number>();

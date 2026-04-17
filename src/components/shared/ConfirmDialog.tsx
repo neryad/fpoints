@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
   },
   card: {
     width: "100%",
-    borderWidth: 1,
+    borderWidth: 0.5,
     padding: 20,
   },
   title: {},
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   },
   btn: {
     flex: 1,
-    borderWidth: 1,
+    borderWidth: 0.5,
     alignItems: "center",
   },
   btnConfirm: {

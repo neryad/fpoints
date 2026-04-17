@@ -5,5 +5,5 @@
     "baseUrl": ".",
     "types": []
   },
-  "include": ["src", "App.js", "nativewind-env.d.ts"]
+  "include": ["src", "App.js"]
 }

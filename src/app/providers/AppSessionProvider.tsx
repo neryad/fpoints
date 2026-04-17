@@ -63,7 +63,15 @@ export function AppSessionProvider({ children }: AppSessionProviderProps) {
     })();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
+        if (event === 'TOKEN_REFRESH_FAILED') {
+          setIsAuthenticated(false);
+          setHasActiveGroup(false);
+          setActiveGroupId(null);
+          setActiveGroupName(null);
+          supabase.auth.signOut().catch(() => {});
+          return;
+        }
         setIsAuthenticated(Boolean(session));
         if (session) {
           ensureCurrentUserRow().catch(() => {

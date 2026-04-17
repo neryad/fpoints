@@ -112,6 +112,8 @@ function makeStyles(theme: ReturnType<typeof useTheme>) {
       letterSpacing: 0.8,
       textTransform: "uppercase",
       marginBottom: spacing[1],        // 4
+      paddingHorizontal: 44,
+      maxWidth: "100%",
     },
     heroPoints: {
       fontSize: 52,
@@ -463,7 +465,7 @@ function Header({
 
   return (
     <View style={s.header}>
-      {groupName ? <Text style={s.groupLabel}>{groupName}</Text> : null}
+      {groupName ? <Text style={s.groupLabel} numberOfLines={1}>{groupName}</Text> : null}
       <Text style={s.heroPoints}>{isLoading ? "--" : points}</Text>
       {!isLoading && weeklyEarned > 0 && (
         <View style={s.deltaPill}>

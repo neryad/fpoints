@@ -1,4 +1,5 @@
-import { supabase } from "../../../core/supabase/client";
+import { ensureSupabase } from "../../../core/supabase/client";
+import { getAuthUser } from "../../../core/supabase/auth";
 
 export type UserProfile = {
   id: string;
@@ -6,25 +7,6 @@ export type UserProfile = {
   name: string | null;
   avatarUrl: string | null;
 };
-
-function ensureSupabase() {
-  if (!supabase) {
-    throw new Error(
-      "Supabase no esta configurado. Revisa EXPO_PUBLIC_SUPABASE_URL y EXPO_PUBLIC_SUPABASE_ANON_KEY.",
-    );
-  }
-  return supabase;
-}
-
-async function getAuthUser() {
-  const client = ensureSupabase();
-  const { data, error } = await client.auth.getUser();
-
-  if (error) throw error;
-  if (!data.user) throw new Error("No hay usuario autenticado.");
-
-  return data.user;
-}
 
 function mapProfileRow(row: Record<string, unknown>): UserProfile {
   return {

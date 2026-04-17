@@ -1,4 +1,3 @@
-
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
@@ -12,6 +11,7 @@ import {
   unstable_batchedUpdates,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { ProfileStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
@@ -657,6 +657,7 @@ export function ProfileScreen({ navigation }: Props) {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={["top"]}>
     <ScrollView contentContainerStyle={s.container}>
 
       {/* ── Hero ── */}
@@ -866,5 +867,6 @@ export function ProfileScreen({ navigation }: Props) {
       </View>
 
     </ScrollView>
+    </SafeAreaView>
   );
 }

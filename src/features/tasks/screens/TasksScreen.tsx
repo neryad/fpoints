@@ -7,6 +7,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { TasksStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
@@ -153,7 +154,7 @@ export function TasksScreen({ navigation }: Props) {
   }, [navigation, reload]);
 
   return (
-    <View style={s.container}>
+    <SafeAreaView style={s.container} edges={["top"]}>
       {/* Header */}
       <View style={s.header}>
         <Pressable
@@ -213,6 +214,6 @@ export function TasksScreen({ navigation }: Props) {
           </Pressable>
         )}
       />
-    </View>
+    </SafeAreaView>
   );
 }

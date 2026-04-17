@@ -9,6 +9,7 @@ import {
   type ViewStyle,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RewardsStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
@@ -307,7 +308,7 @@ export function RewardsScreen({ navigation }: Props) {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <View style={s.container}>
+    <SafeAreaView style={s.container} edges={["top"]}>
       <ConfirmDialog
         visible={dialog !== null}
         title={dialog?.title ?? ""}
@@ -432,6 +433,6 @@ export function RewardsScreen({ navigation }: Props) {
           }}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }

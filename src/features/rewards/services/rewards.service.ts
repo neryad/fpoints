@@ -1,4 +1,5 @@
-import { supabase } from "../../../core/supabase/client";
+import { ensureSupabase } from "../../../core/supabase/client";
+import { getCurrentUserId } from "../../../core/supabase/auth";
 import { getMyPointsBalance } from "../../home/services/points.service";
 import { getMyRoleInGroup } from "../../tasks/services/tasks.service";
 import type {
@@ -8,23 +9,6 @@ import type {
   RewardRedemptionStatus,
   UpdateRewardInput,
 } from "../types";
-
-function ensureSupabase() {
-  if (!supabase) {
-    throw new Error(
-      "Supabase no esta configurado. Revisa EXPO_PUBLIC_SUPABASE_URL y EXPO_PUBLIC_SUPABASE_ANON_KEY.",
-    );
-  }
-  return supabase;
-}
-
-async function getCurrentUserId() {
-  const client = ensureSupabase();
-  const { data, error } = await client.auth.getUser();
-  if (error) throw error;
-  if (!data.user) throw new Error("No hay usuario autenticado.");
-  return data.user.id;
-}
 
 function canManageRole(role: string | null) {
   return role === "owner" || role === "sub_owner";

@@ -43,7 +43,7 @@ function makeStyles(theme: ReturnType<typeof useTheme>) {
     },
     inputInvalid: {
       borderColor: colors.error,
-      borderWidth: 1,
+      borderWidth: 0.5,
     },
     inputMultiline: {
       height: 104,

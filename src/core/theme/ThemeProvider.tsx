@@ -26,12 +26,10 @@ export const useTheme = () => useContext(ThemeContext);
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemScheme = useColorScheme();
   const [override, setOverride] = useState<ThemeOverride>(null);
-  const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((val) => {
       if (val === "light" || val === "dark") setOverride(val);
-      setLoaded(true);
     });
   }, []);
 
@@ -47,8 +45,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       AsyncStorage.setItem(STORAGE_KEY, val);
     }
   };
-
-  if (!loaded) return null;
 
   return (
     <ThemeContext.Provider

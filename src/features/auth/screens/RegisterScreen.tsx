@@ -60,7 +60,7 @@ function makeStyles(t: ReturnType<typeof useTheme>) {
     },
     inputInvalid: {
       borderColor: colors.error,
-      borderWidth: 1,
+      borderWidth: 0.5,
     },
     fieldError: {
       color: colors.error,
@@ -148,6 +148,7 @@ export function RegisterScreen({ navigation }: Props) {
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
+        style={s.flex}
         contentContainerStyle={s.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
