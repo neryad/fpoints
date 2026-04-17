@@ -2,8 +2,9 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -396,7 +397,10 @@ export function ManageRewardsScreen({ navigation }: Props) {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <View style={s.container}>
+    <KeyboardAvoidingView
+      style={s.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
       <FlatList
         data={rewards}
         keyExtractor={(item) => item.id}
@@ -566,6 +570,6 @@ export function ManageRewardsScreen({ navigation }: Props) {
           );
         }}
       />
-    </View>
+    </KeyboardAvoidingView>
   );
 }

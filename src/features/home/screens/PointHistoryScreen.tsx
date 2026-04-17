@@ -209,7 +209,7 @@ function makeStyles(colors: C, spacing: S, radius: R, fontSize: F, fontWeight: W
       borderWidth: 0.5,
       borderColor: colors.border,
       borderRadius: radius.lg,
-      padding: spacing[4] - 2,
+      padding: spacing[3],
       marginBottom: spacing[3],
     },
     row: {
@@ -250,7 +250,7 @@ function makeStyles(colors: C, spacing: S, radius: R, fontSize: F, fontWeight: W
     },
     loadingMore: {
       marginTop: spacing[2],
-      marginBottom: spacing[4] - 2,
+      marginBottom: spacing[3],
     },
     errorText: {
       textAlign: "center",

@@ -112,7 +112,7 @@ function makeStyles(theme: ReturnType<typeof useTheme>) {
       letterSpacing: 0.8,
       textTransform: "uppercase",
       marginBottom: spacing[1],        // 4
-      paddingHorizontal: 44,
+      paddingHorizontal: spacing[9],
       maxWidth: "100%",
     },
     heroPoints: {

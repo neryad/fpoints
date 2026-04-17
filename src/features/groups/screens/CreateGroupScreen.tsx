@@ -1,10 +1,11 @@
 import React, { useCallback, useState } from "react";
 import {
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
-  View,
 } from "react-native";
 import { useTheme } from "../../../core/theme/ThemeProvider";
 import { createGroup } from "../services/groups.service";
@@ -100,7 +101,10 @@ export function CreateGroupScreen() {
   }, [name, selectGroup]);
 
   return (
-    <View style={s.container}>
+    <KeyboardAvoidingView
+      style={s.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
       <Text style={s.title}>Crear grupo</Text>
       <Text style={s.subtitle}>Crea un nuevo grupo para comenzar.</Text>
 
@@ -124,6 +128,6 @@ export function CreateGroupScreen() {
       >
         <Text style={s.btnPrimaryText}>{isLoading ? "Creando..." : "Crear grupo"}</Text>
       </Pressable>
-    </View>
+    </KeyboardAvoidingView>
   );
 }

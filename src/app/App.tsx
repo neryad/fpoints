@@ -7,9 +7,9 @@ import { RootNavigator } from "./navigation/RootNavigator";
 import { ThemeProvider, useTheme } from "src/core/theme/ThemeProvider";
 
 function AppContent() {
-  const { isDark } = useTheme();
+  const { isDark, colors } = useTheme();
   return (
-    <SafeAreaProvider>
+    <SafeAreaProvider style={{ backgroundColor: colors.background }}>
       <StatusBar style={isDark ? "light" : "dark"} />
       <AppSessionProvider>
         <NavigationContainer>

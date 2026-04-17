@@ -1,4 +1,4 @@
-const spacingScale = {
+export const spacing = {
   1: 4,
   2: 8,
   3: 12,
@@ -12,15 +12,6 @@ const spacingScale = {
   11: 64,
   12: 72,
   13: 80,
-} as const;
-
-export const spacing = {
-  ...spacingScale,
-  // Backward-compatible aliases used by older screens.
-  14: spacingScale[10],
-  16: spacingScale[11],
-  18: spacingScale[12],
-  20: spacingScale[13],
 } as const;
 
 export type Spacing = typeof spacing;

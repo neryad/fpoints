@@ -1,10 +1,11 @@
 import React, { useCallback, useState } from "react";
 import {
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
-  View,
 } from "react-native";
 import { useTheme } from "../../../core/theme/ThemeProvider";
 import { joinGroupByCode } from "../services/groups.service";
@@ -101,7 +102,10 @@ export function JoinGroupScreen() {
   }, [inviteCode, selectGroup]);
 
   return (
-    <View style={s.container}>
+    <KeyboardAvoidingView
+      style={s.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
       <Text style={s.title}>Unirse a un grupo</Text>
       <Text style={s.subtitle}>Ingresa el código de invitación del grupo.</Text>
 
@@ -127,6 +131,6 @@ export function JoinGroupScreen() {
       >
         <Text style={s.btnPrimaryText}>{isLoading ? "Uniéndose..." : "Unirse al grupo"}</Text>
       </Pressable>
-    </View>
+    </KeyboardAvoidingView>
   );
 }

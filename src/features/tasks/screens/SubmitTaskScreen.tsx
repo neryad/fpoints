@@ -1,5 +1,7 @@
 import React, { useCallback, useState } from "react";
 import {
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -110,8 +112,15 @@ export function SubmitTaskScreen({ route, navigation }: Props) {
   }, [taskId, note, proofImageUrl, navigation]);
 
   return (
-    <View style={s.container}>
-      <ScrollView contentContainerStyle={s.scrollContent} keyboardShouldPersistTaps="handled">
+    <KeyboardAvoidingView
+      style={s.container}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={s.scrollContent}
+        keyboardShouldPersistTaps="handled"
+      >
 
         {/* Nota */}
         <View style={s.fieldWrap}>
@@ -157,6 +166,6 @@ export function SubmitTaskScreen({ route, navigation }: Props) {
         </Pressable>
 
       </ScrollView>
-    </View>
+    </KeyboardAvoidingView>
   );
 }

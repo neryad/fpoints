@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -247,7 +249,14 @@ export function GroupSettingsScreen({ navigation }: Props) {
   }
 
   return (
-    <ScrollView contentContainerStyle={s.scrollContent}>
+    <KeyboardAvoidingView
+      style={{ flex: 1, backgroundColor: theme.colors.background }}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
+    >
+    <ScrollView
+      style={{ flex: 1, backgroundColor: theme.colors.background }}
+      contentContainerStyle={s.scrollContent}
+    >
 
       {/* ── Nombre ── */}
       <View style={s.card}>
@@ -310,5 +319,6 @@ export function GroupSettingsScreen({ navigation }: Props) {
       </View>
 
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

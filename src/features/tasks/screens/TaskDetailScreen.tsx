@@ -366,7 +366,10 @@ export function TaskDetailScreen({ route, navigation }: Props) {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <ScrollView contentContainerStyle={s.scrollContent}>
+    <ScrollView
+      style={{ flex: 1, backgroundColor: theme.colors.background }}
+      contentContainerStyle={s.scrollContent}
+    >
       <ConfirmDialog
         visible={dialog !== null}
         title={dialog?.title ?? ""}

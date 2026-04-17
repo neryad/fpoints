@@ -230,7 +230,7 @@ export function MyRedemptionsScreen({ navigation }: Props) {
                 </View>
 
                 {/* Estado */}
-                <View style={[s.metaRow, { marginBottom: spacing[2] }]}>
+                <View style={[s.metaRow, { marginBottom: theme.spacing[2] }]}>
                   <Text style={s.metaLabel}>Estado</Text>
                   <View style={s.statusRow}>
                     <View
@@ -263,13 +263,3 @@ export function MyRedemptionsScreen({ navigation }: Props) {
     </View>
   );
 }
-
-// spacing helper usado inline
-const spacing = {
-  1: 4,
-  2: 8,
-  3: 12,
-  4: 16,
-  6: 24,
-  7: 32,
-} as const;

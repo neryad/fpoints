@@ -30,6 +30,7 @@ export const letterSpacing = {
   body: 0.25,
   negative: -0.25,
   wide: 0.5,
+  label: 0.8,
   decorative: 2.4,
 } as const;
 

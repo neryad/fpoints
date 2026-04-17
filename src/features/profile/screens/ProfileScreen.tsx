@@ -3,6 +3,8 @@ import {
   ActivityIndicator,
   Image,
   type ImageSourcePropType,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -658,6 +660,7 @@ export function ProfileScreen({ navigation }: Props) {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={["top"]}>
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
     <ScrollView contentContainerStyle={s.container}>
 
       {/* ── Hero ── */}
@@ -867,6 +870,7 @@ export function ProfileScreen({ navigation }: Props) {
       </View>
 
     </ScrollView>
+    </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
