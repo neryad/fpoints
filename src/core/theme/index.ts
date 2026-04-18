@@ -1,4 +1,4 @@
-import { colors, palette } from "./colors";
+import { colors, darkColors, palette } from "./colors";
 export type { Colors } from "./colors";
 
 import { spacing } from "./spacing";
@@ -25,7 +25,7 @@ export type { ZIndex } from "./zIndex";
 import { layout } from "./layout";
 export type { Layout } from "./layout";
 
-export { colors, palette };
+export { colors, darkColors, palette };
 export { spacing };
 export { radius };
 export { shadow };

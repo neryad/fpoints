@@ -5,13 +5,15 @@ import React, {
   useState,
 } from "react";
 import {
-  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
   View,
   Pressable,
 } from "react-native";
+import { Button } from "../../../components/ui/Button";
+import { ProgressBar } from "../../../components/ui/ProgressBar";
+import { SkeletonLoader } from "../../../components/ui/SkeletonLoader";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { HomeStackParamList } from "../../../app/navigation/types";
@@ -507,9 +509,7 @@ function WeeklyProgressCard({
     <View style={s.card}>
       <Text style={s.cardLabel}>Progreso semanal</Text>
       {isLoading ? (
-        <View style={s.loadingWrap}>
-          <ActivityIndicator size="small" color={theme.colors.primary} />
-        </View>
+        <SkeletonLoader variant="card" count={1} />
       ) : (
         <>
           <View style={s.progressHeader}>
@@ -519,9 +519,7 @@ function WeeklyProgressCard({
             </Text>
             <Text style={s.progressGoalLabel}>Meta semanal</Text>
           </View>
-          <View style={s.track}>
-            <View style={[s.trackFillSuccess, { width: `${percent}%` as any }]} />
-          </View>
+          <ProgressBar progress={earned / WEEKLY_XP_GOAL} variant="xp" />
           <Text style={s.progressSub}>
             {earned >= WEEKLY_XP_GOAL
               ? `¡Meta alcanzada! (${WEEKLY_XP_GOAL} XP)`
@@ -576,9 +574,7 @@ function StreakCard({
     <View style={s.card}>
       <Text style={s.cardLabel}>Racha diaria</Text>
       {isLoading ? (
-        <View style={s.loadingWrap}>
-          <ActivityIndicator size="small" color={theme.colors.primary} />
-        </View>
+        <SkeletonLoader variant="card" count={1} />
       ) : (
         <>
           <View style={s.streakMain}>
@@ -620,12 +616,12 @@ function StreakCard({
           )}
 
           {streak.isAtRisk && (
-            <Pressable
-              style={({ pressed }) => [s.streakCta, pressed && { opacity: 0.75 }]}
+            <Button
+              label="Completar tarea hoy"
               onPress={onGoToTasks}
-            >
-              <Text style={s.streakCtaText}>Completar tarea hoy</Text>
-            </Pressable>
+              variant="primary"
+              size="md"
+            />
           )}
         </>
       )}
@@ -650,9 +646,7 @@ function LevelCard({
     <View style={s.card}>
       <Text style={s.cardLabel}>Nivel</Text>
       {isLoading ? (
-        <View style={s.loadingWrap}>
-          <ActivityIndicator size="small" color={theme.colors.primary} />
-        </View>
+        <SkeletonLoader variant="card" count={1} />
       ) : (
         <>
           <View style={s.levelRow}>
@@ -664,11 +658,7 @@ function LevelCard({
               <Text style={s.levelXpLabel}>{xp.totalXp} XP acumulados</Text>
             </View>
           </View>
-          <View style={s.track}>
-            <View
-              style={[s.trackFillPrimary, { width: `${xp.progressPercent}%` as any }]}
-            />
-          </View>
+          <ProgressBar progress={xp.progressPercent / 100} variant="xp" />
           {xp.isMaxLevel ? (
             <Text style={s.levelMaxText}>Nivel máximo alcanzado 🎉</Text>
           ) : (
@@ -798,12 +788,12 @@ export function HomeScreen({ navigation }: Props) {
 
       <LevelCard isLoading={isLoading} xp={xp} />
 
-      <Pressable
-        style={({ pressed }) => [s.ctaBtn, pressed && { opacity: 0.75 }]}
+      <Button
+        label="Ver historial de puntos"
         onPress={handleGoToHistory}
-      >
-        <Text style={s.ctaBtnText}>Ver historial de puntos</Text>
-      </Pressable>
+        variant="secondary"
+        size="lg"
+      />
 
       {error ? <Text style={s.errorText}>{error}</Text> : null}
     </ScrollView>

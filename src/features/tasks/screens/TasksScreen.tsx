@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 import {
-  ActivityIndicator,
   FlatList,
   Pressable,
   StyleSheet,
@@ -12,139 +11,16 @@ import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { TasksStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
 import { useTheme } from "../../../core/theme/ThemeProvider";
+import { Button } from "../../../components/ui/Button";
+import { TaskCard } from "../../../components/ui/TaskCard";
+import { EmptyState } from "../../../components/ui/EmptyState";
+import { SkeletonLoader } from "../../../components/ui/SkeletonLoader";
 import { useTasks } from "../hooks/useTasks";
 
 type Props = NativeStackScreenProps<TasksStackParamList, "TasksList">;
 
-// ---------------------------------------------------------------------------
-// Styles
-// ---------------------------------------------------------------------------
-
-function makeStyles(theme: ReturnType<typeof useTheme>) {
-  const { colors, spacing, fontSize, fontWeight, radius } = theme;
-
-  return StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-      padding: spacing[4],             // 16
-    },
-
-    // ── Header ──────────────────────────────────────────────────────────────
-    header: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: spacing[4],        // 16
-    },
-    btnOutline: {
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.full,
-      paddingHorizontal: spacing[3],   // 12
-      paddingVertical: spacing[2],     // 8
-      backgroundColor: colors.surface,
-    },
-    btnOutlineText: {
-      fontSize: fontSize.xs,           // 12
-      fontWeight: fontWeight.semibold, // "600"
-      color: colors.text,
-    },
-    btnPrimary: {
-      backgroundColor: colors.primary,
-      borderRadius: radius.full,
-      paddingHorizontal: spacing[3],   // 12
-      paddingVertical: spacing[2],     // 8
-    },
-    btnPrimaryText: {
-      fontSize: fontSize.xs,           // 12
-      fontWeight: fontWeight.bold,     // "700"
-      color: colors.primaryText,
-    },
-
-    // ── States ───────────────────────────────────────────────────────────────
-    centered: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    infoText: {
-      textAlign: "center",
-      fontSize: fontSize.sm,           // 14
-      color: colors.muted,
-      marginTop: spacing[8],           // 40
-    },
-    errorText: {
-      textAlign: "center",
-      fontSize: fontSize.xs,           // 12
-      color: colors.error,
-      marginTop: spacing[4],           // 16
-    },
-
-    // ── List ─────────────────────────────────────────────────────────────────
-    list: {
-      flex: 1,
-    },
-    listContent: {
-      paddingBottom: spacing[7],       // 32
-    },
-
-    // ── Task card ────────────────────────────────────────────────────────────
-    taskCard: {
-      backgroundColor: colors.surface,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.lg,         // 16
-      padding: spacing[4],             // 16
-      marginBottom: spacing[3],        // 12
-    },
-    taskCardHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "flex-start",
-      gap: spacing[2],                 // 8
-      marginBottom: spacing[1],        // 4
-    },
-    taskTitle: {
-      flex: 1,
-      fontSize: fontSize.base,         // 16
-      fontWeight: fontWeight.semibold, // "600"
-      color: colors.textStrong,
-    },
-    pointsPill: {
-      backgroundColor: colors.rewardSoft,
-      borderRadius: radius.full,
-      paddingHorizontal: spacing[2],   // 8
-      paddingVertical: 3,
-    },
-    pointsPillText: {
-      fontSize: fontSize.xs,           // 12
-      fontWeight: fontWeight.bold,     // "700"
-      color: colors.reward,
-    },
-    proofBadge: {
-      alignSelf: "flex-start",
-      marginTop: spacing[2],           // 8
-      backgroundColor: colors.infoSoft,
-      borderRadius: radius.full,
-      paddingHorizontal: spacing[2],   // 8
-      paddingVertical: 2,
-    },
-    proofBadgeText: {
-      fontSize: fontSize.xxs,          // 11
-      fontWeight: fontWeight.medium,   // "500"
-      color: colors.info,
-    },
-  });
-}
-
-// ---------------------------------------------------------------------------
-// TasksScreen
-// ---------------------------------------------------------------------------
-
 export function TasksScreen({ navigation }: Props) {
-  const theme = useTheme();
-  const s = makeStyles(theme);
+  const { colors, spacing, radius, fontSize, fontWeight } = useTheme();
   const { activeGroupId } = useAppSession();
   const { tasks, isLoading, error, reload } = useTasks(activeGroupId);
 
@@ -154,66 +30,91 @@ export function TasksScreen({ navigation }: Props) {
   }, [navigation, reload]);
 
   return (
-    <SafeAreaView style={s.container} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, padding: spacing[4] }} edges={["top"]}>
       {/* Header */}
-      <View style={s.header}>
+      <View style={styles.header}>
         <Pressable
-          style={({ pressed }) => [s.btnOutline, pressed && { opacity: 0.7 }]}
           onPress={() => navigation.navigate("Approvals")}
+          style={({ pressed }) => [
+            styles.outlineBtn,
+            {
+              borderColor: colors.border,
+              borderRadius: radius.full,
+              paddingHorizontal: spacing[3],
+              paddingVertical: spacing[2],
+              opacity: pressed ? 0.7 : 1,
+            },
+          ]}
         >
-          <Text style={s.btnOutlineText}>Aprobaciones</Text>
+          <Text style={{ fontSize: fontSize.xs, fontWeight: fontWeight.semibold, color: colors.text }}>
+            Aprobaciones
+          </Text>
         </Pressable>
 
-        <Pressable
-          style={({ pressed }) => [s.btnPrimary, pressed && { opacity: 0.8 }]}
+        <Button
+          label="+ Nueva tarea"
           onPress={() => navigation.navigate("CreateTask")}
-        >
-          <Text style={s.btnPrimaryText}>+ Nueva tarea</Text>
-        </Pressable>
+          variant="primary"
+          size="sm"
+          fullWidth={false}
+        />
       </View>
 
-      {/* Estados */}
+      {/* Loading */}
       {isLoading ? (
-        <ActivityIndicator
-          size="small"
-          color={theme.colors.primary}
-          style={{ marginTop: theme.spacing[4] }}
+        <SkeletonLoader variant="list" count={4} />
+      ) : null}
+
+      {/* Error */}
+      {!isLoading && error ? (
+        <EmptyState
+          emoji="⚠️"
+          title="Error al cargar"
+          message={error}
+          actionLabel="Reintentar"
+          onAction={reload}
         />
       ) : null}
-      {error ? <Text style={s.errorText}>{error}</Text> : null}
+
+      {/* Empty */}
       {!isLoading && !error && tasks.length === 0 ? (
-        <Text style={s.infoText}>No hay tareas activas en este grupo.</Text>
+        <EmptyState
+          emoji="🎯"
+          title="No hay tareas activas"
+          message="No hay tareas en este grupo. ¡Crea la primera!"
+          actionLabel="+ Nueva tarea"
+          onAction={() => navigation.navigate("CreateTask")}
+        />
       ) : null}
 
       {/* Lista */}
-      <FlatList
-        data={tasks}
-        keyExtractor={(item) => item.id}
-        style={s.list}
-        contentContainerStyle={s.listContent}
-        renderItem={({ item }) => (
-          <Pressable
-            style={({ pressed }) => [
-              s.taskCard,
-              pressed && { opacity: 0.75 },
-            ]}
-            onPress={() => navigation.navigate("TaskDetail", { taskId: item.id })}
-          >
-            <View style={s.taskCardHeader}>
-              <Text style={s.taskTitle}>{item.title}</Text>
-              <View style={s.pointsPill}>
-                <Text style={s.pointsPillText}>{item.pointsValue} pts</Text>
-              </View>
-            </View>
-
-            {item.requiresProof ? (
-              <View style={s.proofBadge}>
-                <Text style={s.proofBadgeText}>Requiere prueba</Text>
-              </View>
-            ) : null}
-          </Pressable>
-        )}
-      />
+      {!isLoading && tasks.length > 0 ? (
+        <FlatList
+          data={tasks}
+          keyExtractor={(item) => item.id}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ paddingBottom: spacing[7], gap: spacing[3] }}
+          renderItem={({ item }) => (
+            <TaskCard
+              task={item}
+              onPress={() => navigation.navigate("TaskDetail", { taskId: item.id })}
+            />
+          )}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
+  outlineBtn: {
+    borderWidth: 0.5,
+    backgroundColor: "transparent",
+  },
+});
