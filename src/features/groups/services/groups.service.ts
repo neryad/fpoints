@@ -119,6 +119,37 @@ export async function updateGroupName(
   }
 }
 
+export async function createChildInvitation(
+  username: string,
+  pin: string,
+  displayName: string,
+  groupId: string,
+): Promise<void> {
+  const client = ensureSupabase();
+  const userId = await getCurrentUserId();
+
+  const sanitized = username.trim().toLowerCase().replace(/[^a-z0-9_]/g, "");
+  if (!sanitized) throw new Error("El nombre de usuario no es válido.");
+  if (pin.length < 4 || pin.length > 6 || !/^\d+$/.test(pin)) {
+    throw new Error("El PIN debe tener entre 4 y 6 dígitos.");
+  }
+
+  const { error } = await client.from("child_invitations").insert({
+    username: sanitized,
+    pin,
+    display_name: displayName.trim() || sanitized,
+    group_id: groupId,
+    created_by: userId,
+  });
+
+  if (error) {
+    if (error.code === "23505") {
+      throw new Error(`El usuario "${sanitized}" ya existe.`);
+    }
+    throw new Error("No se pudo crear la invitación. Intenta de nuevo.");
+  }
+}
+
 export async function listGroupMembers(
   groupId: string,
 ): Promise<GroupMember[]> {

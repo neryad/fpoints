@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  FlatList,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -17,6 +16,7 @@ import { useAppSession } from "../../../app/providers/AppSessionProvider";
 import { useTheme } from "../../../core/theme/ThemeProvider";
 import { getMyRoleInGroup } from "../../tasks/services/tasks.service";
 import {
+  createChildInvitation,
   getGroupDetails,
   listGroupMembers,
   updateGroupName,
@@ -199,6 +199,15 @@ export function GroupSettingsScreen({ navigation }: Props) {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
+  // Child invitation form
+  const [showChildForm, setShowChildForm] = useState(false);
+  const [childUsername, setChildUsername] = useState("");
+  const [childPin, setChildPin] = useState("");
+  const [childDisplayName, setChildDisplayName] = useState("");
+  const [isSavingChild, setIsSavingChild] = useState(false);
+  const [childError, setChildError] = useState("");
+  const [childSuccess, setChildSuccess] = useState("");
+
   const loadData = useCallback(async () => {
     if (!activeGroupId) { setIsLoading(false); return; }
     try {
@@ -224,6 +233,24 @@ export function GroupSettingsScreen({ navigation }: Props) {
     const unsubscribe = navigation.addListener("focus", loadData);
     return unsubscribe;
   }, [navigation, loadData]);
+
+  const handleCreateChild = useCallback(async () => {
+    if (!activeGroupId) return;
+    try {
+      setChildError("");
+      setChildSuccess("");
+      setIsSavingChild(true);
+      await createChildInvitation(childUsername, childPin, childDisplayName, activeGroupId);
+      setChildSuccess(`¡Invitación creada! El niño puede entrar con usuario "${childUsername.trim().toLowerCase()}" y su PIN.`);
+      setChildUsername("");
+      setChildPin("");
+      setChildDisplayName("");
+    } catch (err) {
+      setChildError(err instanceof Error ? err.message : "No se pudo crear la invitación.");
+    } finally {
+      setIsSavingChild(false);
+    }
+  }, [activeGroupId, childUsername, childPin, childDisplayName]);
 
   const handleSaveName = useCallback(async () => {
     if (!activeGroupId) return;
@@ -291,6 +318,68 @@ export function GroupSettingsScreen({ navigation }: Props) {
         <Text style={s.hint}>Comparte este código para que otros se unan al grupo.</Text>
       </View>
 
+      {/* ── Agregar niño (solo owners) ── */}
+      {isOwner ? (
+        <View style={s.card}>
+          <Pressable
+            style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1, flexDirection: "row", alignItems: "center", justifyContent: "space-between" })}
+            onPress={() => { setShowChildForm((v) => !v); setChildError(""); setChildSuccess(""); }}
+          >
+            <Text style={s.cardLabel}>Agregar miembro sin email</Text>
+            <Text style={{ fontSize: theme.fontSize.xs, color: theme.colors.primary }}>
+              {showChildForm ? "Cancelar" : "+ Nuevo"}
+            </Text>
+          </Pressable>
+
+          {showChildForm ? (
+            <View style={{ marginTop: theme.spacing[3], gap: theme.spacing[3] }}>
+              <TextInput
+                style={s.input}
+                value={childDisplayName}
+                onChangeText={setChildDisplayName}
+                placeholder="Nombre visible (ej: Ana)"
+                placeholderTextColor={theme.colors.muted}
+                editable={!isSavingChild}
+              />
+              <TextInput
+                style={s.input}
+                value={childUsername}
+                onChangeText={(t) => setChildUsername(t.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+                placeholder="Nombre de usuario (ej: ana)"
+                placeholderTextColor={theme.colors.muted}
+                autoCapitalize="none"
+                autoCorrect={false}
+                editable={!isSavingChild}
+              />
+              <TextInput
+                style={s.input}
+                value={childPin}
+                onChangeText={setChildPin}
+                placeholder="PIN (4-6 dígitos)"
+                placeholderTextColor={theme.colors.muted}
+                keyboardType="number-pad"
+                secureTextEntry
+                maxLength={6}
+                editable={!isSavingChild}
+              />
+              {childError ? <Text style={s.errorText}>{childError}</Text> : null}
+              {childSuccess ? <Text style={s.successText}>{childSuccess}</Text> : null}
+              <Pressable
+                style={({ pressed }) => [s.btnPrimary, isSavingChild && s.btnDisabled, pressed && !isSavingChild && { opacity: 0.8 }]}
+                onPress={handleCreateChild}
+                disabled={isSavingChild}
+              >
+                <Text style={s.btnPrimaryText}>{isSavingChild ? "Creando..." : "Crear invitación"}</Text>
+              </Pressable>
+            </View>
+          ) : (
+            <Text style={[s.hint, { marginTop: theme.spacing[2] }]}>
+              Crea acceso por usuario y PIN para niños que no tienen correo.
+            </Text>
+          )}
+        </View>
+      ) : null}
+
       {/* ── Miembros ── */}
       <View style={s.card}>
         <View style={s.membersHeader}>
@@ -301,7 +390,15 @@ export function GroupSettingsScreen({ navigation }: Props) {
           const isElevated = item.role === "owner" || item.role === "sub_owner";
           const initial = (item.displayName ?? "?").charAt(0).toUpperCase();
           return (
-            <View key={item.userId} style={[s.memberRow, idx === 0 && { borderTopWidth: 0 }]}>
+            <Pressable
+              key={item.userId}
+              style={({ pressed }) => [s.memberRow, idx === 0 && { borderTopWidth: 0 }, pressed && { opacity: 0.7 }]}
+              onPress={() => navigation.navigate("MemberDashboard", {
+                memberId: item.userId,
+                memberName: item.displayName,
+                memberRole: item.role,
+              })}
+            >
               <View style={s.memberAvatar}>
                 <Text style={s.memberAvatarText}>{initial}</Text>
               </View>
@@ -313,7 +410,7 @@ export function GroupSettingsScreen({ navigation }: Props) {
                   {ROLE_LABELS[item.role] ?? item.role}
                 </Text>
               </View>
-            </View>
+            </Pressable>
           );
         })}
       </View>
