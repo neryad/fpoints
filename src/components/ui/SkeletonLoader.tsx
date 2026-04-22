@@ -40,9 +40,9 @@ export type SkeletonLoaderProps = {
 };
 
 function CardSkeleton() {
-  const { spacing, radius } = useTheme();
+  const { colors, spacing, radius } = useTheme();
   return (
-    <View style={[styles.card, { padding: spacing[4], borderRadius: radius.lg }]}>
+    <View style={{ backgroundColor: colors.surfaceMuted, padding: spacing[4], borderRadius: radius.lg }}>
       <SkeletonBox width="60%" height={14} />
       <View style={{ height: spacing[2] }} />
       <SkeletonBox width="40%" height={11} />
@@ -51,10 +51,10 @@ function CardSkeleton() {
 }
 
 function ListSkeleton() {
-  const { spacing, radius } = useTheme();
+  const { colors, spacing, radius } = useTheme();
   return (
-    <View style={[styles.card, { padding: spacing[4], borderRadius: radius.lg }]}>
-      <View style={styles.listRow}>
+    <View style={{ backgroundColor: colors.surfaceMuted, padding: spacing[4], borderRadius: radius.lg }}>
+      <View style={[styles.listRow, { gap: spacing[3] }]}>
         <SkeletonBox width={36} height={36} borderRadius={18} />
         <View style={{ flex: 1, gap: spacing[2] }}>
           <SkeletonBox width="70%" height={13} />
@@ -66,9 +66,9 @@ function ListSkeleton() {
 }
 
 function ProfileSkeleton() {
-  const { spacing } = useTheme();
+  const { colors, spacing } = useTheme();
   return (
-    <View style={[styles.profileWrap, { gap: spacing[3] }]}>
+    <View style={[styles.profileWrap, { gap: spacing[3], paddingVertical: spacing[4] }]}>
       <SkeletonBox width={80} height={80} borderRadius={40} style={styles.center} />
       <SkeletonBox width={140} height={16} style={styles.center} />
       <SkeletonBox width={100} height={12} style={styles.center} />
@@ -77,13 +77,13 @@ function ProfileSkeleton() {
 }
 
 function StatsSkeleton() {
-  const { spacing, radius } = useTheme();
+  const { colors, spacing, radius } = useTheme();
   return (
     <View style={[styles.statsRow, { gap: spacing[3] }]}>
       {[0, 1, 2].map((i) => (
         <View
           key={i}
-          style={[styles.statCard, { padding: spacing[4], borderRadius: radius.lg, gap: spacing[2] }]}
+          style={{ flex: 1, backgroundColor: colors.surfaceMuted, padding: spacing[4], borderRadius: radius.lg, gap: spacing[2] }}
         >
           <SkeletonBox width={36} height={36} borderRadius={8} />
           <SkeletonBox width="70%" height={18} />
@@ -112,26 +112,17 @@ export function SkeletonLoader({ variant, count = 3 }: SkeletonLoaderProps) {
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "rgba(0,0,0,0.03)",
-  },
   listRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
   },
   profileWrap: {
     alignItems: "center",
-    paddingVertical: 16,
   },
   center: {
     alignSelf: "center",
   },
   statsRow: {
     flexDirection: "row",
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.03)",
   },
 });

@@ -204,7 +204,7 @@ export function CelebrationOverlay({ visible, data, onClose }: Props) {
             onPress={onClose}
           >
             <Text style={{ fontSize: fontSize.base, fontWeight: fontWeight.bold, color: colors.primaryText }}>
-              ¡Genial! 🎉
+              ¡Genial!
             </Text>
           </Pressable>
         </Animated.View>

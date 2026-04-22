@@ -31,7 +31,7 @@ export function RewardCard({ reward, userPoints, onRedeem }: RewardCardProps) {
         },
       ]}
     >
-      <View style={styles.header}>
+      <View style={[styles.header, { gap: spacing[3] }]}>
         <View style={styles.info}>
           <Text
             style={{
@@ -43,16 +43,12 @@ export function RewardCard({ reward, userPoints, onRedeem }: RewardCardProps) {
           >
             {reward.title}
           </Text>
-          <Text
-            style={{
-              color: colors.points,
-              fontSize: fontSize.xs,
-              fontWeight: fontWeight.bold,
-              marginTop: spacing[1],
-            }}
-          >
-            ⭐ {reward.costPoints} pts
-          </Text>
+          <View style={[styles.inlineRow, { marginTop: spacing[1] }]}>
+            <Ionicons name="star" size={12} color={colors.points} />
+            <Text style={{ color: colors.points, fontSize: fontSize.xs, fontWeight: fontWeight.bold }}>
+              {reward.costPoints} pts
+            </Text>
+          </View>
         </View>
 
         <Pressable
@@ -84,7 +80,7 @@ export function RewardCard({ reward, userPoints, onRedeem }: RewardCardProps) {
       {!canAfford && (
         <View style={{ marginTop: spacing[3], gap: spacing[1] }}>
           <ProgressBar progress={progress} variant="points" />
-          <View style={styles.missingRow}>
+          <View style={[styles.missingRow, { gap: spacing[1] }]}>
             <Ionicons name="lock-closed-outline" size={12} color={colors.muted} />
             <Text style={{ color: colors.muted, fontSize: fontSize.xxs }}>
               Te faltan {missing} pts
@@ -103,7 +99,6 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
   },
   info: {
     flex: 1,
@@ -115,6 +110,10 @@ const styles = StyleSheet.create({
   missingRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+  },
+  inlineRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
   },
 });

@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1.5,
+    borderWidth: 0.5,
   },
   input: {
     flex: 1,

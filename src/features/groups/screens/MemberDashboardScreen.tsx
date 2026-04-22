@@ -369,7 +369,7 @@ export function MemberDashboardScreen({ route }: Props) {
           <Text style={s.sectionTitle}>Tareas disponibles</Text>
           <View style={s.card}>
             {(data?.tasks ?? []).length === 0 ? (
-              <Text style={s.emptyText}>¡No hay tareas pendientes! 🎉</Text>
+              <Text style={s.emptyText}>¡No hay tareas pendientes!</Text>
             ) : (
               (data?.tasks ?? []).map((task, i) => {
                 const isCompleting = completing === task.id;

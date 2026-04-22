@@ -11,6 +11,7 @@ import {
   View,
   Pressable,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { Button } from "../../../components/ui/Button";
 import { ProgressBar } from "../../../components/ui/ProgressBar";
 import { SkeletonLoader } from "../../../components/ui/SkeletonLoader";
@@ -89,7 +90,7 @@ function getInitials(name: string) {
 // ---------------------------------------------------------------------------
 
 function makeStyles(theme: ReturnType<typeof useTheme>) {
-  const { colors, spacing, fontSize, fontWeight, radius } = theme;
+  const { colors, spacing, fontSize, fontWeight, radius, screen } = theme;
 
   return StyleSheet.create({
     // ── Screen ──────────────────────────────────────────────────────────────
@@ -114,14 +115,13 @@ function makeStyles(theme: ReturnType<typeof useTheme>) {
       letterSpacing: 0.8,
       textTransform: "uppercase",
       marginBottom: spacing[1],        // 4
-      paddingHorizontal: spacing[9],
       maxWidth: "100%",
     },
     heroPoints: {
-      fontSize: 52,
+      fontSize: screen.isCompact ? 42 : 52,
       fontWeight: fontWeight.bold,     // "700"
       color: colors.textStrong,
-      lineHeight: 58,
+      lineHeight: screen.isCompact ? 48 : 58,
       marginBottom: spacing[2],        // 8
     },
     deltaPill: {
@@ -244,7 +244,7 @@ function makeStyles(theme: ReturnType<typeof useTheme>) {
     lbRank: {
       fontSize: fontSize.xxs,          // 11
       color: colors.muted,
-      width: 14,
+      minWidth: 20,
       textAlign: "center",
     },
     lbAvatar: {
@@ -292,13 +292,13 @@ function makeStyles(theme: ReturnType<typeof useTheme>) {
       marginBottom: spacing[3],        // 12
     },
     streakNumber: {
-      fontSize: 36,
+      fontSize: screen.isCompact ? 28 : 36,
       fontWeight: fontWeight.bold,     // "700"
       color: colors.textStrong,
-      lineHeight: 40,
+      lineHeight: screen.isCompact ? 34 : 40,
     },
     streakFire: {
-      fontSize: 28,
+      // kept for layout spacing — icon rendered inline
     },
     streakInfo: {
       flex: 1,
@@ -375,7 +375,7 @@ function makeStyles(theme: ReturnType<typeof useTheme>) {
       height: 46,
       borderRadius: radius.full,
       backgroundColor: colors.primarySoft,
-      borderWidth: 1.5,
+      borderWidth: 0.5,
       borderColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
@@ -579,7 +579,7 @@ function StreakCard({
         <>
           <View style={s.streakMain}>
             <Text style={s.streakNumber}>{streak.currentStreak}</Text>
-            <Text style={s.streakFire}>🔥</Text>
+            <Ionicons name="flame" size={30} color={theme.colors.streak} />
             <View style={s.streakInfo}>
               {streak.isActiveToday ? (
                 <Text style={s.streakStatusOk}>¡Hoy ya sumaste actividad!</Text>
@@ -616,12 +616,14 @@ function StreakCard({
           )}
 
           {streak.isAtRisk && (
-            <Button
-              label="Completar tarea hoy"
-              onPress={onGoToTasks}
-              variant="primary"
-              size="md"
-            />
+            <View style={{ marginTop: theme.spacing[4] }}>
+              <Button
+                label="Completar tarea hoy"
+                onPress={onGoToTasks}
+                variant="primary"
+                size="md"
+              />
+            </View>
           )}
         </>
       )}
@@ -660,7 +662,7 @@ function LevelCard({
           </View>
           <ProgressBar progress={xp.progressPercent / 100} variant="xp" />
           {xp.isMaxLevel ? (
-            <Text style={s.levelMaxText}>Nivel máximo alcanzado 🎉</Text>
+            <Text style={s.levelMaxText}>¡Nivel máximo alcanzado!</Text>
           ) : (
             <View style={s.levelNextRow}>
               <Text style={s.levelNextText}>

@@ -83,7 +83,7 @@ export function TasksScreen({ navigation }: Props) {
       {/* Error */}
       {!isLoading && error ? (
         <EmptyState
-          emoji="⚠️"
+          icon="alert-circle-outline"
           title="Error al cargar"
           message={error}
           actionLabel="Reintentar"
@@ -94,7 +94,7 @@ export function TasksScreen({ navigation }: Props) {
       {/* Empty */}
       {!isLoading && !error && tasks.length === 0 ? (
         <EmptyState
-          emoji="🎯"
+          icon="flag-outline"
           title="No hay tareas activas"
           message="No hay tareas en este grupo. ¡Crea la primera!"
           actionLabel="+ Nueva tarea"

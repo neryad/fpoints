@@ -73,7 +73,7 @@ export function Button({
           borderRadius: radius.md,
           paddingVertical: paddingV[size],
           paddingHorizontal: spacing[4],
-          borderWidth: variant === "outline" ? 1.5 : 0,
+          borderWidth: variant === "outline" ? 0.5 : 0,
           borderColor: variant === "outline" ? colors.primary : "transparent",
           alignSelf: fullWidth ? "stretch" : "flex-start",
           opacity: isDisabled ? 0.5 : pressed ? 0.78 : 1,

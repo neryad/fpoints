@@ -12,6 +12,7 @@ import { useAppSession } from "../../../app/providers/AppSessionProvider";
 import { useTheme } from "../../../core/theme/ThemeProvider";
 import { GroupStackParamList } from "../../../app/navigation/types";
 import { useGroups } from "../hooks/useGroups";
+import { Button } from "../../../components/ui/Button";
 
 type Props = NativeStackScreenProps<GroupStackParamList, "GroupSelection">;
 
@@ -125,32 +126,6 @@ function makeStyles(theme: ReturnType<typeof useTheme>) {
       gap: spacing[3],
       marginBottom: spacing[3],
     },
-    btnPrimary: {
-      flex: 1,
-      backgroundColor: colors.primary,
-      borderRadius: radius.md,
-      paddingVertical: spacing[3],
-      alignItems: "center",
-    },
-    btnPrimaryText: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.bold,
-      color: colors.primaryText,
-    },
-    btnSecondary: {
-      flex: 1,
-      backgroundColor: colors.surface,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.md,
-      paddingVertical: spacing[3],
-      alignItems: "center",
-    },
-    btnSecondaryText: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.semibold,
-      color: colors.text,
-    },
     reloadBtn: {
       alignSelf: "center",
       paddingVertical: spacing[2],
@@ -221,18 +196,22 @@ export function GroupSelectionScreen({ navigation }: Props) {
       <Text style={s.actionsLabel}>Más opciones</Text>
 
       <View style={s.actionsRow}>
-        <Pressable
-          style={({ pressed }) => [s.btnPrimary, pressed && { opacity: 0.8 }]}
-          onPress={() => navigation.navigate("CreateGroup")}
-        >
-          <Text style={s.btnPrimaryText}>Crear grupo</Text>
-        </Pressable>
-        <Pressable
-          style={({ pressed }) => [s.btnSecondary, pressed && { opacity: 0.7 }]}
-          onPress={() => navigation.navigate("JoinGroup")}
-        >
-          <Text style={s.btnSecondaryText}>Unirse</Text>
-        </Pressable>
+        <View style={{ flex: 1 }}>
+          <Button
+            label="Crear grupo"
+            onPress={() => navigation.navigate("CreateGroup")}
+            variant="primary"
+            size="md"
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Button
+            label="Unirse"
+            onPress={() => navigation.navigate("JoinGroup")}
+            variant="secondary"
+            size="md"
+          />
+        </View>
       </View>
 
       <Pressable style={({ pressed }) => [s.reloadBtn, pressed && { opacity: 0.6 }]} onPress={reload}>

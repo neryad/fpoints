@@ -1,9 +1,10 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../core/theme/ThemeProvider";
 
 export type EmptyStateProps = {
-  emoji: string;
+  icon: keyof typeof Ionicons.glyphMap;
   title: string;
   message: string;
   actionLabel?: string;
@@ -11,7 +12,7 @@ export type EmptyStateProps = {
 };
 
 export function EmptyState({
-  emoji,
+  icon,
   title,
   message,
   actionLabel,
@@ -21,7 +22,7 @@ export function EmptyState({
 
   return (
     <View style={[styles.container, { padding: spacing[7] }]}>
-      <Text style={[styles.emoji, { marginBottom: spacing[3] }]}>{emoji}</Text>
+      <Ionicons name={icon} size={48} color={colors.muted} style={{ marginBottom: spacing[3] }} />
       <Text
         style={{
           color: colors.textPrimary,
@@ -78,9 +79,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-  },
-  emoji: {
-    fontSize: 48,
   },
   action: {
     alignSelf: "center",

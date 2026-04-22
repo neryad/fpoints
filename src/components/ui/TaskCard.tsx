@@ -44,7 +44,7 @@ export function TaskCard({
         },
       ]}
     >
-      <View style={styles.row}>
+      <View style={[styles.row, { gap: spacing[3] }]}>
         <View style={styles.info}>
           <Text
             style={[
@@ -60,14 +60,18 @@ export function TaskCard({
             {task.title}
           </Text>
 
-          <View style={[styles.meta, { marginTop: spacing[1] }]}>
-            <Text style={{ color: colors.points, fontSize: fontSize.xs, fontWeight: fontWeight.bold }}>
-              ⭐ {task.pointsValue} pts
-            </Text>
+          <View style={[styles.meta, { marginTop: spacing[1], gap: spacing[2] }]}>
+            <View style={styles.inlineRow}>
+              <Ionicons name="star" size={12} color={colors.points} />
+              <Text style={{ color: colors.points, fontSize: fontSize.xs, fontWeight: fontWeight.bold }}>
+                {task.pointsValue} pts
+              </Text>
+            </View>
             {task.requiresProof && (
-              <View style={[styles.pill, { backgroundColor: colors.infoSoft, borderRadius: radius.sm, paddingHorizontal: spacing[2] }]}>
+              <View style={[styles.pill, styles.inlineRow, { backgroundColor: colors.infoSoft, borderRadius: radius.sm, paddingHorizontal: spacing[2], gap: 3 }]}>
+                <Ionicons name="camera-outline" size={11} color={colors.info} />
                 <Text style={{ color: colors.info, fontSize: fontSize.xxs, fontWeight: fontWeight.medium }}>
-                  📷 Evidencia
+                  Evidencia
                 </Text>
               </View>
             )}
@@ -116,7 +120,6 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
   },
   info: {
     flex: 1,
@@ -124,10 +127,14 @@ const styles = StyleSheet.create({
   meta: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
   },
   pill: {
     paddingVertical: 2,
+  },
+  inlineRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
   },
   strikethrough: {
     textDecorationLine: "line-through",
@@ -135,6 +142,6 @@ const styles = StyleSheet.create({
   checkBtn: {
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1.5,
+    borderWidth: 0.5,
   },
 });

@@ -27,22 +27,17 @@ type Props = NativeStackScreenProps<TasksStackParamList, "TaskDetail">;
 // ---------------------------------------------------------------------------
 
 type SubmissionStatus = "pending" | "approved" | "rejected";
+type StatusCfg = { label: string; dotColor: string; textColor: string; bgColor: string };
+type ThemeColors = ReturnType<typeof useTheme>["colors"];
 
-const SUBMISSION_STATUS: Record<
-  SubmissionStatus,
-  { label: string; dotColor: string; textColor: string; bgColor: string }
-> = {
-  pending:  { label: "Pendiente", dotColor: "#F0872F", textColor: "#E5730A", bgColor: "#FFF3E6" },
-  approved: { label: "Aprobado",  dotColor: "#4CCB86", textColor: "#26B765", bgColor: "#E6F7EF" },
-  rejected: { label: "Rechazado", dotColor: "#D94A42", textColor: "#B3261E", bgColor: "#FDECEC" },
-};
-
-function statusConfig(status: string) {
-  return SUBMISSION_STATUS[status as SubmissionStatus] ?? {
-    label: status,
-    dotColor: "#8A8791",
-    textColor: "#8A8791",
-    bgColor: "#F5F3F7",
+function statusConfig(status: string, colors: ThemeColors): StatusCfg {
+  const map: Record<SubmissionStatus, StatusCfg> = {
+    pending:  { label: "Pendiente", dotColor: colors.warning,  textColor: colors.warning,  bgColor: colors.warningSoft },
+    approved: { label: "Aprobado",  dotColor: colors.success,  textColor: colors.success,  bgColor: colors.successSoft },
+    rejected: { label: "Rechazado", dotColor: colors.error,    textColor: colors.error,    bgColor: colors.errorSoft   },
+  };
+  return map[status as SubmissionStatus] ?? {
+    label: status, dotColor: colors.muted, textColor: colors.muted, bgColor: colors.surfaceMuted,
   };
 }
 
@@ -405,7 +400,7 @@ export function TaskDetailScreen({ route, navigation }: Props) {
       <View style={s.card}>
         <Text style={s.cardLabel}>Mi último envío</Text>
         {latestSubmission ? (() => {
-          const cfg = statusConfig(latestSubmission.status);
+          const cfg = statusConfig(latestSubmission.status, theme.colors);
           return (
             <>
               <View style={[s.statusBadge, { backgroundColor: cfg.bgColor }]}>
@@ -495,7 +490,7 @@ export function TaskDetailScreen({ route, navigation }: Props) {
             <Text style={s.emptyMeta}>Aún no hay envíos revisados.</Text>
           ) : null}
           {reviewedAll.map((sub) => {
-            const cfg = statusConfig(sub.status);
+            const cfg = statusConfig(sub.status, theme.colors);
             return (
               <View key={sub.id} style={s.reviewCard}>
                 <View style={[s.statusBadge, { backgroundColor: cfg.bgColor }]}>
