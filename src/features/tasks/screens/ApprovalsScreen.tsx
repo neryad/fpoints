@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -26,6 +26,13 @@ type Props = NativeStackScreenProps<TasksStackParamList, "Approvals">;
 
 type PendingApprovalItem = { submission: TaskSubmission; task: Task };
 type ProofFilter = "all" | "withProof" | "withoutProof";
+
+const PROOF_FILTERS: ProofFilter[] = ["all", "withProof", "withoutProof"];
+const PROOF_LABELS: Record<ProofFilter, string> = {
+  all: "Todas",
+  withProof: "Con prueba",
+  withoutProof: "Sin prueba",
+};
 
 function makeStyles(theme: ReturnType<typeof useTheme>) {
   const { colors, spacing, fontSize, fontWeight, radius } = theme;
@@ -208,6 +215,12 @@ export function ApprovalsScreen({ navigation }: Props) {
     destructive?: boolean; onConfirm: () => void;
   }>(null);
 
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
+
   const loadPending = useCallback(async () => {
     if (!activeGroupId) { setPending([]); setIsLoading(false); return; }
     try {
@@ -215,6 +228,7 @@ export function ApprovalsScreen({ navigation }: Props) {
       setIsLoading(true);
       const role = await getMyRoleInGroup(activeGroupId);
       const canReview = role === "owner" || role === "sub_owner";
+      if (!isMountedRef.current) return;
       setIsReviewer(canReview);
       if (!canReview) { setPending([]); return; }
       const tasks = await listGroupTasks(activeGroupId);
@@ -224,16 +238,17 @@ export function ApprovalsScreen({ navigation }: Props) {
           return subs.filter((s) => s.status === "pending").map((submission) => ({ submission, task }));
         }),
       );
+      if (!isMountedRef.current) return;
       const flat = byTask.flat().sort((a, b) =>
         a.submission.createdAt > b.submission.createdAt ? -1 : 1,
       );
       setPending(flat);
       const labels = await getUserDisplayNames(flat.map((i) => i.submission.userId), activeGroupId);
-      setUserDisplayNames(labels);
+      if (isMountedRef.current) setUserDisplayNames(labels);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudieron cargar las aprobaciones.");
+      if (isMountedRef.current) setError(err instanceof Error ? err.message : "No se pudieron cargar las aprobaciones.");
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) setIsLoading(false);
     }
   }, [activeGroupId]);
 
@@ -325,8 +340,7 @@ export function ApprovalsScreen({ navigation }: Props) {
       />
 
       <View style={s.chipsRow}>
-        {(["all", "withProof", "withoutProof"] as ProofFilter[]).map((f) => {
-          const labels: Record<ProofFilter, string> = { all: "Todas", withProof: "Con prueba", withoutProof: "Sin prueba" };
+        {PROOF_FILTERS.map((f) => {
           const active = proofFilter === f;
           return (
             <Pressable
@@ -334,7 +348,7 @@ export function ApprovalsScreen({ navigation }: Props) {
               style={({ pressed }) => [s.chip, active && s.chipActive, pressed && { opacity: 0.7 }]}
               onPress={() => setProofFilter(f)}
             >
-              <Text style={[s.chipText, active && s.chipTextActive]}>{labels[f]}</Text>
+              <Text style={[s.chipText, active && s.chipTextActive]}>{PROOF_LABELS[f]}</Text>
             </Pressable>
           );
         })}

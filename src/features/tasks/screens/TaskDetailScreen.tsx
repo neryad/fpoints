@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -333,10 +333,13 @@ export function TaskDetailScreen({ route, navigation }: Props) {
     [loadTaskData]
   );
 
+  const loadTaskDataRef = useRef(loadTaskData);
+  useEffect(() => { loadTaskDataRef.current = loadTaskData; }, [loadTaskData]);
+
   useEffect(() => {
-    const unsubscribe = navigation.addListener("focus", loadTaskData);
+    const unsubscribe = navigation.addListener("focus", () => loadTaskDataRef.current());
     return unsubscribe;
-  }, [navigation, loadTaskData]);
+  }, [navigation]);
 
   // ── Guards ────────────────────────────────────────────────────────────────
 

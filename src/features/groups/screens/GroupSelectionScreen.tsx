@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -170,6 +170,30 @@ export function GroupSelectionScreen({ navigation }: Props) {
   const { selectGroup } = useAppSession();
   const { groups, isLoading, error, reload } = useGroups();
 
+  const renderGroupItem = useCallback(({ item }: { item: typeof groups[0] }) => (
+    <Pressable
+      style={({ pressed }) => [s.groupCard, pressed && { opacity: 0.75 }]}
+      onPress={() => selectGroup(item.id, item.name)}
+    >
+      <View style={s.groupAvatar}>
+        <Text style={s.groupAvatarText}>
+          {item.name.charAt(0).toUpperCase()}
+        </Text>
+      </View>
+      <View style={s.groupInfo}>
+        <Text style={s.groupName}>{item.name}</Text>
+        <Text style={s.groupMeta}>Código: {item.invite_code}</Text>
+      </View>
+      {item.my_role ? (
+        <View style={s.rolePill}>
+          <Text style={s.rolePillText}>
+            {ROLE_LABELS[item.my_role] ?? item.my_role}
+          </Text>
+        </View>
+      ) : null}
+    </Pressable>
+  ), [s, selectGroup]);
+
   return (
     <View style={s.container}>
       <View style={s.hero}>
@@ -190,30 +214,7 @@ export function GroupSelectionScreen({ navigation }: Props) {
         keyExtractor={(item) => item.id}
         contentContainerStyle={s.listContent}
         scrollEnabled={groups.length > 4}
-        renderItem={({ item }) => (
-          <Pressable
-            style={({ pressed }) => [s.groupCard, pressed && { opacity: 0.75 }]}
-            onPress={() => selectGroup(item.id, item.name)}
-          >
-            {/* Avatar con inicial */}
-            <View style={s.groupAvatar}>
-              <Text style={s.groupAvatarText}>
-                {item.name.charAt(0).toUpperCase()}
-              </Text>
-            </View>
-            <View style={s.groupInfo}>
-              <Text style={s.groupName}>{item.name}</Text>
-              <Text style={s.groupMeta}>Código: {item.invite_code}</Text>
-            </View>
-            {item.my_role ? (
-              <View style={s.rolePill}>
-                <Text style={s.rolePillText}>
-                  {ROLE_LABELS[item.my_role] ?? item.my_role}
-                </Text>
-              </View>
-            ) : null}
-          </Pressable>
-        )}
+        renderItem={renderGroupItem}
       />
 
       <View style={s.divider} />

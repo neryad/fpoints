@@ -82,7 +82,9 @@ export function AppSessionProvider({ children }: AppSessionProviderProps) {
           setHasActiveGroup(false);
           setActiveGroupId(null);
           setActiveGroupName(null);
-          supabase.auth.signOut().catch(() => {});
+          supabase.auth.signOut().catch((err) => {
+          if (__DEV__) console.error("Sign out failed:", err);
+        });
           return;
         }
         setIsAuthenticated(Boolean(session));

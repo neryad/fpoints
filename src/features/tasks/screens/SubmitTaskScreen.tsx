@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
   Platform,
@@ -89,6 +89,13 @@ export function SubmitTaskScreen({ route, navigation }: Props) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [shouldGoBack, setShouldGoBack] = useState(false);
+
+  useEffect(() => {
+    if (!shouldGoBack) return;
+    const timer = setTimeout(() => navigation.goBack(), 600);
+    return () => clearTimeout(timer);
+  }, [shouldGoBack, navigation]);
 
   const handleSubmit = useCallback(async () => {
     const urlTrimmed = proofImageUrl.trim();
@@ -103,13 +110,13 @@ export function SubmitTaskScreen({ route, navigation }: Props) {
       setIsLoading(true);
       await createTaskSubmission(taskId, { note, proofImageUrl: urlTrimmed });
       setSuccessMessage("Enviado. Quedó pendiente de revisión.");
-      setTimeout(() => navigation.goBack(), 600);
+      setShouldGoBack(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al enviar la tarea.");
     } finally {
       setIsLoading(false);
     }
-  }, [taskId, note, proofImageUrl, navigation]);
+  }, [taskId, note, proofImageUrl]);
 
   return (
     <KeyboardAvoidingView

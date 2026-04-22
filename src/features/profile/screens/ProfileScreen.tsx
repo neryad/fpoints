@@ -10,7 +10,6 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  unstable_batchedUpdates,
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -559,13 +558,11 @@ export function ProfileScreen({ navigation }: Props) {
       setError("");
       setIsLoadingProfile(true);
       const profile = await getMyProfile();
-      unstable_batchedUpdates(() => {
-        setProfileId(profile.id);
-        setName(profile.name ?? "");
-        setEmail(profile.email);
-        setAvatarUrl(profile.avatarUrl ?? "");
-        setAvatarImageFailed(false);
-      });
+      setProfileId(profile.id);
+      setName(profile.name ?? "");
+      setEmail(profile.email);
+      setAvatarUrl(profile.avatarUrl ?? "");
+      setAvatarImageFailed(false);
 
       if (activeGroupId) {
         try {
@@ -574,28 +571,22 @@ export function ProfileScreen({ navigation }: Props) {
             getMyXpSummary(activeGroupId),
             getMyStreakSummary(activeGroupId),
           ]);
-          unstable_batchedUpdates(() => {
-            setRole(myRole);
-            setCanConfigureGroup(myRole === "owner" || myRole === "sub_owner");
-            setXp(myXp);
-            setStreak(myStreak);
-          });
+          setRole(myRole);
+          setCanConfigureGroup(myRole === "owner" || myRole === "sub_owner");
+          setXp(myXp);
+          setStreak(myStreak);
         } catch (err) {
-          unstable_batchedUpdates(() => {
-            setRole(null);
-            setCanConfigureGroup(false);
-            setXp(null);
-            setStreak(null);
-          });
-          throw err;
-        }
-      } else {
-        unstable_batchedUpdates(() => {
           setRole(null);
           setCanConfigureGroup(false);
           setXp(null);
           setStreak(null);
-        });
+          throw err;
+        }
+      } else {
+        setRole(null);
+        setCanConfigureGroup(false);
+        setXp(null);
+        setStreak(null);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al cargar el perfil.");
@@ -614,14 +605,12 @@ export function ProfileScreen({ navigation }: Props) {
       setSuccessMessage("");
       setIsSaving(true);
       const profile = await saveMyProfile({ name, avatarUrl });
-      unstable_batchedUpdates(() => {
-        setProfileId(profile.id);
-        setName(profile.name ?? "");
-        setEmail(profile.email);
-        setAvatarUrl(profile.avatarUrl ?? "");
-        setAvatarImageFailed(false);
-        setSuccessMessage("Perfil guardado correctamente.");
-      });
+      setProfileId(profile.id);
+      setName(profile.name ?? "");
+      setEmail(profile.email);
+      setAvatarUrl(profile.avatarUrl ?? "");
+      setAvatarImageFailed(false);
+      setSuccessMessage("Perfil guardado correctamente.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al guardar el perfil.");
     } finally {

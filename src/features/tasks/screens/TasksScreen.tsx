@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import {
   FlatList,
   Pressable,
@@ -28,6 +28,21 @@ export function TasksScreen({ navigation }: Props) {
     const unsubscribe = navigation.addListener("focus", reload);
     return unsubscribe;
   }, [navigation, reload]);
+
+  const listContentStyle = useMemo(
+    () => ({ paddingBottom: spacing[7], gap: spacing[3] }),
+    [spacing],
+  );
+
+  const renderTask = useCallback(
+    ({ item }: { item: typeof tasks[0] }) => (
+      <TaskCard
+        task={item}
+        onPress={() => navigation.navigate("TaskDetail", { taskId: item.id })}
+      />
+    ),
+    [navigation],
+  );
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background, padding: spacing[4] }} edges={["top"]}>
@@ -93,13 +108,8 @@ export function TasksScreen({ navigation }: Props) {
           data={tasks}
           keyExtractor={(item) => item.id}
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingBottom: spacing[7], gap: spacing[3] }}
-          renderItem={({ item }) => (
-            <TaskCard
-              task={item}
-              onPress={() => navigation.navigate("TaskDetail", { taskId: item.id })}
-            />
-          )}
+          contentContainerStyle={listContentStyle}
+          renderItem={renderTask}
         />
       ) : null}
     </SafeAreaView>

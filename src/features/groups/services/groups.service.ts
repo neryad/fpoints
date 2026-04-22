@@ -22,7 +22,6 @@ export async function createGroup(name: string) {
     .single();
 
   if (groupError) {
-    console.error("Error creating group:", groupError);
     throw groupError;
   }
 

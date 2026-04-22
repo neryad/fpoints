@@ -106,23 +106,7 @@ async function tryGetLeaderboardFromRpc(
     input_since: sinceIso ?? null,
   });
 
-  if (error) {
-    console.warn("get_group_points_leaderboard RPC failed; using fallback", {
-      groupId,
-      sinceIso: sinceIso ?? null,
-      error,
-    });
-    return null;
-  }
-
-  if (!data) {
-    console.warn(
-      "get_group_points_leaderboard RPC returned no data; using fallback",
-      {
-        groupId,
-        sinceIso: sinceIso ?? null,
-      },
-    );
+  if (error || !data) {
     return null;
   }
 

@@ -206,7 +206,11 @@ export function CreateTaskScreen({ navigation }: Props) {
 
   useEffect(() => {
     if (!activeGroupId) return;
-    listGroupMembers(activeGroupId).then(setMembers).catch(() => {});
+    let isMounted = true;
+    listGroupMembers(activeGroupId)
+      .then((data) => { if (isMounted) setMembers(data); })
+      .catch(() => { if (isMounted) setMembers([]); });
+    return () => { isMounted = false; };
   }, [activeGroupId]);
 
   const selectedMember = members.find((m) => m.userId === assignedTo) ?? null;
