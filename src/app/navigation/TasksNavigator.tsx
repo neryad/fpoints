@@ -21,31 +21,11 @@ export function TasksNavigator() {
         headerShadowVisible: false,
       }}
     >
-      <Stack.Screen
-        name="TasksList"
-        component={TasksScreen}
-        options={{ title: "Tasks" }}
-      />
-      <Stack.Screen
-        name="TaskDetail"
-        component={TaskDetailScreen}
-        options={{ title: "Task Detail" }}
-      />
-      <Stack.Screen
-        name="CreateTask"
-        component={CreateTaskScreen}
-        options={{ title: "New Task" }}
-      />
-      <Stack.Screen
-        name="SubmitTask"
-        component={SubmitTaskScreen}
-        options={{ title: "Submit Completion" }}
-      />
-      <Stack.Screen
-        name="Approvals"
-        component={ApprovalsScreen}
-        options={{ title: "Pending Approvals" }}
-      />
+      <Stack.Screen name="TasksList"  component={TasksScreen}     options={{ title: "Tareas" }} />
+      <Stack.Screen name="TaskDetail" component={TaskDetailScreen} options={{ title: "Detalle" }} />
+      <Stack.Screen name="CreateTask" component={CreateTaskScreen} options={{ title: "Nueva tarea" }} />
+      <Stack.Screen name="SubmitTask" component={SubmitTaskScreen} options={{ title: "Enviar tarea" }} />
+      <Stack.Screen name="Approvals"  component={ApprovalsScreen}  options={{ title: "Aprobaciones" }} />
     </Stack.Navigator>
   );
 }

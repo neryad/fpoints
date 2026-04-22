@@ -22,7 +22,7 @@ type Props = NativeStackScreenProps<TasksStackParamList, "TasksList">;
 export function TasksScreen({ navigation }: Props) {
   const { colors, spacing, radius, fontSize, fontWeight } = useTheme();
   const { activeGroupId } = useAppSession();
-  const { tasks, isLoading, error, reload } = useTasks(activeGroupId);
+  const { tasks, submissionsByTaskId, assigneeNames, isLoading, error, reload } = useTasks(activeGroupId);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener("focus", reload);
@@ -38,10 +38,12 @@ export function TasksScreen({ navigation }: Props) {
     ({ item }: { item: typeof tasks[0] }) => (
       <TaskCard
         task={item}
+        submissionStatus={submissionsByTaskId[item.id] ?? null}
+        assigneeName={item.assignedTo ? (assigneeNames[item.assignedTo] ?? null) : null}
         onPress={() => navigation.navigate("TaskDetail", { taskId: item.id })}
       />
     ),
-    [navigation],
+    [navigation, submissionsByTaskId, assigneeNames],
   );
 
   return (

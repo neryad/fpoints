@@ -4,13 +4,11 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { AuthStackParamList } from "../../../app/navigation/types";
-import { useTheme } from "../../../core/theme/ThemeProvider";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { useAuth } from "../hooks/useAuth";
@@ -18,7 +16,6 @@ import { useAuth } from "../hooks/useAuth";
 type Props = NativeStackScreenProps<AuthStackParamList, "Register">;
 
 export function RegisterScreen({ navigation }: Props) {
-  const { colors, spacing, fontSize, fontWeight, radius } = useTheme();
   const { isLoading, error, signUp } = useAuth();
 
   const [email, setEmail]       = useState("");
@@ -49,24 +46,25 @@ export function RegisterScreen({ navigation }: Props) {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.background }}
+      style={{ flex: 1 }}
+      className="bg-background"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={[styles.scrollContent, { padding: spacing[6] }]}
+        contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 24 }}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={{ width: "100%", marginBottom: spacing[6] }}>
-          <Text style={{ fontSize: fontSize.xl, fontWeight: fontWeight.bold, color: colors.textPrimary, marginBottom: spacing[1] }}>
+        <View className="w-full mb-6">
+          <Text className="font-sans-bold text-xl text-foreground mb-1">
             Crear cuenta
           </Text>
-          <Text style={{ fontSize: fontSize.sm, color: colors.muted }}>
+          <Text className="font-sans text-sm text-muted-foreground">
             Regístrate para empezar
           </Text>
         </View>
 
-        <View style={{ width: "100%", gap: spacing[3] }}>
+        <View className="w-full gap-3">
           <Input
             label="Email"
             value={email}
@@ -95,12 +93,12 @@ export function RegisterScreen({ navigation }: Props) {
           />
 
           {error ? (
-            <Text style={{ color: colors.error, fontSize: fontSize.sm }}>{error}</Text>
+            <Text className="text-destructive text-sm font-sans">{error}</Text>
           ) : null}
 
           {successMessage ? (
-            <View style={{ backgroundColor: colors.successSoft, borderRadius: radius.md, padding: spacing[3] }}>
-              <Text style={{ color: colors.success, fontSize: fontSize.sm }}>{successMessage}</Text>
+            <View className="bg-success/15 rounded-xl p-3">
+              <Text className="text-success text-sm font-sans">{successMessage}</Text>
             </View>
           ) : null}
 
@@ -114,9 +112,9 @@ export function RegisterScreen({ navigation }: Props) {
 
           <Pressable
             onPress={() => navigation.goBack()}
-            style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, alignItems: "center", paddingVertical: spacing[2] })}
+            className="items-center py-2 active:opacity-70"
           >
-            <Text style={{ color: colors.primary, fontSize: fontSize.sm, fontWeight: fontWeight.medium }}>
+            <Text className="text-primary text-sm font-sans-medium">
               ¿Ya tienes cuenta? Inicia sesión
             </Text>
           </Pressable>
@@ -125,11 +123,3 @@ export function RegisterScreen({ navigation }: Props) {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  scrollContent: {
-    flexGrow: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-});

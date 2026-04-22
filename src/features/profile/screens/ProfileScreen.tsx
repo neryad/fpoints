@@ -808,7 +808,7 @@ export function ProfileScreen({ navigation }: Props) {
       {/* ── Apariencia ── */}
       <View style={s.card}>
         <Text style={s.cardLabel}>Apariencia</Text>
-        <View style={{ flexDirection: "row", gap: theme.spacing[2] }}>
+        <View className="flex-row gap-1 rounded-xl border border-border bg-muted p-1">
           {(["Sistema", "Claro", "Oscuro"] as const).map((label) => {
             const val: "light" | "dark" | null =
               label === "Sistema" ? null : label === "Claro" ? "light" : "dark";
@@ -816,22 +816,17 @@ export function ProfileScreen({ navigation }: Props) {
             return (
               <Pressable
                 key={label}
-                style={({ pressed }) => [
-                  s.btnSecondary,
-                  { flex: 1, justifyContent: "center" },
-                  isActive && {
-                    backgroundColor: theme.colors.primary,
-                    borderColor: theme.colors.primary,
-                  },
-                  pressed && { opacity: 0.7 },
-                ]}
+                className={`flex-1 items-center justify-center rounded-lg py-2 ${
+                  isActive ? "bg-primary" : ""
+                }`}
                 onPress={() => setThemeOverride(val)}
               >
                 <Text
-                  style={[
-                    s.btnSecondaryText,
-                    isActive && { color: theme.colors.primaryText },
-                  ]}
+                  className={`text-sm ${
+                    isActive
+                      ? "font-sans-semibold text-primary-foreground"
+                      : "font-sans text-muted-foreground"
+                  }`}
                 >
                   {label}
                 </Text>
@@ -839,6 +834,17 @@ export function ProfileScreen({ navigation }: Props) {
             );
           })}
         </View>
+      </View>
+
+      {/* ── Desarrollo ── */}
+      <View style={s.card}>
+        <Text style={s.cardLabel}>Desarrollo</Text>
+        <Pressable
+          style={({ pressed }) => [s.btnSecondary, pressed && { opacity: 0.7 }]}
+          onPress={() => navigation.navigate("DesignSystem")}
+        >
+          <Text style={s.btnSecondaryText}>Ver Design System</Text>
+        </Pressable>
       </View>
 
       {/* ── Sesión ── */}

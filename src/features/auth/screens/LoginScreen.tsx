@@ -4,14 +4,12 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { AuthStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
-import { useTheme } from "../../../core/theme/ThemeProvider";
 import { Button } from "../../../components/ui/Button";
 import { Input } from "../../../components/ui/Input";
 import { useAuth } from "../hooks/useAuth";
@@ -19,20 +17,14 @@ import { useAuth } from "../hooks/useAuth";
 type Props = NativeStackScreenProps<AuthStackParamList, "Login">;
 
 export function LoginScreen({ navigation }: Props) {
-  const { colors, spacing, fontSize, fontWeight, radius } = useTheme();
   const { isLoading, error, signIn, signInAsChild, setupChild } = useAuth();
   const { selectGroup } = useAppSession();
 
   const [isChildMode, setIsChildMode] = useState(false);
-
-  // Standard login fields
   const [email, setEmail]       = useState("");
   const [password, setPassword] = useState("");
-
-  // Child login fields
   const [username, setUsername] = useState("");
   const [pin, setPin]           = useState("");
-
   const [fieldErrors, setFieldErrors] = useState<Record<string, string | undefined>>({});
 
   const validateEmail = useCallback((): boolean => {
@@ -63,7 +55,6 @@ export function LoginScreen({ navigation }: Props) {
 
   const handleChildLogin = useCallback(async () => {
     if (!validateChild()) return;
-    // Try login first; if account doesn't exist yet, activate invitation
     const loggedIn = await signInAsChild(username.trim(), pin);
     if (!loggedIn) {
       const result = await setupChild(username.trim(), pin);
@@ -82,54 +73,43 @@ export function LoginScreen({ navigation }: Props) {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: colors.background }}
+      style={{ flex: 1 }}
+      className="bg-background"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={[styles.scrollContent, { padding: spacing[6] }]}
+        contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 24 }}
         keyboardShouldPersistTaps="handled"
       >
-        <View style={{ width: "100%", marginBottom: spacing[6] }}>
-          <Text style={{ fontSize: 34, fontWeight: fontWeight.bold, color: colors.primary, marginBottom: spacing[1] }}>
+        <View className="w-full mb-6">
+          <Text className="font-sans-bold text-[34px] text-primary mb-1">
             fpoints
           </Text>
-          <Text style={{ fontSize: fontSize.sm, color: colors.muted }}>
+          <Text className="font-sans text-sm text-muted-foreground">
             {isChildMode ? "Acceso para miembros" : "Inicia sesión para continuar"}
           </Text>
         </View>
 
         {/* Mode toggle */}
-        <View style={[styles.toggle, { backgroundColor: colors.surfaceMuted, borderRadius: radius.lg, marginBottom: spacing[5] }]}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.toggleBtn,
-              { borderRadius: radius.md },
-              !isChildMode && { backgroundColor: colors.surface },
-              pressed && { opacity: 0.8 },
-            ]}
-            onPress={() => switchMode(false)}
-          >
-            <Text style={{ fontSize: fontSize.sm, fontWeight: !isChildMode ? fontWeight.bold : fontWeight.regular, color: !isChildMode ? colors.textStrong : colors.muted }}>
-              Adulto
-            </Text>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [
-              styles.toggleBtn,
-              { borderRadius: radius.md },
-              isChildMode && { backgroundColor: colors.surface },
-              pressed && { opacity: 0.8 },
-            ]}
-            onPress={() => switchMode(true)}
-          >
-            <Text style={{ fontSize: fontSize.sm, fontWeight: isChildMode ? fontWeight.bold : fontWeight.regular, color: isChildMode ? colors.textStrong : colors.muted }}>
-              Soy niño / miembro
-            </Text>
-          </Pressable>
+        <View className="flex-row gap-1 rounded-xl border border-border bg-muted p-1 w-full mb-5">
+          {([false, true] as const).map((childMode) => {
+            const isActive = isChildMode === childMode;
+            return (
+              <Pressable
+                key={String(childMode)}
+                className={`flex-1 items-center justify-center py-2 rounded-lg active:opacity-80 ${isActive ? "bg-primary" : ""}`}
+                onPress={() => switchMode(childMode)}
+              >
+                <Text className={`text-sm ${isActive ? "font-sans-semibold text-primary-foreground" : "font-sans text-muted-foreground"}`}>
+                  {childMode ? "Soy niño / miembro" : "Adulto"}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
 
-        <View style={{ width: "100%", gap: spacing[3] }}>
+        <View className="w-full gap-3">
           {!isChildMode ? (
             <>
               <Input
@@ -158,22 +138,22 @@ export function LoginScreen({ navigation }: Props) {
                 onSubmitEditing={handleLogin}
               />
               {error ? (
-                <Text style={{ color: colors.error, fontSize: fontSize.sm }}>{error}</Text>
+                <Text className="text-destructive text-sm font-sans">{error}</Text>
               ) : null}
               <Button label="Ingresar" onPress={handleLogin} loading={isLoading} disabled={isLoading} size="lg" />
               <Pressable
                 onPress={() => navigation.navigate("Register")}
-                style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, alignItems: "center", paddingVertical: spacing[2] })}
+                className="items-center py-2 active:opacity-70"
               >
-                <Text style={{ color: colors.primary, fontSize: fontSize.sm, fontWeight: fontWeight.medium }}>
+                <Text className="text-primary text-sm font-sans-medium">
                   ¿No tienes cuenta? Regístrate
                 </Text>
               </Pressable>
             </>
           ) : (
             <>
-              <View style={{ backgroundColor: colors.infoSoft, borderRadius: radius.md, padding: spacing[3], marginBottom: spacing[1] }}>
-                <Text style={{ color: colors.info, fontSize: fontSize.xs }}>
+              <View className="bg-secondary rounded-xl p-3 mb-1">
+                <Text className="text-secondary-foreground text-xs font-sans">
                   Usa el nombre de usuario y PIN que te dio tu papá o mamá.
                 </Text>
               </View>
@@ -201,9 +181,8 @@ export function LoginScreen({ navigation }: Props) {
                 disabled={isLoading}
                 onSubmitEditing={handleChildLogin}
               />
-
               {error ? (
-                <Text style={{ color: colors.error, fontSize: fontSize.sm }}>{error}</Text>
+                <Text className="text-destructive text-sm font-sans">{error}</Text>
               ) : null}
               <Button
                 label="Entrar"
@@ -219,21 +198,3 @@ export function LoginScreen({ navigation }: Props) {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  scrollContent: {
-    flexGrow: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  toggle: {
-    flexDirection: "row",
-    padding: 4,
-    width: "100%",
-  },
-  toggleBtn: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 8,
-  },
-});

@@ -6,7 +6,6 @@ import React, {
 } from "react";
 import {
   ScrollView,
-  StyleSheet,
   Text,
   View,
   Pressable,
@@ -86,366 +85,6 @@ function getInitials(name: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Styles — makeStyles consumes the real theme tokens
-// ---------------------------------------------------------------------------
-
-function makeStyles(theme: ReturnType<typeof useTheme>) {
-  const { colors, spacing, fontSize, fontWeight, radius, screen } = theme;
-
-  return StyleSheet.create({
-    // ── Screen ──────────────────────────────────────────────────────────────
-    container: {
-      flexGrow: 1,
-      paddingHorizontal: spacing[4],   // 16
-      paddingBottom: spacing[8],       // 40
-      backgroundColor: colors.background,
-    },
-
-    // ── Header ──────────────────────────────────────────────────────────────
-    header: {
-      alignItems: "center",
-      paddingTop: spacing[4],          // 16
-      paddingBottom: spacing[5],       // 20
-      position: "relative",
-    },
-    groupLabel: {
-      fontSize: fontSize.xxs,          // 11
-      fontWeight: fontWeight.medium,   // "500"
-      color: colors.muted,
-      letterSpacing: 0.8,
-      textTransform: "uppercase",
-      marginBottom: spacing[1],        // 4
-      maxWidth: "100%",
-    },
-    heroPoints: {
-      fontSize: screen.isCompact ? 42 : 52,
-      fontWeight: fontWeight.bold,     // "700"
-      color: colors.textStrong,
-      lineHeight: screen.isCompact ? 48 : 58,
-      marginBottom: spacing[2],        // 8
-    },
-    deltaPill: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: colors.successSoft,
-      paddingHorizontal: spacing[3],   // 12
-      paddingVertical: spacing[1],     // 4
-      borderRadius: radius.full,       // 999
-    },
-    deltaPillText: {
-      fontSize: fontSize.xs,           // 12
-      fontWeight: fontWeight.semibold, // "600"
-      color: colors.success,
-    },
-    reloadBtn: {
-      position: "absolute",
-      right: 0,
-      top: spacing[4],                 // 16
-      width: 36,
-      height: 36,
-      borderRadius: radius.full,       // 999
-      backgroundColor: colors.surfaceMuted,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    reloadBtnText: {
-      fontSize: fontSize.base,         // 16
-      color: colors.muted,
-    },
-
-    // ── Card ────────────────────────────────────────────────────────────────
-    card: {
-      backgroundColor: colors.surface,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.lg,         // 16
-      padding: spacing[4],             // 16
-      marginBottom: spacing[3],        // 12
-    },
-    cardLabel: {
-      fontSize: fontSize.xxs,          // 11
-      fontWeight: fontWeight.medium,   // "500"
-      color: colors.muted,
-      letterSpacing: 0.8,
-      textTransform: "uppercase",
-      marginBottom: spacing[3],        // 12
-    },
-    loadingWrap: {
-      paddingVertical: spacing[3],     // 12
-      alignItems: "center",
-    },
-
-    // ── Weekly progress ──────────────────────────────────────────────────────
-    progressHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "baseline",
-      marginBottom: spacing[2],        // 8
-    },
-    progressNum: {
-      fontSize: fontSize.xl,           // 22
-      fontWeight: fontWeight.semibold, // "600"
-      color: colors.textStrong,
-    },
-    progressNumSub: {
-      fontSize: fontSize.sm,           // 14
-      fontWeight: fontWeight.regular,  // "400"
-      color: colors.muted,
-    },
-    progressGoalLabel: {
-      fontSize: fontSize.xs,           // 12
-      color: colors.muted,
-    },
-    track: {
-      height: 8,
-      backgroundColor: colors.border,
-      borderRadius: radius.full,
-      overflow: "hidden",
-      marginBottom: spacing[1],        // 4
-    },
-    trackFillSuccess: {
-      height: 8,
-      borderRadius: radius.full,
-      backgroundColor: colors.success,
-    },
-    trackFillPrimary: {
-      height: 8,
-      borderRadius: radius.full,
-      backgroundColor: colors.primary,
-    },
-    progressSub: {
-      fontSize: fontSize.xxs,          // 11
-      color: colors.muted,
-      marginBottom: spacing[4],        // 16
-    },
-
-    // ── Mini leaderboard ─────────────────────────────────────────────────────
-    lbDivider: {
-      borderTopWidth: 0.5,
-      borderTopColor: colors.border,
-      paddingTop: spacing[3],          // 12
-    },
-    lbSectionLabel: {
-      fontSize: fontSize.xxs,          // 11
-      fontWeight: fontWeight.medium,   // "500"
-      color: colors.muted,
-      letterSpacing: 0.8,
-      textTransform: "uppercase",
-      marginBottom: spacing[2],        // 8
-    },
-    lbRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[2],                 // 8
-      paddingVertical: spacing[1],     // 4
-    },
-    lbRank: {
-      fontSize: fontSize.xxs,          // 11
-      color: colors.muted,
-      minWidth: 20,
-      textAlign: "center",
-    },
-    lbAvatar: {
-      width: 28,
-      height: 28,
-      borderRadius: radius.full,
-      backgroundColor: colors.primarySoft,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    lbAvatarMe: {
-      backgroundColor: colors.successSoft,
-    },
-    lbAvatarText: {
-      fontSize: fontSize.xxs,          // 11
-      fontWeight: fontWeight.semibold, // "600"
-      color: colors.primary,
-    },
-    lbAvatarTextMe: {
-      color: colors.success,
-    },
-    lbName: {
-      flex: 1,
-      fontSize: fontSize.sm,           // 14
-      color: colors.text,
-    },
-    lbNameMe: {
-      fontWeight: fontWeight.semibold, // "600"
-      color: colors.success,
-    },
-    lbPts: {
-      fontSize: fontSize.sm,           // 14
-      fontWeight: fontWeight.semibold, // "600"
-      color: colors.text,
-    },
-    lbPtsMe: {
-      color: colors.success,
-    },
-
-    // ── Streak ───────────────────────────────────────────────────────────────
-    streakMain: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[3],                 // 12
-      marginBottom: spacing[3],        // 12
-    },
-    streakNumber: {
-      fontSize: screen.isCompact ? 28 : 36,
-      fontWeight: fontWeight.bold,     // "700"
-      color: colors.textStrong,
-      lineHeight: screen.isCompact ? 34 : 40,
-    },
-    streakFire: {
-      // kept for layout spacing — icon rendered inline
-    },
-    streakInfo: {
-      flex: 1,
-    },
-    streakStatusOk: {
-      fontSize: fontSize.sm,           // 14
-      fontWeight: fontWeight.semibold, // "600"
-      color: colors.success,
-      marginBottom: 2,
-    },
-    streakStatusRisk: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.semibold,
-      color: colors.warning,
-      marginBottom: 2,
-    },
-    streakStatusNeutral: {
-      fontSize: fontSize.sm,
-      color: colors.muted,
-      marginBottom: 2,
-    },
-    streakSub: {
-      fontSize: fontSize.xxs,          // 11
-      color: colors.muted,
-    },
-    weekRow: {
-      flexDirection: "row",
-      gap: spacing[1],                 // 4
-    },
-    dayPill: {
-      flex: 1,
-      height: 30,
-      borderRadius: radius.xs,         // 4
-      alignItems: "center",
-      justifyContent: "center",
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      backgroundColor: colors.surfaceMuted,
-    },
-    dayPillActive: {
-      backgroundColor: colors.successSoft,
-      borderColor: colors.success,
-    },
-    dayPillText: {
-      fontSize: fontSize.xxs,          // 11
-      fontWeight: fontWeight.bold,     // "700"
-      color: colors.muted,
-    },
-    dayPillTextActive: {
-      color: colors.success,
-    },
-    streakCta: {
-      marginTop: spacing[3],           // 12
-      backgroundColor: colors.primary,
-      borderRadius: radius.md,         // 12
-      paddingVertical: spacing[3],     // 12
-      alignItems: "center",
-    },
-    streakCtaText: {
-      fontSize: fontSize.sm,           // 14
-      fontWeight: fontWeight.bold,     // "700"
-      color: colors.primaryText,
-    },
-
-    // ── Level ────────────────────────────────────────────────────────────────
-    levelRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[3],                 // 12
-      marginBottom: spacing[3],        // 12
-    },
-    levelBadge: {
-      width: 46,
-      height: 46,
-      borderRadius: radius.full,
-      backgroundColor: colors.primarySoft,
-      borderWidth: 0.5,
-      borderColor: colors.primary,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    levelBadgeText: {
-      fontSize: fontSize.lg,           // 18
-      fontWeight: fontWeight.bold,     // "700"
-      color: colors.primary,
-    },
-    levelInfo: {
-      flex: 1,
-    },
-    levelName: {
-      fontSize: fontSize.base,         // 16
-      fontWeight: fontWeight.semibold, // "600"
-      color: colors.textStrong,
-      marginBottom: 2,
-    },
-    levelXpLabel: {
-      fontSize: fontSize.xxs,          // 11
-      color: colors.muted,
-    },
-    levelNextRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      marginTop: spacing[1],           // 4
-    },
-    levelNextText: {
-      fontSize: fontSize.xxs,          // 11
-      color: colors.muted,
-    },
-    levelNextHighlight: {
-      fontSize: fontSize.xxs,          // 11
-      fontWeight: fontWeight.semibold, // "600"
-      color: colors.textStrong,
-    },
-    levelMaxText: {
-      fontSize: fontSize.xxs,          // 11
-      color: colors.success,
-      textAlign: "center",
-      marginTop: spacing[1],
-    },
-
-    // ── CTA ──────────────────────────────────────────────────────────────────
-    ctaBtn: {
-      backgroundColor: colors.primary,
-      borderRadius: radius.md,         // 12
-      paddingVertical: spacing[4],     // 16
-      alignItems: "center",
-      justifyContent: "center",
-      marginTop: spacing[2],           // 8
-    },
-    ctaBtnText: {
-      fontSize: fontSize.base,         // 16
-      fontWeight: fontWeight.bold,     // "700"
-      color: colors.primaryText,
-    },
-
-    // ── Error ────────────────────────────────────────────────────────────────
-    errorText: {
-      marginTop: spacing[4],           // 16
-      color: colors.error,
-      textAlign: "center",
-      fontSize: fontSize.sm,           // 14
-      fontWeight: fontWeight.medium,   // "500"
-    },
-  });
-}
-
-// ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
 
@@ -462,25 +101,33 @@ function Header({
   isLoading: boolean;
   onReload: () => void;
 }) {
-  const theme = useTheme();
-  const s = makeStyles(theme);
-
   return (
-    <View style={s.header}>
-      {groupName ? <Text style={s.groupLabel} numberOfLines={1}>{groupName}</Text> : null}
-      <Text style={s.heroPoints}>{isLoading ? "--" : points}</Text>
+    <View className="items-center pt-4 pb-5 relative">
+      {groupName ? (
+        <Text
+          className="text-[11px] font-sans-medium text-muted-foreground uppercase tracking-[0.8px] mb-1"
+          numberOfLines={1}
+        >
+          {groupName}
+        </Text>
+      ) : null}
+      <Text className="text-[52px] font-sans-bold text-foreground leading-[58px] mb-2">
+        {isLoading ? "--" : points}
+      </Text>
       {!isLoading && weeklyEarned > 0 && (
-        <View style={s.deltaPill}>
-          <Text style={s.deltaPillText}>↑ +{weeklyEarned} esta semana</Text>
+        <View className="flex-row items-center bg-success/15 px-3 py-1 rounded-full">
+          <Text className="text-xs font-sans-semibold text-success">
+            ↑ +{weeklyEarned} esta semana
+          </Text>
         </View>
       )}
       <Pressable
-        style={({ pressed }) => [s.reloadBtn, pressed && { opacity: 0.6 }]}
+        className="absolute right-0 top-4 w-9 h-9 rounded-full bg-muted border border-border items-center justify-center active:opacity-60"
         onPress={onReload}
         disabled={isLoading}
         accessibilityLabel="Recargar datos"
       >
-        <Text style={s.reloadBtnText}>↻</Text>
+        <Text className="text-base text-muted-foreground">↻</Text>
       </Pressable>
     </View>
   );
@@ -499,50 +146,74 @@ function WeeklyProgressCard({
   weeklyLeaderboard: GroupPointsEntry[];
   myUserId: string | null;
 }) {
-  const theme = useTheme();
-  const s = makeStyles(theme);
   const percent = Math.min(100, Math.round((earned / WEEKLY_XP_GOAL) * 100));
   const remaining = Math.max(0, WEEKLY_XP_GOAL - earned);
   const top3 = weeklyLeaderboard.slice(0, 3);
 
   return (
-    <View style={s.card}>
-      <Text style={s.cardLabel}>Progreso semanal</Text>
+    <View className="bg-card border border-border rounded-xl p-4 mb-3">
+      <Text className="text-[11px] font-sans-medium text-muted-foreground uppercase tracking-[0.8px] mb-3">
+        Progreso semanal
+      </Text>
       {isLoading ? (
         <SkeletonLoader variant="card" count={1} />
       ) : (
         <>
-          <View style={s.progressHeader}>
-            <Text style={s.progressNum}>
+          <View className="flex-row justify-between items-end mb-2">
+            <Text className="text-[22px] font-sans-semibold text-foreground">
               {earned}{" "}
-              <Text style={s.progressNumSub}>/ {WEEKLY_XP_GOAL} XP</Text>
+              <Text className="text-sm font-sans text-muted-foreground">
+                / {WEEKLY_XP_GOAL} XP
+              </Text>
             </Text>
-            <Text style={s.progressGoalLabel}>Meta semanal</Text>
+            <Text className="text-xs text-muted-foreground">Meta semanal</Text>
           </View>
           <ProgressBar progress={earned / WEEKLY_XP_GOAL} variant="xp" />
-          <Text style={s.progressSub}>
+          <Text className="text-[11px] text-muted-foreground mb-4">
             {earned >= WEEKLY_XP_GOAL
               ? `¡Meta alcanzada! (${WEEKLY_XP_GOAL} XP)`
               : `${percent}% completado · ${remaining} XP para la meta`}
           </Text>
 
           {top3.length > 0 && (
-            <View style={s.lbDivider}>
-              <Text style={s.lbSectionLabel}>Top semanal</Text>
+            <View className="border-t border-border pt-3">
+              <Text className="text-[11px] font-sans-medium text-muted-foreground uppercase tracking-[0.8px] mb-2">
+                Top semanal
+              </Text>
               {top3.map((entry, idx) => {
                 const isMe = entry.userId === myUserId;
                 return (
-                  <View key={entry.userId} style={s.lbRow}>
-                    <Text style={s.lbRank}>{idx + 1}</Text>
-                    <View style={[s.lbAvatar, isMe && s.lbAvatarMe]}>
-                      <Text style={[s.lbAvatarText, isMe && s.lbAvatarTextMe]}>
+                  <View key={entry.userId} className="flex-row items-center gap-2 py-1">
+                    <Text className="text-[11px] text-muted-foreground w-5 text-center">
+                      {idx + 1}
+                    </Text>
+                    <View
+                      className={`w-7 h-7 rounded-full items-center justify-center ${
+                        isMe ? "bg-success/15" : "bg-primary/15"
+                      }`}
+                    >
+                      <Text
+                        className={`text-[11px] font-sans-semibold ${
+                          isMe ? "text-success" : "text-primary"
+                        }`}
+                      >
                         {isMe ? "TÚ" : getInitials(entry.displayName)}
                       </Text>
                     </View>
-                    <Text style={[s.lbName, isMe && s.lbNameMe]}>
+                    <Text
+                      className={`flex-1 text-sm ${
+                        isMe
+                          ? "font-sans-semibold text-success"
+                          : "font-sans text-foreground"
+                      }`}
+                    >
                       {isMe ? "Tú" : entry.displayName}
                     </Text>
-                    <Text style={[s.lbPts, isMe && s.lbPtsMe]}>
+                    <Text
+                      className={`text-sm font-sans-semibold ${
+                        isMe ? "text-success" : "text-foreground"
+                      }`}
+                    >
                       {entry.points} pts
                     </Text>
                   </View>
@@ -567,32 +238,39 @@ function StreakCard({
   streak: StreakSummary;
   onGoToTasks: () => void;
 }) {
-  const theme = useTheme();
-  const s = makeStyles(theme);
+  const { colors } = useTheme();
 
   return (
-    <View style={s.card}>
-      <Text style={s.cardLabel}>Racha diaria</Text>
+    <View className="bg-card border border-border rounded-xl p-4 mb-3">
+      <Text className="text-[11px] font-sans-medium text-muted-foreground uppercase tracking-[0.8px] mb-3">
+        Racha diaria
+      </Text>
       {isLoading ? (
         <SkeletonLoader variant="card" count={1} />
       ) : (
         <>
-          <View style={s.streakMain}>
-            <Text style={s.streakNumber}>{streak.currentStreak}</Text>
-            <Ionicons name="flame" size={30} color={theme.colors.streak} />
-            <View style={s.streakInfo}>
+          <View className="flex-row items-center gap-3 mb-3">
+            <Text className="text-[36px] font-sans-bold text-foreground leading-[40px]">
+              {streak.currentStreak}
+            </Text>
+            <Ionicons name="flame" size={30} color={colors.streak} />
+            <View className="flex-1">
               {streak.isActiveToday ? (
-                <Text style={s.streakStatusOk}>¡Hoy ya sumaste actividad!</Text>
+                <Text className="text-sm font-sans-semibold text-success mb-[2px]">
+                  ¡Hoy ya sumaste actividad!
+                </Text>
               ) : streak.isAtRisk ? (
-                <Text style={s.streakStatusRisk}>¡En riesgo! Completa algo hoy</Text>
+                <Text className="text-sm font-sans-semibold text-warning mb-[2px]">
+                  ¡En riesgo! Completa algo hoy
+                </Text>
               ) : (
-                <Text style={s.streakStatusNeutral}>
+                <Text className="text-sm text-muted-foreground mb-[2px]">
                   {streak.currentStreak > 0
                     ? "¡Vamos por una nueva racha!"
                     : "Aún no tienes actividad."}
                 </Text>
               )}
-              <Text style={s.streakSub}>
+              <Text className="text-[11px] text-muted-foreground">
                 {streak.lastActiveDate
                   ? `Última actividad: ${formatLocalDate(streak.lastActiveDate)}`
                   : "Sin actividad registrada"}
@@ -601,13 +279,21 @@ function StreakCard({
           </View>
 
           {streak.recent7Days.length > 0 && (
-            <View style={s.weekRow}>
+            <View className="flex-row gap-1">
               {streak.recent7Days.map((day) => (
                 <View
                   key={day.dateKey}
-                  style={[s.dayPill, day.isActive && s.dayPillActive]}
+                  className={`flex-1 h-[30px] rounded items-center justify-center border ${
+                    day.isActive
+                      ? "bg-success/15 border-success"
+                      : "bg-muted border-border"
+                  }`}
                 >
-                  <Text style={[s.dayPillText, day.isActive && s.dayPillTextActive]}>
+                  <Text
+                    className={`text-[11px] font-sans-bold ${
+                      day.isActive ? "text-success" : "text-muted-foreground"
+                    }`}
+                  >
                     {formatWeekday(day.dateKey)}
                   </Text>
                 </View>
@@ -616,7 +302,7 @@ function StreakCard({
           )}
 
           {streak.isAtRisk && (
-            <View style={{ marginTop: theme.spacing[4] }}>
+            <View className="mt-4">
               <Button
                 label="Completar tarea hoy"
                 onPress={onGoToTasks}
@@ -640,35 +326,45 @@ function LevelCard({
   isLoading: boolean;
   xp: XpSummary;
 }) {
-  const theme = useTheme();
-  const s = makeStyles(theme);
   const remaining = xp.xpNeededForNextLevel - xp.xpInCurrentLevel;
 
   return (
-    <View style={s.card}>
-      <Text style={s.cardLabel}>Nivel</Text>
+    <View className="bg-card border border-border rounded-xl p-4 mb-3">
+      <Text className="text-[11px] font-sans-medium text-muted-foreground uppercase tracking-[0.8px] mb-3">
+        Nivel
+      </Text>
       {isLoading ? (
         <SkeletonLoader variant="card" count={1} />
       ) : (
         <>
-          <View style={s.levelRow}>
-            <View style={s.levelBadge}>
-              <Text style={s.levelBadgeText}>{xp.levelName}</Text>
+          <View className="flex-row items-center gap-3 mb-3">
+            <View className="w-[46px] h-[46px] rounded-full bg-primary/15 border border-primary items-center justify-center">
+              <Text className="text-lg font-sans-bold text-primary">
+                {xp.levelName}
+              </Text>
             </View>
-            <View style={s.levelInfo}>
-              <Text style={s.levelName}>Rango {xp.levelName}</Text>
-              <Text style={s.levelXpLabel}>{xp.totalXp} XP acumulados</Text>
+            <View className="flex-1">
+              <Text className="text-base font-sans-semibold text-foreground mb-[2px]">
+                Rango {xp.levelName}
+              </Text>
+              <Text className="text-[11px] text-muted-foreground">
+                {xp.totalXp} XP acumulados
+              </Text>
             </View>
           </View>
           <ProgressBar progress={xp.progressPercent / 100} variant="xp" />
           {xp.isMaxLevel ? (
-            <Text style={s.levelMaxText}>¡Nivel máximo alcanzado!</Text>
+            <Text className="text-[11px] text-success text-center mt-1">
+              ¡Nivel máximo alcanzado!
+            </Text>
           ) : (
-            <View style={s.levelNextRow}>
-              <Text style={s.levelNextText}>
+            <View className="flex-row justify-between mt-1">
+              <Text className="text-[11px] text-muted-foreground">
                 {xp.xpInCurrentLevel} / {xp.xpNeededForNextLevel} XP
               </Text>
-              <Text style={s.levelNextHighlight}>{remaining} XP para subir</Text>
+              <Text className="text-[11px] font-sans-semibold text-foreground">
+                {remaining} XP para subir
+              </Text>
             </View>
           )}
         </>
@@ -682,8 +378,6 @@ function LevelCard({
 // ---------------------------------------------------------------------------
 
 export function HomeScreen({ navigation }: Props) {
-  const theme = useTheme();
-  const s = makeStyles(theme);
   const { activeGroupId, activeGroupName } = useAppSession();
 
   const [myPoints, setMyPoints] = useState(0);
@@ -765,40 +459,47 @@ export function HomeScreen({ navigation }: Props) {
   }, [loadData]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={["top"]}>
-    <ScrollView contentContainerStyle={s.container}>
-      <Header
-        groupName={activeGroupName}
-        points={myPoints}
-        weeklyEarned={myWeeklyEarned}
-        isLoading={isLoading}
-        onReload={loadData}
-      />
+    <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={["top"]}>
+      <ScrollView
+        className="bg-background"
+        contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16, paddingBottom: 40 }}
+      >
+        <Header
+          groupName={activeGroupName}
+          points={myPoints}
+          weeklyEarned={myWeeklyEarned}
+          isLoading={isLoading}
+          onReload={loadData}
+        />
 
-      <WeeklyProgressCard
-        isLoading={isLoading}
-        earned={myWeeklyEarned}
-        weeklyLeaderboard={weeklyLeaderboard}
-        myUserId={myUserId}
-      />
+        <WeeklyProgressCard
+          isLoading={isLoading}
+          earned={myWeeklyEarned}
+          weeklyLeaderboard={weeklyLeaderboard}
+          myUserId={myUserId}
+        />
 
-      <StreakCard
-        isLoading={isLoading}
-        streak={streak}
-        onGoToTasks={handleGoToTasks}
-      />
+        <StreakCard
+          isLoading={isLoading}
+          streak={streak}
+          onGoToTasks={handleGoToTasks}
+        />
 
-      <LevelCard isLoading={isLoading} xp={xp} />
+        <LevelCard isLoading={isLoading} xp={xp} />
 
-      <Button
-        label="Ver historial de puntos"
-        onPress={handleGoToHistory}
-        variant="secondary"
-        size="lg"
-      />
+        <Button
+          label="Ver historial de puntos"
+          onPress={handleGoToHistory}
+          variant="secondary"
+          size="lg"
+        />
 
-      {error ? <Text style={s.errorText}>{error}</Text> : null}
-    </ScrollView>
+        {error ? (
+          <Text className="mt-4 text-destructive text-center text-sm font-sans-medium">
+            {error}
+          </Text>
+        ) : null}
+      </ScrollView>
     </SafeAreaView>
   );
 }

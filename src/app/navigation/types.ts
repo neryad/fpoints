@@ -26,6 +26,7 @@ export type ProfileStackParamList = {
   ProfileMain: undefined;
   GroupSettings: undefined;
   MemberDashboard: { memberId: string; memberName: string; memberRole: string };
+  DesignSystem: undefined;
 };
 
 export type RewardsStackParamList = {

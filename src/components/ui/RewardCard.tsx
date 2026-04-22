@@ -1,7 +1,8 @@
 import React from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { useTheme } from "../../core/theme/ThemeProvider";
+import { useColorScheme } from "nativewind";
+import { shadows } from "../../../design-system-rn/tokens/shadows";
 import { ProgressBar } from "./ProgressBar";
 import type { Reward } from "../../features/rewards/types";
 
@@ -12,7 +13,8 @@ export type RewardCardProps = {
 };
 
 export function RewardCard({ reward, userPoints, onRedeem }: RewardCardProps) {
-  const { colors, spacing, radius, fontSize, fontWeight, shadow } = useTheme();
+  const { colorScheme } = useColorScheme();
+  const iconColor = colorScheme === "dark" ? "#808790" : "#737980";
 
   const canAfford = userPoints >= reward.costPoints;
   const progress  = Math.min(1, userPoints / reward.costPoints);
@@ -20,57 +22,35 @@ export function RewardCard({ reward, userPoints, onRedeem }: RewardCardProps) {
 
   return (
     <View
-      style={[
-        styles.card,
-        shadow.level1,
-        {
-          backgroundColor: colors.surface,
-          borderRadius: radius.lg,
-          padding: spacing[4],
-          opacity: reward.active ? 1 : 0.5,
-        },
-      ]}
+      style={[shadows.card, !reward.active && { opacity: 0.5 }]}
+      className="rounded-xl border border-border bg-card p-4"
     >
-      <View style={[styles.header, { gap: spacing[3] }]}>
-        <View style={styles.info}>
-          <Text
-            style={{
-              color: colors.textPrimary,
-              fontSize: fontSize.sm,
-              fontWeight: fontWeight.semibold,
-            }}
-            numberOfLines={1}
-          >
+      <View className="flex-row items-center gap-3">
+        <View className="flex-1">
+          <Text className="font-sans-semibold text-sm text-foreground" numberOfLines={1}>
             {reward.title}
           </Text>
-          <View style={[styles.inlineRow, { marginTop: spacing[1] }]}>
-            <Ionicons name="star" size={12} color={colors.points} />
-            <Text style={{ color: colors.points, fontSize: fontSize.xs, fontWeight: fontWeight.bold }}>
-              {reward.costPoints} pts
-            </Text>
-          </View>
+          <Text
+            className="mt-0.5 font-mono-bold text-xs text-points"
+            style={{ fontVariant: ["tabular-nums"] }}
+          >
+            {reward.costPoints} pts
+          </Text>
         </View>
 
         <Pressable
           onPress={onRedeem}
           disabled={!canAfford || !reward.active}
-          style={({ pressed }) => [
-            styles.redeemBtn,
-            {
-              backgroundColor: canAfford ? colors.primary : colors.surfaceMuted,
-              borderRadius: radius.md,
-              paddingHorizontal: spacing[3],
-              paddingVertical: spacing[2],
-              opacity: pressed ? 0.75 : 1,
-            },
-          ]}
+          className={[
+            "rounded-full px-3 py-2 active:opacity-75",
+            canAfford && reward.active ? "bg-primary" : "bg-muted",
+          ].join(" ")}
         >
           <Text
-            style={{
-              color: canAfford ? colors.textInverse : colors.muted,
-              fontSize: fontSize.xs,
-              fontWeight: fontWeight.bold,
-            }}
+            className={[
+              "font-sans-bold text-xs",
+              canAfford && reward.active ? "text-primary-foreground" : "text-muted-foreground",
+            ].join(" ")}
           >
             Canjear
           </Text>
@@ -78,11 +58,11 @@ export function RewardCard({ reward, userPoints, onRedeem }: RewardCardProps) {
       </View>
 
       {!canAfford && (
-        <View style={{ marginTop: spacing[3], gap: spacing[1] }}>
+        <View className="mt-3 gap-1.5">
           <ProgressBar progress={progress} variant="points" />
-          <View style={[styles.missingRow, { gap: spacing[1] }]}>
-            <Ionicons name="lock-closed-outline" size={12} color={colors.muted} />
-            <Text style={{ color: colors.muted, fontSize: fontSize.xxs }}>
+          <View className="flex-row items-center gap-1">
+            <Ionicons name="lock-closed-outline" size={11} color={iconColor} />
+            <Text className="font-sans text-[10px] text-muted-foreground">
               Te faltan {missing} pts
             </Text>
           </View>
@@ -91,29 +71,3 @@ export function RewardCard({ reward, userPoints, onRedeem }: RewardCardProps) {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  card: {
-    width: "100%",
-  },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  info: {
-    flex: 1,
-  },
-  redeemBtn: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  missingRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  inlineRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-  },
-});

@@ -1,12 +1,6 @@
 import React from "react";
-import {
-  ActivityIndicator,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
-import { useTheme } from "../../core/theme/ThemeProvider";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { useColorScheme } from "nativewind";
 
 export type ButtonVariant = "primary" | "secondary" | "danger" | "ghost" | "outline";
 export type ButtonSize = "sm" | "md" | "lg";
@@ -21,6 +15,34 @@ export type ButtonProps = {
   fullWidth?: boolean;
 };
 
+const variantClass: Record<ButtonVariant, string> = {
+  primary:   "bg-primary",
+  secondary: "bg-secondary",
+  danger:    "bg-destructive",
+  ghost:     "bg-transparent",
+  outline:   "bg-transparent border border-primary",
+};
+
+const textClass: Record<ButtonVariant, string> = {
+  primary:   "text-primary-foreground",
+  secondary: "text-secondary-foreground",
+  danger:    "text-destructive-foreground",
+  ghost:     "text-primary",
+  outline:   "text-primary",
+};
+
+const sizeClass: Record<ButtonSize, string> = {
+  sm: "px-3 py-2",
+  md: "px-4 py-3",
+  lg: "px-5 py-4",
+};
+
+const sizeTextClass: Record<ButtonSize, string> = {
+  sm: "text-xs",
+  md: "text-sm",
+  lg: "text-base",
+};
+
 export function Button({
   label,
   onPress,
@@ -30,71 +52,29 @@ export function Button({
   disabled = false,
   fullWidth = true,
 }: ButtonProps) {
-  const { colors, spacing, radius, fontSize, fontWeight } = useTheme();
-
+  const { colorScheme } = useColorScheme();
   const isDisabled = disabled || loading;
-
-  const bgColor: Record<ButtonVariant, string> = {
-    primary:   colors.primary,
-    secondary: colors.surfaceMuted,
-    danger:    colors.error,
-    ghost:     "transparent",
-    outline:   "transparent",
-  };
-
-  const textColor: Record<ButtonVariant, string> = {
-    primary:   colors.textInverse,
-    secondary: colors.textPrimary,
-    danger:    colors.textInverse,
-    ghost:     colors.primary,
-    outline:   colors.primary,
-  };
-
-  const paddingV: Record<ButtonSize, number> = {
-    sm: spacing[2],
-    md: spacing[3],
-    lg: spacing[4],
-  };
-
-  const textSize: Record<ButtonSize, number> = {
-    sm: fontSize.xs,
-    md: fontSize.sm,
-    lg: fontSize.base,
-  };
+  const spinnerColor = (variant === "primary" || variant === "danger")
+    ? "#FFFFFF"
+    : colorScheme === "dark" ? "#E0DDD8" : "#1B1E26";
 
   return (
     <Pressable
       onPress={onPress}
       disabled={isDisabled}
-      style={({ pressed }) => [
-        styles.base,
-        {
-          backgroundColor: bgColor[variant],
-          borderRadius: radius.md,
-          paddingVertical: paddingV[size],
-          paddingHorizontal: spacing[4],
-          borderWidth: variant === "outline" ? 0.5 : 0,
-          borderColor: variant === "outline" ? colors.primary : "transparent",
-          alignSelf: fullWidth ? "stretch" : "flex-start",
-          opacity: isDisabled ? 0.5 : pressed ? 0.78 : 1,
-        },
-      ]}
+      className={[
+        "items-center justify-center rounded-xl active:opacity-75",
+        variantClass[variant],
+        sizeClass[size],
+        fullWidth ? "self-stretch" : "self-start",
+        isDisabled ? "opacity-50" : "",
+      ].join(" ")}
     >
-      <View style={styles.content}>
+      <View className="flex-row items-center gap-2">
         {loading ? (
-          <ActivityIndicator
-            size="small"
-            color={textColor[variant]}
-          />
+          <ActivityIndicator size="small" color={spinnerColor} />
         ) : (
-          <Text
-            style={{
-              color: textColor[variant],
-              fontSize: textSize[size],
-              fontWeight: fontWeight.bold,
-              textAlign: "center",
-            }}
-          >
+          <Text className={["font-sans-bold", textClass[variant], sizeTextClass[size]].join(" ")}>
             {label}
           </Text>
         )}
@@ -102,15 +82,3 @@ export function Button({
     </Pressable>
   );
 }
-
-const styles = StyleSheet.create({
-  base: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  content: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-});
