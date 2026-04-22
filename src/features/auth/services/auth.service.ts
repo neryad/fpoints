@@ -68,19 +68,13 @@ export async function signInWithUsername(username: string, pin: string) {
     );
   }
 
-  const { data: emailData, error: lookupError } = await supabase.rpc(
-    "get_auth_email_by_username",
-    { p_username: username.trim().toLowerCase() },
-  );
-
-  if (lookupError || !emailData) {
-    const err = new Error("Cuenta no encontrada.");
-    (err as any).notFound = true;
-    throw err;
-  }
+  // Email is deterministic — derive it locally instead of calling the
+  // get_auth_email_by_username RPC as anon (which would expose the email
+  // lookup endpoint to unauthenticated callers).
+  const email = childEmail(username.trim().toLowerCase());
 
   const { data, error } = await supabase.auth.signInWithPassword({
-    email: emailData as string,
+    email,
     password: pin,
   });
 
