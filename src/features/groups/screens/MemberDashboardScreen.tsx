@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Modal,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -17,6 +18,11 @@ import {
   CelebrationOverlay,
   type CelebrationData,
 } from "../../../components/ui/CelebrationOverlay";
+import {
+  listGroupRewards,
+  redeemRewardForMember,
+} from "../../rewards/services/rewards.service";
+import type { Reward } from "../../rewards/types";
 
 type Props = NativeStackScreenProps<ProfileStackParamList, "MemberDashboard">;
 
@@ -109,6 +115,27 @@ function makeStyles(theme: ReturnType<typeof useTheme>) {
     doneBtnText: { fontSize: fontSize.xs, fontWeight: fontWeight.bold, color: "#fff" },
     doneBtnDisabled: { opacity: 0.4 },
 
+    // Reward row
+    rewardRow: {
+      flexDirection: "row", alignItems: "center",
+      paddingHorizontal: spacing[4], paddingVertical: spacing[3],
+      borderTopWidth: 0.5, borderTopColor: colors.border,
+      gap: spacing[3],
+    },
+    rewardInfo: { flex: 1 },
+    rewardTitle: { fontSize: fontSize.sm, fontWeight: fontWeight.medium, color: colors.textStrong },
+    rewardCost: {
+      backgroundColor: colors.rewardSoft ?? colors.warningSoft, borderRadius: radius.full,
+      paddingHorizontal: spacing[2], paddingVertical: 3,
+    },
+    rewardCostText: { fontSize: fontSize.xs, fontWeight: fontWeight.bold, color: colors.reward ?? colors.warning },
+    redeemBtn: {
+      backgroundColor: colors.reward ?? colors.warning, borderRadius: radius.md,
+      paddingHorizontal: spacing[3], paddingVertical: spacing[2],
+    },
+    redeemBtnText: { fontSize: fontSize.xs, fontWeight: fontWeight.bold, color: "#fff" },
+    redeemBtnDisabled: { opacity: 0.35 },
+
     // Transaction row
     txRow: {
       flexDirection: "row", alignItems: "center",
@@ -127,6 +154,37 @@ function makeStyles(theme: ReturnType<typeof useTheme>) {
       padding: spacing[3], marginBottom: spacing[4], gap: spacing[2],
     },
     pendingText: { fontSize: fontSize.sm, color: colors.warning, flex: 1 },
+
+    // Confirmation modal
+    modalOverlay: {
+      flex: 1, backgroundColor: "rgba(0,0,0,0.45)",
+      justifyContent: "flex-end",
+    },
+    modalSheet: {
+      backgroundColor: colors.background,
+      borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl,
+      padding: spacing[5], paddingBottom: spacing[8],
+    },
+    modalTitle: {
+      fontSize: fontSize.base, fontWeight: fontWeight.semibold,
+      color: colors.textStrong, marginBottom: spacing[2],
+    },
+    modalSub: {
+      fontSize: fontSize.sm, color: colors.muted, marginBottom: spacing[5],
+    },
+    modalActions: { flexDirection: "row", gap: spacing[3] },
+    btnCancel: {
+      flex: 1, borderRadius: radius.md, paddingVertical: spacing[4],
+      alignItems: "center", backgroundColor: colors.surface,
+      borderWidth: 0.5, borderColor: colors.border,
+    },
+    btnCancelText: { fontSize: fontSize.sm, color: colors.text },
+    btnConfirm: {
+      flex: 1, borderRadius: radius.md, paddingVertical: spacing[4],
+      alignItems: "center", backgroundColor: colors.reward ?? colors.warning,
+    },
+    btnConfirmText: { fontSize: fontSize.sm, fontWeight: fontWeight.bold, color: "#fff" },
+    btnConfirmDisabled: { opacity: 0.4 },
   });
 }
 
@@ -136,7 +194,7 @@ const ROLE_LABELS: Record<string, string> = {
 
 function formatReason(reason: string): string {
   if (reason.startsWith("task_approved:"))  return "Tarea aprobada";
-  if (reason.startsWith("reward_redeemed:")) return "Recompensa canjeada";
+  if (reason.startsWith("reward_redeemed:")) return "Premio canjeado";
   if (reason.startsWith("manual:"))          return reason.slice("manual:".length);
   return reason;
 }
@@ -152,12 +210,15 @@ export function MemberDashboardScreen({ route }: Props) {
   const s = makeStyles(theme);
   const { colors, spacing, fontSize } = theme;
 
-  const [data, setData]         = useState<MemberOverview | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError]       = useState("");
-  const [completing, setCompleting] = useState<string | null>(null); // taskId being completed
+  const [data, setData]               = useState<MemberOverview | null>(null);
+  const [isLoading, setIsLoading]     = useState(true);
+  const [error, setError]             = useState("");
+  const [completing, setCompleting]   = useState<string | null>(null);
+  const [rewards, setRewards]         = useState<Reward[]>([]);
+  const [redeeming, setRedeeming]     = useState<string | null>(null);
+  const [confirmReward, setConfirmReward] = useState<Reward | null>(null);
 
-  const [celebration, setCelebration] = useState<CelebrationData | null>(null);
+  const [celebration, setCelebration]       = useState<CelebrationData | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
 
   const load = useCallback(async () => {
@@ -166,12 +227,13 @@ export function MemberDashboardScreen({ route }: Props) {
       setIsLoading(true);
       setError("");
       const client = ensureSupabase();
-      const { data: rpcData, error: rpcError } = await client.rpc(
-        "get_member_overview",
-        { p_user_id: memberId, p_group_id: activeGroupId },
-      );
+      const [{ data: rpcData, error: rpcError }, rewardList] = await Promise.all([
+        client.rpc("get_member_overview", { p_user_id: memberId, p_group_id: activeGroupId }),
+        listGroupRewards(activeGroupId),
+      ]);
       if (rpcError) throw rpcError;
       setData(rpcData as MemberOverview);
+      setRewards(rewardList);
     } catch {
       setError("No se pudo cargar la información del miembro.");
     } finally {
@@ -199,7 +261,6 @@ export function MemberDashboardScreen({ route }: Props) {
         newBalance: res.new_balance,
       });
       setShowCelebration(true);
-      // Optimistically remove task and update points in local state
       setData((prev) => {
         if (!prev) return prev;
         return {
@@ -216,6 +277,28 @@ export function MemberDashboardScreen({ route }: Props) {
       setCompleting(null);
     }
   }, [activeGroupId, memberId, memberName, completing]);
+
+  const handleConfirmRedeem = useCallback(async () => {
+    if (!activeGroupId || !confirmReward || redeeming) return;
+    const reward = confirmReward;
+    setConfirmReward(null);
+    try {
+      setRedeeming(reward.id);
+      const result = await redeemRewardForMember(activeGroupId, reward.id, memberId);
+      setData((prev) => prev ? { ...prev, total_points: result.newBalance } : prev);
+      setCelebration({
+        memberName,
+        taskTitle: result.rewardTitle,
+        pointsEarned: -result.pointsSpent,
+        newBalance: result.newBalance,
+      });
+      setShowCelebration(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo realizar el canje.");
+    } finally {
+      setRedeeming(null);
+    }
+  }, [activeGroupId, confirmReward, memberId, memberName, redeeming]);
 
   const handleCloseCelebration = useCallback(() => {
     setShowCelebration(false);
@@ -237,6 +320,7 @@ export function MemberDashboardScreen({ route }: Props) {
     );
   }
 
+  const balance = data?.total_points ?? 0;
   const initial = (memberName ?? "?").charAt(0).toUpperCase();
 
   return (
@@ -272,7 +356,7 @@ export function MemberDashboardScreen({ route }: Props) {
           {/* Stats */}
           <View style={s.statsRow}>
             <View style={s.statCard}>
-              <Text style={s.statValue}>{data?.total_points ?? 0}</Text>
+              <Text style={s.statValue}>{balance}</Text>
               <Text style={s.statLabel}>Puntos totales</Text>
             </View>
             <View style={s.statCard}>
@@ -319,6 +403,44 @@ export function MemberDashboardScreen({ route }: Props) {
             )}
           </View>
 
+          {/* Redeem reward */}
+          {rewards.length > 0 && (
+            <>
+              <Text style={s.sectionTitle}>Canjear premio</Text>
+              <View style={s.card}>
+                {rewards.map((reward, i) => {
+                  const canAfford = balance >= reward.costPoints;
+                  const isRedeeming = redeeming === reward.id;
+                  return (
+                    <View key={reward.id} style={[s.rewardRow, i === 0 && { borderTopWidth: 0 }]}>
+                      <View style={s.rewardInfo}>
+                        <Text style={[s.rewardTitle, !canAfford && { color: colors.muted }]}>
+                          {reward.title}
+                        </Text>
+                      </View>
+                      <View style={s.rewardCost}>
+                        <Text style={s.rewardCostText}>{reward.costPoints} pts</Text>
+                      </View>
+                      <Pressable
+                        style={({ pressed }) => [
+                          s.redeemBtn,
+                          (!canAfford || !!redeeming) && s.redeemBtnDisabled,
+                          pressed && canAfford && !redeeming && { opacity: 0.75 },
+                        ]}
+                        onPress={() => canAfford && !redeeming && setConfirmReward(reward)}
+                        disabled={!canAfford || !!redeeming}
+                      >
+                        <Text style={s.redeemBtnText}>
+                          {isRedeeming ? "..." : "Canjear"}
+                        </Text>
+                      </Pressable>
+                    </View>
+                  );
+                })}
+              </View>
+            </>
+          )}
+
           {/* Recent activity */}
           <Text style={s.sectionTitle}>Actividad reciente</Text>
           <View style={s.card}>
@@ -345,6 +467,37 @@ export function MemberDashboardScreen({ route }: Props) {
 
         </ScrollView>
       </SafeAreaView>
+
+      {/* Confirmation modal */}
+      <Modal
+        visible={!!confirmReward}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setConfirmReward(null)}
+      >
+        <Pressable style={s.modalOverlay} onPress={() => setConfirmReward(null)}>
+          <Pressable style={s.modalSheet} onPress={() => {}}>
+            <Text style={s.modalTitle}>¿Confirmar canje?</Text>
+            <Text style={s.modalSub}>
+              Se descontarán {confirmReward?.costPoints} puntos a {memberName} por "{confirmReward?.title}".
+            </Text>
+            <View style={s.modalActions}>
+              <Pressable
+                style={({ pressed }) => [s.btnCancel, pressed && { opacity: 0.7 }]}
+                onPress={() => setConfirmReward(null)}
+              >
+                <Text style={s.btnCancelText}>Cancelar</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [s.btnConfirm, pressed && { opacity: 0.75 }]}
+                onPress={handleConfirmRedeem}
+              >
+                <Text style={s.btnConfirmText}>Confirmar</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
 
       <CelebrationOverlay
         visible={showCelebration}

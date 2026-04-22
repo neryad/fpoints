@@ -1,6 +1,7 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -15,6 +16,7 @@ import { TasksStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
 import { useTheme } from "../../../core/theme/ThemeProvider";
 import { createTask } from "../services/tasks.service";
+import { listGroupMembers, type GroupMember } from "../../groups/services/groups.service";
 
 type Props = NativeStackScreenProps<TasksStackParamList, "CreateTask">;
 
@@ -63,6 +65,29 @@ function makeStyles(theme: ReturnType<typeof useTheme>) {
       color: colors.error,
       marginTop: spacing[1],
     },
+    pickerBtn: {
+      backgroundColor: colors.surface,
+      borderWidth: 0.5,
+      borderColor: colors.border,
+      borderRadius: radius.sm,
+      paddingHorizontal: spacing[3],
+      paddingVertical: spacing[3],
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    pickerBtnText: {
+      fontSize: fontSize.sm,
+      color: colors.text,
+    },
+    pickerBtnPlaceholder: {
+      fontSize: fontSize.sm,
+      color: colors.muted,
+    },
+    pickerChevron: {
+      fontSize: fontSize.xs,
+      color: colors.muted,
+    },
     switchCard: {
       backgroundColor: colors.surface,
       borderWidth: 0.5,
@@ -103,6 +128,63 @@ function makeStyles(theme: ReturnType<typeof useTheme>) {
       color: colors.primaryText,
     },
     btnDisabled: { opacity: 0.4 },
+    // Modal
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.4)",
+      justifyContent: "flex-end",
+    },
+    modalSheet: {
+      backgroundColor: colors.background,
+      borderTopLeftRadius: radius.xl,
+      borderTopRightRadius: radius.xl,
+      paddingTop: spacing[4],
+      paddingBottom: spacing[8],
+      maxHeight: "60%",
+    },
+    modalTitle: {
+      fontSize: fontSize.base,
+      fontWeight: fontWeight.semibold,
+      color: colors.textStrong,
+      textAlign: "center",
+      marginBottom: spacing[3],
+      paddingHorizontal: spacing[4],
+    },
+    memberRow: {
+      paddingHorizontal: spacing[4],
+      paddingVertical: spacing[3],
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    memberRowSelected: {
+      backgroundColor: colors.primarySoft,
+    },
+    memberName: {
+      fontSize: fontSize.sm,
+      color: colors.text,
+    },
+    memberNameSelected: {
+      color: colors.primary,
+      fontWeight: fontWeight.semibold,
+    },
+    memberCheck: {
+      fontSize: fontSize.sm,
+      color: colors.primary,
+    },
+    divider: {
+      height: 0.5,
+      backgroundColor: colors.divider,
+      marginHorizontal: spacing[4],
+    },
+    noneRow: {
+      paddingHorizontal: spacing[4],
+      paddingVertical: spacing[3],
+    },
+    noneText: {
+      fontSize: fontSize.sm,
+      color: colors.muted,
+    },
   });
 }
 
@@ -115,9 +197,19 @@ export function CreateTaskScreen({ navigation }: Props) {
   const [description, setDescription] = useState("");
   const [pointsValue, setPointsValue] = useState("10");
   const [requiresProof, setRequiresProof] = useState(false);
+  const [assignedTo, setAssignedTo] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<{ title?: string; pointsValue?: string }>({});
+  const [members, setMembers] = useState<GroupMember[]>([]);
+  const [showMemberPicker, setShowMemberPicker] = useState(false);
+
+  useEffect(() => {
+    if (!activeGroupId) return;
+    listGroupMembers(activeGroupId).then(setMembers).catch(() => {});
+  }, [activeGroupId]);
+
+  const selectedMember = members.find((m) => m.userId === assignedTo) ?? null;
 
   const validate = useCallback((): boolean => {
     const errs: { title?: string; pointsValue?: string } = {};
@@ -140,6 +232,7 @@ export function CreateTaskScreen({ navigation }: Props) {
         description,
         pointsValue: parseInt(pointsValue, 10),
         requiresProof,
+        assignedTo,
       });
       navigation.goBack();
     } catch (err) {
@@ -147,7 +240,12 @@ export function CreateTaskScreen({ navigation }: Props) {
     } finally {
       setIsLoading(false);
     }
-  }, [activeGroupId, title, description, pointsValue, requiresProof, validate, navigation]);
+  }, [activeGroupId, title, description, pointsValue, requiresProof, assignedTo, validate, navigation]);
+
+  const handleSelectMember = useCallback((userId: string | null) => {
+    setAssignedTo(userId);
+    setShowMemberPicker(false);
+  }, []);
 
   return (
     <KeyboardAvoidingView
@@ -204,6 +302,23 @@ export function CreateTaskScreen({ navigation }: Props) {
           {fieldErrors.pointsValue ? <Text style={s.fieldError}>{fieldErrors.pointsValue}</Text> : null}
         </View>
 
+        {/* Asignar a */}
+        {members.length > 0 && (
+          <View style={s.fieldWrap}>
+            <Text style={s.label}>Asignar a</Text>
+            <Pressable
+              style={({ pressed }) => [s.pickerBtn, pressed && { opacity: 0.8 }]}
+              onPress={() => setShowMemberPicker(true)}
+              disabled={isLoading}
+            >
+              <Text style={selectedMember ? s.pickerBtnText : s.pickerBtnPlaceholder}>
+                {selectedMember ? selectedMember.displayName : "Sin asignar (cualquiera puede hacerla)"}
+              </Text>
+              <Text style={s.pickerChevron}>▾</Text>
+            </Pressable>
+          </View>
+        )}
+
         {/* Switch requiere prueba */}
         <View style={s.switchCard}>
           <View style={s.switchLabelWrap}>
@@ -229,6 +344,54 @@ export function CreateTaskScreen({ navigation }: Props) {
         </Pressable>
 
       </ScrollView>
+
+      {/* Modal selector de miembro */}
+      <Modal
+        visible={showMemberPicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowMemberPicker(false)}
+      >
+        <Pressable style={s.modalOverlay} onPress={() => setShowMemberPicker(false)}>
+          <Pressable style={s.modalSheet} onPress={() => {}}>
+            <Text style={s.modalTitle}>Asignar tarea a</Text>
+
+            <ScrollView>
+              {/* Opción sin asignar */}
+              <Pressable
+                style={({ pressed }) => [s.noneRow, !assignedTo && s.memberRowSelected, pressed && { opacity: 0.7 }]}
+                onPress={() => handleSelectMember(null)}
+              >
+                <Text style={[s.noneText, !assignedTo && { color: theme.colors.primary, fontWeight: "600" as any }]}>
+                  Sin asignar
+                </Text>
+              </Pressable>
+              <View style={s.divider} />
+
+              {members.map((member, index) => (
+                <View key={member.userId}>
+                  <Pressable
+                    style={({ pressed }) => [
+                      s.memberRow,
+                      assignedTo === member.userId && s.memberRowSelected,
+                      pressed && { opacity: 0.7 },
+                    ]}
+                    onPress={() => handleSelectMember(member.userId)}
+                  >
+                    <Text style={[s.memberName, assignedTo === member.userId && s.memberNameSelected]}>
+                      {member.displayName}
+                    </Text>
+                    {assignedTo === member.userId && (
+                      <Text style={s.memberCheck}>✓</Text>
+                    )}
+                  </Pressable>
+                  {index < members.length - 1 && <View style={s.divider} />}
+                </View>
+              ))}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }
