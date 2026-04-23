@@ -5,7 +5,6 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -31,163 +30,8 @@ const ROLE_LABELS: Record<string, string> = {
   member: "Miembro",
 };
 
-function makeStyles(theme: ReturnType<typeof useTheme>) {
-  const { colors, spacing, fontSize, fontWeight, radius } = theme;
-  return StyleSheet.create({
-    centered: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: colors.background,
-    },
-    scrollContent: {
-      backgroundColor: colors.background,
-      padding: spacing[4],             // 16
-      paddingBottom: spacing[8],       // 40
-    },
-
-    // ── Card ────────────────────────────────────────────────────────────────
-    card: {
-      backgroundColor: colors.surface,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.lg,
-      padding: spacing[4],
-      marginBottom: spacing[3],
-    },
-    cardLabel: {
-      fontSize: fontSize.xxs,
-      fontWeight: fontWeight.medium,
-      color: colors.muted,
-      letterSpacing: 0.8,
-      textTransform: "uppercase",
-      marginBottom: spacing[3],
-    },
-
-    // ── Input ────────────────────────────────────────────────────────────────
-    input: {
-      backgroundColor: colors.background,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.sm,
-      paddingHorizontal: spacing[3],
-      paddingVertical: spacing[3],
-      fontSize: fontSize.sm,
-      color: colors.text,
-      marginBottom: spacing[3],
-    },
-    inputDisabled: { opacity: 0.5 },
-
-    // ── Invite code ──────────────────────────────────────────────────────────
-    codeBox: {
-      backgroundColor: colors.primarySoft,
-      borderRadius: radius.md,
-      paddingVertical: spacing[4],
-      alignItems: "center",
-      marginBottom: spacing[2],
-    },
-    codeText: {
-      fontSize: 26,
-      fontWeight: fontWeight.bold,
-      letterSpacing: 6,
-      color: colors.primary,
-    },
-    hint: {
-      fontSize: fontSize.xxs,
-      color: colors.muted,
-      textAlign: "center",
-    },
-
-    // ── Members ──────────────────────────────────────────────────────────────
-    memberRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[3],
-      paddingVertical: spacing[3],
-      borderTopWidth: 0.5,
-      borderTopColor: colors.border,
-    },
-    memberAvatar: {
-      width: 34,
-      height: 34,
-      borderRadius: radius.full,
-      backgroundColor: colors.primarySoft,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    memberAvatarText: {
-      fontSize: fontSize.xs,
-      fontWeight: fontWeight.bold,
-      color: colors.primary,
-    },
-    memberInfo: { flex: 1 },
-    memberName: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.medium,
-      color: colors.textStrong,
-    },
-    rolePill: {
-      backgroundColor: colors.surfaceMuted,
-      borderRadius: radius.full,
-      paddingHorizontal: spacing[2],
-      paddingVertical: 2,
-    },
-    rolePillOwner: {
-      backgroundColor: colors.primarySoft,
-    },
-    rolePillText: {
-      fontSize: fontSize.xxs,
-      fontWeight: fontWeight.medium,
-      color: colors.muted,
-    },
-    rolePillTextOwner: {
-      color: colors.primary,
-    },
-
-    // ── Buttons ──────────────────────────────────────────────────────────────
-    btnPrimary: {
-      backgroundColor: colors.primary,
-      borderRadius: radius.md,
-      paddingVertical: spacing[3],
-      alignItems: "center",
-    },
-    btnPrimaryText: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.bold,
-      color: colors.primaryText,
-    },
-    btnDisabled: { opacity: 0.4 },
-
-    // ── Feedback ─────────────────────────────────────────────────────────────
-    errorText: {
-      fontSize: fontSize.xs,
-      color: colors.error,
-      textAlign: "center",
-      marginBottom: spacing[3],
-    },
-    successText: {
-      fontSize: fontSize.xs,
-      color: colors.success,
-      textAlign: "center",
-      marginBottom: spacing[3],
-    },
-    membersHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      marginBottom: spacing[2],
-    },
-    membersCount: {
-      fontSize: fontSize.xxs,
-      color: colors.muted,
-      fontWeight: fontWeight.medium,
-    },
-  });
-}
-
 export function GroupSettingsScreen({ navigation }: Props) {
-  const theme = useTheme();
-  const s = makeStyles(theme);
+  const { colors } = useTheme();
   const { activeGroupId } = useAppSession();
 
   const [groupName, setGroupName] = useState("");
@@ -199,7 +43,6 @@ export function GroupSettingsScreen({ navigation }: Props) {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Child invitation form
   const [showChildForm, setShowChildForm] = useState(false);
   const [childUsername, setChildUsername] = useState("");
   const [childPin, setChildPin] = useState("");
@@ -269,153 +112,169 @@ export function GroupSettingsScreen({ navigation }: Props) {
 
   if (isLoading) {
     return (
-      <View style={s.centered}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+      <View className="flex-1 bg-background items-center justify-center">
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
+  const inputClass = "bg-background border border-border rounded-lg px-3 py-3 text-sm text-foreground mb-3";
+  const cardLabel = "text-[11px] font-sans-medium text-muted-foreground uppercase tracking-[0.8px] mb-3";
+
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: theme.colors.background }}
+      style={{ flex: 1 }}
+      className="bg-background"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-    <ScrollView
-      style={{ flex: 1, backgroundColor: theme.colors.background }}
-      contentContainerStyle={s.scrollContent}
-    >
-
-      {/* ── Nombre ── */}
-      <View style={s.card}>
-        <Text style={s.cardLabel}>Nombre del grupo</Text>
-        <TextInput
-          style={[s.input, !isOwner && s.inputDisabled]}
-          value={groupName}
-          onChangeText={setGroupName}
-          editable={isOwner && !isSaving}
-          placeholder="Nombre del grupo"
-          placeholderTextColor={theme.colors.muted}
-        />
-        {isOwner ? (
-          <Pressable
-            style={({ pressed }) => [s.btnPrimary, isSaving && s.btnDisabled, pressed && !isSaving && { opacity: 0.8 }]}
-            onPress={handleSaveName}
-            disabled={isSaving}
-          >
-            <Text style={s.btnPrimaryText}>{isSaving ? "Guardando..." : "Guardar nombre"}</Text>
-          </Pressable>
-        ) : null}
-        {error ? <Text style={[s.errorText, { marginTop: theme.spacing[2], marginBottom: 0 }]}>{error}</Text> : null}
-        {successMessage ? <Text style={[s.successText, { marginTop: theme.spacing[2], marginBottom: 0 }]}>{successMessage}</Text> : null}
-      </View>
-
-      {/* ── Código de invitación ── */}
-      <View style={s.card}>
-        <Text style={s.cardLabel}>Código de invitación</Text>
-        <View style={s.codeBox}>
-          <Text style={s.codeText} selectable>{inviteCode}</Text>
-        </View>
-        <Text style={s.hint}>Comparte este código para que otros se unan al grupo.</Text>
-      </View>
-
-      {/* ── Agregar niño (solo owners) ── */}
-      {isOwner ? (
-        <View style={s.card}>
-          <Pressable
-            style={({ pressed }) => ({ opacity: pressed ? 0.8 : 1, flexDirection: "row", alignItems: "center", justifyContent: "space-between" })}
-            onPress={() => { setShowChildForm((v) => !v); setChildError(""); setChildSuccess(""); }}
-          >
-            <Text style={s.cardLabel}>Agregar miembro sin email</Text>
-            <Text style={{ fontSize: theme.fontSize.xs, color: theme.colors.primary }}>
-              {showChildForm ? "Cancelar" : "+ Nuevo"}
-            </Text>
-          </Pressable>
-
-          {showChildForm ? (
-            <View style={{ marginTop: theme.spacing[3], gap: theme.spacing[3] }}>
-              <TextInput
-                style={s.input}
-                value={childDisplayName}
-                onChangeText={setChildDisplayName}
-                placeholder="Nombre visible (ej: Ana)"
-                placeholderTextColor={theme.colors.muted}
-                editable={!isSavingChild}
-              />
-              <TextInput
-                style={s.input}
-                value={childUsername}
-                onChangeText={(t) => setChildUsername(t.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
-                placeholder="Nombre de usuario (ej: ana)"
-                placeholderTextColor={theme.colors.muted}
-                autoCapitalize="none"
-                autoCorrect={false}
-                editable={!isSavingChild}
-              />
-              <TextInput
-                style={s.input}
-                value={childPin}
-                onChangeText={setChildPin}
-                placeholder="PIN (4-6 dígitos)"
-                placeholderTextColor={theme.colors.muted}
-                keyboardType="number-pad"
-                secureTextEntry
-                maxLength={6}
-                editable={!isSavingChild}
-              />
-              {childError ? <Text style={s.errorText}>{childError}</Text> : null}
-              {childSuccess ? <Text style={s.successText}>{childSuccess}</Text> : null}
-              <Pressable
-                style={({ pressed }) => [s.btnPrimary, isSavingChild && s.btnDisabled, pressed && !isSavingChild && { opacity: 0.8 }]}
-                onPress={handleCreateChild}
-                disabled={isSavingChild}
-              >
-                <Text style={s.btnPrimaryText}>{isSavingChild ? "Creando..." : "Crear invitación"}</Text>
-              </Pressable>
-            </View>
-          ) : (
-            <Text style={[s.hint, { marginTop: theme.spacing[2] }]}>
-              Crea acceso por usuario y PIN para niños que no tienen correo.
-            </Text>
-          )}
-        </View>
-      ) : null}
-
-      {/* ── Miembros ── */}
-      <View style={s.card}>
-        <View style={s.membersHeader}>
-          <Text style={s.cardLabel}>Miembros</Text>
-          <Text style={s.membersCount}>{members.length} en total</Text>
-        </View>
-        {members.map((item, idx) => {
-          const isElevated = item.role === "owner" || item.role === "sub_owner";
-          const initial = (item.displayName ?? "?").charAt(0).toUpperCase();
-          return (
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+      >
+        {/* Nombre del grupo */}
+        <View className="bg-card border border-border rounded-xl p-4 mb-3">
+          <Text className={cardLabel}>Nombre del grupo</Text>
+          <TextInput
+            className={`${inputClass} ${!isOwner ? "opacity-50" : ""}`}
+            value={groupName}
+            onChangeText={setGroupName}
+            editable={isOwner && !isSaving}
+            placeholder="Nombre del grupo"
+            placeholderTextColor={colors.muted}
+          />
+          {isOwner ? (
             <Pressable
-              key={item.userId}
-              style={({ pressed }) => [s.memberRow, idx === 0 && { borderTopWidth: 0 }, pressed && { opacity: 0.7 }]}
-              onPress={() => navigation.navigate("MemberDashboard", {
-                memberId: item.userId,
-                memberName: item.displayName,
-                memberRole: item.role,
-              })}
+              className={`bg-primary rounded-xl py-3 items-center active:opacity-80 ${isSaving ? "opacity-40" : ""}`}
+              onPress={handleSaveName}
+              disabled={isSaving}
             >
-              <View style={s.memberAvatar}>
-                <Text style={s.memberAvatarText}>{initial}</Text>
-              </View>
-              <View style={s.memberInfo}>
-                <Text style={s.memberName}>{item.displayName}</Text>
-              </View>
-              <View style={[s.rolePill, isElevated && s.rolePillOwner]}>
-                <Text style={[s.rolePillText, isElevated && s.rolePillTextOwner]}>
-                  {ROLE_LABELS[item.role] ?? item.role}
-                </Text>
-              </View>
+              <Text className="text-sm font-sans-bold text-primary-foreground">
+                {isSaving ? "Guardando..." : "Guardar nombre"}
+              </Text>
             </Pressable>
-          );
-        })}
-      </View>
+          ) : null}
+          {error ? <Text className="text-destructive text-xs text-center mt-2 font-sans">{error}</Text> : null}
+          {successMessage ? <Text className="text-success text-xs text-center mt-2 font-sans">{successMessage}</Text> : null}
+        </View>
 
-    </ScrollView>
+        {/* Código de invitación */}
+        <View className="bg-card border border-border rounded-xl p-4 mb-3">
+          <Text className={cardLabel}>Código de invitación</Text>
+          <View className="bg-primary/15 rounded-xl py-4 items-center mb-2">
+            <Text
+              className="text-[26px] font-sans-bold text-primary"
+              style={{ letterSpacing: 6 }}
+              selectable
+            >
+              {inviteCode}
+            </Text>
+          </View>
+          <Text className="text-[11px] text-muted-foreground text-center">
+            Comparte este código para que otros se unan al grupo.
+          </Text>
+        </View>
+
+        {/* Agregar niño (solo owners) */}
+        {isOwner ? (
+          <View className="bg-card border border-border rounded-xl p-4 mb-3">
+            <Pressable
+              className="flex-row items-center justify-between active:opacity-80"
+              onPress={() => { setShowChildForm((v) => !v); setChildError(""); setChildSuccess(""); }}
+            >
+              <Text className={cardLabel}>Agregar miembro sin email</Text>
+              <Text className="text-xs text-primary">
+                {showChildForm ? "Cancelar" : "+ Nuevo"}
+              </Text>
+            </Pressable>
+
+            {showChildForm ? (
+              <View className="mt-3 gap-3">
+                <TextInput
+                  className={inputClass}
+                  value={childDisplayName}
+                  onChangeText={setChildDisplayName}
+                  placeholder="Nombre visible (ej: Ana)"
+                  placeholderTextColor={colors.muted}
+                  editable={!isSavingChild}
+                />
+                <TextInput
+                  className={inputClass}
+                  value={childUsername}
+                  onChangeText={(t) => setChildUsername(t.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+                  placeholder="Nombre de usuario (ej: ana)"
+                  placeholderTextColor={colors.muted}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  editable={!isSavingChild}
+                />
+                <TextInput
+                  className={inputClass}
+                  value={childPin}
+                  onChangeText={setChildPin}
+                  placeholder="PIN (4-6 dígitos)"
+                  placeholderTextColor={colors.muted}
+                  keyboardType="number-pad"
+                  secureTextEntry
+                  maxLength={6}
+                  editable={!isSavingChild}
+                />
+                {childError ? <Text className="text-destructive text-xs font-sans">{childError}</Text> : null}
+                {childSuccess ? <Text className="text-success text-xs font-sans">{childSuccess}</Text> : null}
+                <Pressable
+                  className={`bg-primary rounded-xl py-3 items-center active:opacity-80 ${isSavingChild ? "opacity-40" : ""}`}
+                  onPress={handleCreateChild}
+                  disabled={isSavingChild}
+                >
+                  <Text className="text-sm font-sans-bold text-primary-foreground">
+                    {isSavingChild ? "Creando..." : "Crear invitación"}
+                  </Text>
+                </Pressable>
+              </View>
+            ) : (
+              <Text className="text-[11px] text-muted-foreground mt-2">
+                Crea acceso por usuario y PIN para niños que no tienen correo.
+              </Text>
+            )}
+          </View>
+        ) : null}
+
+        {/* Miembros */}
+        <View className="bg-card border border-border rounded-xl p-4 mb-3">
+          <View className="flex-row items-center justify-between mb-2">
+            <Text className={cardLabel}>Miembros</Text>
+            <Text className="text-[11px] font-sans-medium text-muted-foreground">
+              {members.length} en total
+            </Text>
+          </View>
+          {members.map((item, idx) => {
+            const isElevated = item.role === "owner" || item.role === "sub_owner";
+            const initial = (item.displayName ?? "?").charAt(0).toUpperCase();
+            return (
+              <Pressable
+                key={item.userId}
+                className={`flex-row items-center gap-3 py-3 active:opacity-70 ${idx > 0 ? "border-t border-border" : ""}`}
+                onPress={() => navigation.navigate("MemberDashboard", {
+                  memberId: item.userId,
+                  memberName: item.displayName,
+                  memberRole: item.role,
+                })}
+              >
+                <View className="w-[34px] h-[34px] rounded-full bg-primary/15 items-center justify-center">
+                  <Text className="text-xs font-sans-bold text-primary">{initial}</Text>
+                </View>
+                <View className="flex-1">
+                  <Text className="text-sm font-sans-medium text-foreground">{item.displayName}</Text>
+                </View>
+                <View className={`rounded-full px-2 ${isElevated ? "bg-primary/15" : "bg-muted"}`} style={{ paddingVertical: 2 }}>
+                  <Text className={`text-[11px] font-sans-medium ${isElevated ? "text-primary" : "text-muted-foreground"}`}>
+                    {ROLE_LABELS[item.role] ?? item.role}
+                  </Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }

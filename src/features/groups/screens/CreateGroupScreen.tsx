@@ -3,7 +3,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  StyleSheet,
   Text,
   TextInput,
 } from "react-native";
@@ -11,69 +10,8 @@ import { useTheme } from "../../../core/theme/ThemeProvider";
 import { createGroup } from "../services/groups.service";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
 
-function makeStyles(theme: ReturnType<typeof useTheme>) {
-  const { colors, spacing, fontSize, fontWeight, radius } = theme;
-  return StyleSheet.create({
-    container: {
-      flex: 1,
-      justifyContent: "center",
-      backgroundColor: colors.background,
-      padding: spacing[6],             // 24
-    },
-    title: {
-      fontSize: fontSize.xl,           // 22
-      fontWeight: fontWeight.bold,     // "700"
-      color: colors.textStrong,
-      textAlign: "center",
-      marginBottom: spacing[1],        // 4
-    },
-    subtitle: {
-      fontSize: fontSize.sm,           // 14
-      color: colors.muted,
-      textAlign: "center",
-      marginBottom: spacing[5],        // 20
-    },
-    input: {
-      backgroundColor: colors.surface,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.sm,         // 8
-      paddingHorizontal: spacing[3],   // 12
-      paddingVertical: spacing[3],     // 12
-      fontSize: fontSize.sm,           // 14
-      color: colors.text,
-      marginBottom: spacing[3],        // 12
-    },
-    errorText: {
-      fontSize: fontSize.xs,           // 12
-      color: colors.error,
-      textAlign: "center",
-      marginBottom: spacing[3],        // 12
-    },
-    successText: {
-      fontSize: fontSize.xs,           // 12
-      color: colors.success,
-      textAlign: "center",
-      marginBottom: spacing[3],        // 12
-    },
-    btnPrimary: {
-      backgroundColor: colors.primary,
-      borderRadius: radius.md,         // 12
-      paddingVertical: spacing[4],     // 16
-      alignItems: "center",
-    },
-    btnPrimaryText: {
-      fontSize: fontSize.base,         // 16
-      fontWeight: fontWeight.bold,     // "700"
-      color: colors.primaryText,
-    },
-    btnDisabled: { opacity: 0.4 },
-  });
-}
-
 export function CreateGroupScreen() {
-  const theme = useTheme();
-  const s = makeStyles(theme);
+  const { colors } = useTheme();
   const { selectGroup } = useAppSession();
 
   const [name, setName] = useState("");
@@ -102,31 +40,41 @@ export function CreateGroupScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={s.container}
+      className="flex-1 bg-background justify-center px-6"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <Text style={s.title}>Crear grupo</Text>
-      <Text style={s.subtitle}>Crea un nuevo grupo para comenzar.</Text>
+      <Text className="text-[22px] font-sans-bold text-foreground text-center mb-1">
+        Crear grupo
+      </Text>
+      <Text className="text-sm font-sans text-muted-foreground text-center mb-5">
+        Crea un nuevo grupo para comenzar.
+      </Text>
 
       <TextInput
-        style={s.input}
+        className="bg-card border border-border rounded-lg px-3 py-3 text-sm text-foreground mb-3"
         placeholder="Nombre del grupo"
-        placeholderTextColor={theme.colors.muted}
+        placeholderTextColor={colors.muted}
         editable={!isLoading}
         value={name}
         onChangeText={setName}
         onSubmitEditing={handleCreate}
       />
 
-      {error ? <Text style={s.errorText}>{error}</Text> : null}
-      {successMessage ? <Text style={s.successText}>{successMessage}</Text> : null}
+      {error ? (
+        <Text className="text-destructive text-xs text-center mb-3 font-sans">{error}</Text>
+      ) : null}
+      {successMessage ? (
+        <Text className="text-success text-xs text-center mb-3 font-sans">{successMessage}</Text>
+      ) : null}
 
       <Pressable
-        style={({ pressed }) => [s.btnPrimary, isLoading && s.btnDisabled, pressed && !isLoading && { opacity: 0.8 }]}
+        className={`bg-primary rounded-xl py-4 items-center active:opacity-80 ${isLoading ? "opacity-40" : ""}`}
         onPress={handleCreate}
         disabled={isLoading}
       >
-        <Text style={s.btnPrimaryText}>{isLoading ? "Creando..." : "Crear grupo"}</Text>
+        <Text className="text-base font-sans-bold text-primary-foreground">
+          {isLoading ? "Creando..." : "Crear grupo"}
+        </Text>
       </Pressable>
     </KeyboardAvoidingView>
   );

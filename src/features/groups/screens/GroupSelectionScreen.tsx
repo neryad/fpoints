@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -22,181 +21,73 @@ const ROLE_LABELS: Record<string, string> = {
   member: "Miembro",
 };
 
-function makeStyles(theme: ReturnType<typeof useTheme>) {
-  const { colors, spacing, fontSize, fontWeight, radius } = theme;
-  return StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-      padding: spacing[6],             // 24
-    },
-    hero: {
-      alignItems: "center",
-      paddingTop: spacing[8],          // 40
-      paddingBottom: spacing[6],       // 24
-    },
-    title: {
-      fontSize: fontSize.xl,           // 22
-      fontWeight: fontWeight.bold,
-      color: colors.textStrong,
-      marginBottom: spacing[1],
-    },
-    subtitle: {
-      fontSize: fontSize.sm,
-      color: colors.muted,
-      textAlign: "center",
-    },
-    listContent: {
-      paddingBottom: spacing[4],
-    },
-    groupCard: {
-      backgroundColor: colors.surface,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.lg,         // 16
-      padding: spacing[4],             // 16
-      marginBottom: spacing[3],        // 12
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[3],
-    },
-    groupAvatar: {
-      width: 42,
-      height: 42,
-      borderRadius: radius.full,
-      backgroundColor: colors.primarySoft,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    groupAvatarText: {
-      fontSize: fontSize.base,
-      fontWeight: fontWeight.bold,
-      color: colors.primary,
-    },
-    groupInfo: { flex: 1 },
-    groupName: {
-      fontSize: fontSize.base,
-      fontWeight: fontWeight.semibold,
-      color: colors.textStrong,
-      marginBottom: 2,
-    },
-    groupMeta: {
-      fontSize: fontSize.xxs,
-      color: colors.muted,
-    },
-    rolePill: {
-      backgroundColor: colors.primarySoft,
-      borderRadius: radius.full,
-      paddingHorizontal: spacing[2],
-      paddingVertical: 2,
-    },
-    rolePillText: {
-      fontSize: fontSize.xxs,
-      fontWeight: fontWeight.medium,
-      color: colors.primary,
-    },
-    infoText: {
-      fontSize: fontSize.sm,
-      color: colors.muted,
-      textAlign: "center",
-      marginBottom: spacing[4],
-    },
-    errorText: {
-      fontSize: fontSize.xs,
-      color: colors.error,
-      textAlign: "center",
-      marginBottom: spacing[3],
-    },
-    divider: {
-      height: 0.5,
-      backgroundColor: colors.border,
-      marginVertical: spacing[4],
-    },
-    actionsLabel: {
-      fontSize: fontSize.xxs,
-      fontWeight: fontWeight.medium,
-      color: colors.muted,
-      letterSpacing: 0.8,
-      textTransform: "uppercase",
-      textAlign: "center",
-      marginBottom: spacing[3],
-    },
-    actionsRow: {
-      flexDirection: "row",
-      gap: spacing[3],
-      marginBottom: spacing[3],
-    },
-    reloadBtn: {
-      alignSelf: "center",
-      paddingVertical: spacing[2],
-      paddingHorizontal: spacing[4],
-    },
-    reloadBtnText: {
-      fontSize: fontSize.xs,
-      color: colors.muted,
-      textDecorationLine: "underline",
-    },
-  });
-}
-
 export function GroupSelectionScreen({ navigation }: Props) {
-  const theme = useTheme();
-  const s = makeStyles(theme);
+  const { colors } = useTheme();
   const { selectGroup } = useAppSession();
   const { groups, isLoading, error, reload } = useGroups();
 
   const renderGroupItem = useCallback(({ item }: { item: typeof groups[0] }) => (
     <Pressable
-      style={({ pressed }) => [s.groupCard, pressed && { opacity: 0.75 }]}
+      className="bg-card border border-border rounded-xl p-4 mb-3 flex-row items-center gap-3 active:opacity-75"
       onPress={() => selectGroup(item.id, item.name)}
     >
-      <View style={s.groupAvatar}>
-        <Text style={s.groupAvatarText}>
+      <View className="w-[42px] h-[42px] rounded-full bg-primary/15 items-center justify-center">
+        <Text className="text-base font-sans-bold text-primary">
           {item.name.charAt(0).toUpperCase()}
         </Text>
       </View>
-      <View style={s.groupInfo}>
-        <Text style={s.groupName}>{item.name}</Text>
-        <Text style={s.groupMeta}>Código: {item.invite_code}</Text>
+      <View className="flex-1">
+        <Text className="text-base font-sans-semibold text-foreground mb-[2px]">{item.name}</Text>
+        <Text className="text-[11px] text-muted-foreground">Código: {item.invite_code}</Text>
       </View>
       {item.my_role ? (
-        <View style={s.rolePill}>
-          <Text style={s.rolePillText}>
+        <View className="bg-primary/15 rounded-full px-2" style={{ paddingVertical: 2 }}>
+          <Text className="text-[11px] font-sans-medium text-primary">
             {ROLE_LABELS[item.my_role] ?? item.my_role}
           </Text>
         </View>
       ) : null}
     </Pressable>
-  ), [s, selectGroup]);
+  ), [selectGroup]);
 
   return (
-    <View style={s.container}>
-      <View style={s.hero}>
-        <Text style={s.title}>Selecciona un grupo</Text>
-        <Text style={s.subtitle}>Elige un grupo existente o crea uno nuevo.</Text>
+    <View className="flex-1 bg-background px-6">
+      <View className="items-center pt-10 pb-6">
+        <Text className="text-[22px] font-sans-bold text-foreground mb-1">
+          Selecciona un grupo
+        </Text>
+        <Text className="text-sm font-sans text-muted-foreground text-center">
+          Elige un grupo existente o crea uno nuevo.
+        </Text>
       </View>
 
       {isLoading ? (
-        <ActivityIndicator size="small" color={theme.colors.primary} style={{ marginBottom: theme.spacing[4] }} />
+        <ActivityIndicator size="small" color={colors.primary} style={{ marginBottom: 16 }} />
       ) : null}
-      {error ? <Text style={s.errorText}>{error}</Text> : null}
+      {error ? (
+        <Text className="text-destructive text-xs text-center mb-3 font-sans">{error}</Text>
+      ) : null}
       {!isLoading && !error && groups.length === 0 ? (
-        <Text style={s.infoText}>Aún no perteneces a ningún grupo.</Text>
+        <Text className="text-sm text-muted-foreground text-center mb-4">
+          Aún no perteneces a ningún grupo.
+        </Text>
       ) : null}
 
       <FlatList
         data={groups}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={s.listContent}
+        contentContainerStyle={{ paddingBottom: 16 }}
         scrollEnabled={groups.length > 4}
         renderItem={renderGroupItem}
       />
 
-      <View style={s.divider} />
-      <Text style={s.actionsLabel}>Más opciones</Text>
+      <View className="h-px bg-border my-4" />
+      <Text className="text-[11px] font-sans-medium text-muted-foreground uppercase tracking-[0.8px] text-center mb-3">
+        Más opciones
+      </Text>
 
-      <View style={s.actionsRow}>
-        <View style={{ flex: 1 }}>
+      <View className="flex-row gap-3 mb-3">
+        <View className="flex-1">
           <Button
             label="Crear grupo"
             onPress={() => navigation.navigate("CreateGroup")}
@@ -204,7 +95,7 @@ export function GroupSelectionScreen({ navigation }: Props) {
             size="md"
           />
         </View>
-        <View style={{ flex: 1 }}>
+        <View className="flex-1">
           <Button
             label="Unirse"
             onPress={() => navigation.navigate("JoinGroup")}
@@ -214,8 +105,11 @@ export function GroupSelectionScreen({ navigation }: Props) {
         </View>
       </View>
 
-      <Pressable style={({ pressed }) => [s.reloadBtn, pressed && { opacity: 0.6 }]} onPress={reload}>
-        <Text style={s.reloadBtnText}>Recargar grupos</Text>
+      <Pressable
+        className="self-center py-2 px-4 active:opacity-60"
+        onPress={reload}
+      >
+        <Text className="text-xs text-muted-foreground underline">Recargar grupos</Text>
       </Pressable>
     </View>
   );

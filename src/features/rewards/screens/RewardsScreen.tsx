@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useState } from "react";
 import {
   FlatList,
   Pressable,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -10,7 +9,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RewardsStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
-import { useTheme } from "../../../core/theme/ThemeProvider";
 import { ConfirmDialog } from "../../../components/shared/ConfirmDialog";
 import { RewardCard } from "../../../components/ui/RewardCard";
 import { EmptyState } from "../../../components/ui/EmptyState";
@@ -25,94 +23,7 @@ import type { Reward } from "../types";
 
 type Props = NativeStackScreenProps<RewardsStackParamList, "RewardsList">;
 
-function makeStyles(theme: ReturnType<typeof useTheme>) {
-  const { colors, spacing, fontSize, fontWeight, radius, screen } = theme;
-  return StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: colors.background,
-      padding: spacing[4],
-    },
-    balanceCard: {
-      backgroundColor: colors.surface,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.lg,
-      padding: spacing[4],
-      marginBottom: spacing[3],
-    },
-    balanceLabel: {
-      fontSize: fontSize.xxs,
-      fontWeight: fontWeight.medium,
-      color: colors.muted,
-      letterSpacing: 0.8,
-      textTransform: "uppercase",
-    },
-    balanceAmount: {
-      fontSize: screen.isCompact ? 32 : 40,
-      fontWeight: fontWeight.bold,
-      color: colors.textPrimary,
-      lineHeight: screen.isCompact ? 38 : 46,
-      marginTop: spacing[1],
-    },
-    balanceSub: {
-      fontSize: fontSize.xxs,
-      color: colors.muted,
-      marginTop: 2,
-    },
-    actionsRow: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      gap: spacing[2],
-      marginBottom: spacing[3],
-    },
-    chip: {
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.full,
-      paddingHorizontal: spacing[3],
-      paddingVertical: spacing[2],
-    },
-    chipText: {
-      fontSize: fontSize.xs,
-      fontWeight: fontWeight.semibold,
-      color: colors.text,
-    },
-    chipPrimary: {
-      borderWidth: 0.5,
-      borderColor: colors.primary,
-      borderRadius: radius.full,
-      paddingHorizontal: spacing[3],
-      paddingVertical: spacing[2],
-      backgroundColor: colors.primarySoft,
-    },
-    chipPrimaryText: {
-      fontSize: fontSize.xs,
-      fontWeight: fontWeight.semibold,
-      color: colors.primary,
-    },
-    errorText: {
-      color: colors.error,
-      fontSize: fontSize.xs,
-      textAlign: "center",
-      marginBottom: spacing[2],
-    },
-    successText: {
-      color: colors.success,
-      fontSize: fontSize.xs,
-      textAlign: "center",
-      marginBottom: spacing[2],
-    },
-    listContent: {
-      paddingBottom: spacing[7],
-      gap: spacing[3],
-    },
-  });
-}
-
 export function RewardsScreen({ navigation }: Props) {
-  const theme = useTheme();
-  const s = makeStyles(theme);
   const { activeGroupId } = useAppSession();
 
   const [rewards, setRewards]       = useState<Reward[]>([]);
@@ -190,7 +101,7 @@ export function RewardsScreen({ navigation }: Props) {
   const availableCount = rewards.filter((r) => r.active && myPoints >= r.costPoints).length;
 
   return (
-    <SafeAreaView style={s.safeArea} edges={["top"]}>
+    <SafeAreaView style={{ flex: 1 }} className="bg-background p-4" edges={["top"]}>
       <ConfirmDialog
         visible={dialog !== null}
         title={dialog?.title ?? ""}
@@ -202,47 +113,54 @@ export function RewardsScreen({ navigation }: Props) {
       />
 
       {/* Balance */}
-      <View style={s.balanceCard}>
-        <Text style={s.balanceLabel}>Puntos disponibles</Text>
-        <Text style={s.balanceAmount}>{myPoints}</Text>
-        <Text style={s.balanceSub}>{availableCount} premios al alcance</Text>
+      <View className="bg-card border border-border rounded-xl p-4 mb-3">
+        <Text className="text-[11px] font-sans-medium text-muted-foreground uppercase tracking-[0.8px]">
+          Puntos disponibles
+        </Text>
+        <Text className="text-[40px] font-sans-bold text-foreground leading-[46px] mt-1">
+          {myPoints}
+        </Text>
+        <Text className="text-[11px] text-muted-foreground mt-[2px]">
+          {availableCount} premios al alcance
+        </Text>
       </View>
 
       {/* Acciones */}
-      <View style={s.actionsRow}>
+      <View className="flex-row flex-wrap gap-2 mb-3">
         <Pressable
           onPress={() => navigation.navigate("MyRedemptions")}
-          style={({ pressed }) => [s.chip, pressed && { opacity: 0.7 }]}
+          className="border border-border rounded-full px-3 py-2 bg-card active:opacity-70"
         >
-          <Text style={s.chipText}>Mis canjes</Text>
+          <Text className="text-xs font-sans-semibold text-foreground">Mis canjes</Text>
         </Pressable>
 
         {isManager && (
           <>
             <Pressable
               onPress={() => navigation.navigate("ManageRewards")}
-              style={({ pressed }) => [s.chipPrimary, pressed && { opacity: 0.7 }]}
+              className="border border-primary rounded-full px-3 py-2 bg-primary/10 active:opacity-70"
             >
-              <Text style={s.chipPrimaryText}>Gestionar</Text>
+              <Text className="text-xs font-sans-semibold text-primary">Gestionar</Text>
             </Pressable>
             <Pressable
               onPress={() => navigation.navigate("RewardApprovals")}
-              style={({ pressed }) => [s.chipPrimary, pressed && { opacity: 0.7 }]}
+              className="border border-primary rounded-full px-3 py-2 bg-primary/10 active:opacity-70"
             >
-              <Text style={s.chipPrimaryText}>Aprobar canjes</Text>
+              <Text className="text-xs font-sans-semibold text-primary">Aprobar canjes</Text>
             </Pressable>
           </>
         )}
       </View>
 
-      {/* Feedback */}
-      {error ? <Text style={s.errorText}>{error}</Text> : null}
-      {successMessage ? <Text style={s.successText}>{successMessage}</Text> : null}
+      {error ? (
+        <Text className="text-destructive text-xs text-center mb-2 font-sans">{error}</Text>
+      ) : null}
+      {successMessage ? (
+        <Text className="text-success text-xs text-center mb-2 font-sans">{successMessage}</Text>
+      ) : null}
 
-      {/* Loading */}
       {isLoading ? <SkeletonLoader variant="list" count={3} /> : null}
 
-      {/* Empty */}
       {!isLoading && !error && rewards.length === 0 ? (
         <EmptyState
           icon="gift-outline"
@@ -251,12 +169,11 @@ export function RewardsScreen({ navigation }: Props) {
         />
       ) : null}
 
-      {/* Lista */}
       {!isLoading && rewards.length > 0 ? (
         <FlatList
           data={rewards}
           keyExtractor={(item) => item.id}
-          contentContainerStyle={s.listContent}
+          contentContainerStyle={{ paddingBottom: 32, gap: 12 }}
           renderItem={renderReward}
         />
       ) : null}

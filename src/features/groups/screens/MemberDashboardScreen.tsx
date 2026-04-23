@@ -4,7 +4,6 @@ import {
   Modal,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -47,147 +46,6 @@ type MemberOverview = {
   tasks: AvailableTask[];
 };
 
-function makeStyles(theme: ReturnType<typeof useTheme>) {
-  const { colors, spacing, fontSize, fontWeight, radius } = theme;
-  return StyleSheet.create({
-    container:  { flex: 1, backgroundColor: colors.background },
-    scroll:     { padding: spacing[4], paddingBottom: spacing[8] },
-    centered:   { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.background },
-
-    headerCard: {
-      backgroundColor: colors.primary,
-      borderRadius: radius.xl,
-      padding: spacing[5],
-      alignItems: "center",
-      marginBottom: spacing[4],
-    },
-    avatar: {
-      width: 64, height: 64, borderRadius: radius.full,
-      backgroundColor: "rgba(255,255,255,0.25)",
-      alignItems: "center", justifyContent: "center",
-      marginBottom: spacing[3],
-    },
-    avatarText:  { fontSize: 28, fontWeight: fontWeight.bold, color: "#fff" },
-    memberName:  { fontSize: fontSize.xl, fontWeight: fontWeight.bold, color: "#fff", marginBottom: spacing[1] },
-    roleLabel:   { fontSize: fontSize.xs, color: "rgba(255,255,255,0.75)" },
-
-    statsRow: { flexDirection: "row", gap: spacing[3], marginBottom: spacing[4] },
-    statCard: {
-      flex: 1,
-      backgroundColor: colors.surface,
-      borderWidth: 0.5, borderColor: colors.border,
-      borderRadius: radius.lg,
-      padding: spacing[4], alignItems: "center",
-    },
-    statValue: { fontSize: fontSize.xl, fontWeight: fontWeight.bold, color: colors.textStrong, marginBottom: 2 },
-    statLabel: { fontSize: fontSize.xxs, color: colors.muted, textAlign: "center" },
-
-    sectionTitle: {
-      fontSize: fontSize.xxs, fontWeight: fontWeight.medium,
-      color: colors.muted, letterSpacing: 0.8, textTransform: "uppercase",
-      marginBottom: spacing[2],
-    },
-    card: {
-      backgroundColor: colors.surface,
-      borderWidth: 0.5, borderColor: colors.border,
-      borderRadius: radius.lg, marginBottom: spacing[4], overflow: "hidden",
-    },
-
-    // Task row
-    taskRow: {
-      flexDirection: "row", alignItems: "center",
-      paddingHorizontal: spacing[4], paddingVertical: spacing[3],
-      borderTopWidth: 0.5, borderTopColor: colors.border,
-      gap: spacing[3],
-    },
-    taskInfo:   { flex: 1 },
-    taskTitle:  { fontSize: fontSize.sm, fontWeight: fontWeight.medium, color: colors.textStrong },
-    taskDesc:   { fontSize: fontSize.xs, color: colors.muted, marginTop: 2 },
-    taskPoints: {
-      backgroundColor: colors.primarySoft, borderRadius: radius.full,
-      paddingHorizontal: spacing[2], paddingVertical: 3,
-    },
-    taskPointsText: { fontSize: fontSize.xs, fontWeight: fontWeight.bold, color: colors.primary },
-    doneBtn: {
-      backgroundColor: colors.success, borderRadius: radius.md,
-      paddingHorizontal: spacing[3], paddingVertical: spacing[2],
-    },
-    doneBtnText: { fontSize: fontSize.xs, fontWeight: fontWeight.bold, color: "#fff" },
-    doneBtnDisabled: { opacity: 0.4 },
-
-    // Reward row
-    rewardRow: {
-      flexDirection: "row", alignItems: "center",
-      paddingHorizontal: spacing[4], paddingVertical: spacing[3],
-      borderTopWidth: 0.5, borderTopColor: colors.border,
-      gap: spacing[3],
-    },
-    rewardInfo: { flex: 1 },
-    rewardTitle: { fontSize: fontSize.sm, fontWeight: fontWeight.medium, color: colors.textStrong },
-    rewardCost: {
-      backgroundColor: colors.rewardSoft ?? colors.warningSoft, borderRadius: radius.full,
-      paddingHorizontal: spacing[2], paddingVertical: 3,
-    },
-    rewardCostText: { fontSize: fontSize.xs, fontWeight: fontWeight.bold, color: colors.reward ?? colors.warning },
-    redeemBtn: {
-      backgroundColor: colors.reward ?? colors.warning, borderRadius: radius.md,
-      paddingHorizontal: spacing[3], paddingVertical: spacing[2],
-    },
-    redeemBtnText: { fontSize: fontSize.xs, fontWeight: fontWeight.bold, color: "#fff" },
-    redeemBtnDisabled: { opacity: 0.35 },
-
-    // Transaction row
-    txRow: {
-      flexDirection: "row", alignItems: "center",
-      paddingHorizontal: spacing[4], paddingVertical: spacing[3],
-      borderTopWidth: 0.5, borderTopColor: colors.border,
-    },
-    txDot:    { width: 8, height: 8, borderRadius: 4, marginRight: spacing[3] },
-    txReason: { flex: 1, fontSize: fontSize.sm, color: colors.text },
-    txAmount: { fontSize: fontSize.sm, fontWeight: fontWeight.bold },
-
-    emptyText: { fontSize: fontSize.sm, color: colors.muted, textAlign: "center", padding: spacing[4] },
-
-    pendingBanner: {
-      flexDirection: "row", alignItems: "center",
-      backgroundColor: colors.warningSoft, borderRadius: radius.lg,
-      padding: spacing[3], marginBottom: spacing[4], gap: spacing[2],
-    },
-    pendingText: { fontSize: fontSize.sm, color: colors.warning, flex: 1 },
-
-    // Confirmation modal
-    modalOverlay: {
-      flex: 1, backgroundColor: "rgba(0,0,0,0.45)",
-      justifyContent: "flex-end",
-    },
-    modalSheet: {
-      backgroundColor: colors.background,
-      borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl,
-      padding: spacing[5], paddingBottom: spacing[8],
-    },
-    modalTitle: {
-      fontSize: fontSize.base, fontWeight: fontWeight.semibold,
-      color: colors.textStrong, marginBottom: spacing[2],
-    },
-    modalSub: {
-      fontSize: fontSize.sm, color: colors.muted, marginBottom: spacing[5],
-    },
-    modalActions: { flexDirection: "row", gap: spacing[3] },
-    btnCancel: {
-      flex: 1, borderRadius: radius.md, paddingVertical: spacing[4],
-      alignItems: "center", backgroundColor: colors.surface,
-      borderWidth: 0.5, borderColor: colors.border,
-    },
-    btnCancelText: { fontSize: fontSize.sm, color: colors.text },
-    btnConfirm: {
-      flex: 1, borderRadius: radius.md, paddingVertical: spacing[4],
-      alignItems: "center", backgroundColor: colors.reward ?? colors.warning,
-    },
-    btnConfirmText: { fontSize: fontSize.sm, fontWeight: fontWeight.bold, color: "#fff" },
-    btnConfirmDisabled: { opacity: 0.4 },
-  });
-}
-
 const ROLE_LABELS: Record<string, string> = {
   owner: "Propietario", sub_owner: "Sub-propietario", member: "Miembro",
 };
@@ -203,12 +61,12 @@ function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
 }
 
+const sectionTitle = "text-[11px] font-sans-medium text-muted-foreground uppercase tracking-[0.8px] mb-2";
+
 export function MemberDashboardScreen({ route }: Props) {
   const { memberId, memberName, memberRole } = route.params;
   const { activeGroupId } = useAppSession();
-  const theme = useTheme();
-  const s = makeStyles(theme);
-  const { colors, spacing, fontSize } = theme;
+  const { colors } = useTheme();
 
   const [data, setData]               = useState<MemberOverview | null>(null);
   const [isLoading, setIsLoading]     = useState(true);
@@ -217,7 +75,6 @@ export function MemberDashboardScreen({ route }: Props) {
   const [rewards, setRewards]         = useState<Reward[]>([]);
   const [redeeming, setRedeeming]     = useState<string | null>(null);
   const [confirmReward, setConfirmReward] = useState<Reward | null>(null);
-
   const [celebration, setCelebration]       = useState<CelebrationData | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
 
@@ -254,21 +111,11 @@ export function MemberDashboardScreen({ route }: Props) {
       );
       if (rpcError) throw rpcError;
       const res = result as { points_earned: number; new_balance: number; task_title: string };
-      setCelebration({
-        memberName,
-        taskTitle: res.task_title,
-        pointsEarned: res.points_earned,
-        newBalance: res.new_balance,
-      });
+      setCelebration({ memberName, taskTitle: res.task_title, pointsEarned: res.points_earned, newBalance: res.new_balance });
       setShowCelebration(true);
       setData((prev) => {
         if (!prev) return prev;
-        return {
-          ...prev,
-          total_points: res.new_balance,
-          week_points: prev.week_points + res.points_earned,
-          tasks: prev.tasks.filter((t) => t.id !== task.id),
-        };
+        return { ...prev, total_points: res.new_balance, week_points: prev.week_points + res.points_earned, tasks: prev.tasks.filter((t) => t.id !== task.id) };
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "No se pudo completar la tarea.";
@@ -286,12 +133,7 @@ export function MemberDashboardScreen({ route }: Props) {
       setRedeeming(reward.id);
       const result = await redeemRewardForMember(activeGroupId, reward.id, memberId);
       setData((prev) => prev ? { ...prev, total_points: result.newBalance } : prev);
-      setCelebration({
-        memberName,
-        taskTitle: result.rewardTitle,
-        pointsEarned: -result.pointsSpent,
-        newBalance: result.newBalance,
-      });
+      setCelebration({ memberName, taskTitle: result.rewardTitle, pointsEarned: -result.pointsSpent, newBalance: result.newBalance });
       setShowCelebration(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "No se pudo realizar el canje.");
@@ -306,7 +148,7 @@ export function MemberDashboardScreen({ route }: Props) {
 
   if (isLoading) {
     return (
-      <View style={s.centered}>
+      <View className="flex-1 bg-background items-center justify-center">
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -314,8 +156,8 @@ export function MemberDashboardScreen({ route }: Props) {
 
   if (error && !data) {
     return (
-      <View style={s.centered}>
-        <Text style={{ color: colors.error, fontSize: fontSize.sm }}>{error}</Text>
+      <View className="flex-1 bg-background items-center justify-center">
+        <Text className="text-sm text-destructive">{error}</Text>
       </View>
     );
   }
@@ -325,75 +167,80 @@ export function MemberDashboardScreen({ route }: Props) {
 
   return (
     <>
-      <SafeAreaView style={s.container} edges={["top"]}>
-        <ScrollView style={s.scroll}>
+      <SafeAreaView style={{ flex: 1 }} className="bg-background" edges={["top"]}>
+        <ScrollView style={{ padding: 16, paddingBottom: 40 }}>
 
           {/* Header */}
-          <View style={s.headerCard}>
-            <View style={s.avatar}>
-              <Text style={s.avatarText}>{initial}</Text>
+          <View className="bg-primary rounded-[20px] p-5 items-center mb-4">
+            <View
+              className="w-16 h-16 rounded-full items-center justify-center mb-3"
+              style={{ backgroundColor: "rgba(255,255,255,0.25)" }}
+            >
+              <Text style={{ fontSize: 28, fontWeight: "700", color: "#fff" }}>{initial}</Text>
             </View>
-            <Text style={s.memberName}>{memberName}</Text>
-            <Text style={s.roleLabel}>{ROLE_LABELS[memberRole] ?? memberRole}</Text>
+            <Text style={{ fontSize: 22, fontWeight: "700", color: "#fff", marginBottom: 4 }}>
+              {memberName}
+            </Text>
+            <Text style={{ fontSize: 12, color: "rgba(255,255,255,0.75)" }}>
+              {ROLE_LABELS[memberRole] ?? memberRole}
+            </Text>
           </View>
 
-          {/* Pending submissions warning */}
+          {/* Pending tasks warning */}
           {(data?.pending_tasks ?? 0) > 0 ? (
-            <View style={s.pendingBanner}>
-              <Text style={s.pendingText}>
+            <View className="flex-row items-center bg-warning/15 rounded-xl p-3 mb-4 gap-2">
+              <Text className="text-sm text-warning flex-1">
                 {data!.pending_tasks} tarea{data!.pending_tasks > 1 ? "s" : ""} enviada{data!.pending_tasks > 1 ? "s" : ""} esperando aprobación
               </Text>
             </View>
           ) : null}
 
-          {/* Error inline */}
           {error ? (
-            <Text style={{ color: colors.error, fontSize: fontSize.sm, marginBottom: spacing[3], textAlign: "center" }}>
-              {error}
-            </Text>
+            <Text className="text-destructive text-sm text-center mb-3">{error}</Text>
           ) : null}
 
           {/* Stats */}
-          <View style={s.statsRow}>
-            <View style={s.statCard}>
-              <Text style={s.statValue}>{balance}</Text>
-              <Text style={s.statLabel}>Puntos totales</Text>
+          <View className="flex-row gap-3 mb-4">
+            <View className="flex-1 bg-card border border-border rounded-xl p-4 items-center">
+              <Text className="text-[22px] font-sans-bold text-foreground mb-[2px]">{balance}</Text>
+              <Text className="text-[11px] text-muted-foreground text-center">Puntos totales</Text>
             </View>
-            <View style={s.statCard}>
-              <Text style={[s.statValue, { color: colors.success }]}>{data?.week_points ?? 0}</Text>
-              <Text style={s.statLabel}>Esta semana</Text>
+            <View className="flex-1 bg-card border border-border rounded-xl p-4 items-center">
+              <Text className="text-[22px] font-sans-bold text-success mb-[2px]">{data?.week_points ?? 0}</Text>
+              <Text className="text-[11px] text-muted-foreground text-center">Esta semana</Text>
             </View>
           </View>
 
           {/* Available tasks */}
-          <Text style={s.sectionTitle}>Tareas disponibles</Text>
-          <View style={s.card}>
+          <Text className={sectionTitle}>Tareas disponibles</Text>
+          <View className="bg-card border border-border rounded-xl mb-4 overflow-hidden">
             {(data?.tasks ?? []).length === 0 ? (
-              <Text style={s.emptyText}>¡No hay tareas pendientes!</Text>
+              <Text className="text-sm text-muted-foreground text-center p-4">¡No hay tareas pendientes!</Text>
             ) : (
               (data?.tasks ?? []).map((task, i) => {
                 const isCompleting = completing === task.id;
                 return (
-                  <View key={task.id} style={[s.taskRow, i === 0 && { borderTopWidth: 0 }]}>
-                    <View style={s.taskInfo}>
-                      <Text style={s.taskTitle}>{task.title}</Text>
+                  <View
+                    key={task.id}
+                    className={`flex-row items-center px-4 py-3 gap-3 ${i > 0 ? "border-t border-border" : ""}`}
+                  >
+                    <View className="flex-1">
+                      <Text className="text-sm font-sans-medium text-foreground">{task.title}</Text>
                       {task.description ? (
-                        <Text style={s.taskDesc} numberOfLines={1}>{task.description}</Text>
+                        <Text className="text-xs text-muted-foreground mt-[2px]" numberOfLines={1}>
+                          {task.description}
+                        </Text>
                       ) : null}
                     </View>
-                    <View style={s.taskPoints}>
-                      <Text style={s.taskPointsText}>+{task.points_value} pts</Text>
+                    <View className="bg-primary/15 rounded-full px-2" style={{ paddingVertical: 3 }}>
+                      <Text className="text-xs font-sans-bold text-primary">+{task.points_value} pts</Text>
                     </View>
                     <Pressable
-                      style={({ pressed }) => [
-                        s.doneBtn,
-                        (isCompleting || !!completing) && s.doneBtnDisabled,
-                        pressed && !completing && { opacity: 0.75 },
-                      ]}
+                      className={`bg-success rounded-xl px-3 py-2 active:opacity-75 ${(isCompleting || !!completing) ? "opacity-40" : ""}`}
                       onPress={() => handleCompleteTask(task)}
                       disabled={!!completing}
                     >
-                      <Text style={s.doneBtnText}>
+                      <Text className="text-xs font-sans-bold text-primary-foreground">
                         {isCompleting ? "..." : "✓ Hecho"}
                       </Text>
                     </Pressable>
@@ -406,31 +253,30 @@ export function MemberDashboardScreen({ route }: Props) {
           {/* Redeem reward */}
           {rewards.length > 0 && (
             <>
-              <Text style={s.sectionTitle}>Canjear premio</Text>
-              <View style={s.card}>
+              <Text className={sectionTitle}>Canjear premio</Text>
+              <View className="bg-card border border-border rounded-xl mb-4 overflow-hidden">
                 {rewards.map((reward, i) => {
                   const canAfford = balance >= reward.costPoints;
                   const isRedeeming = redeeming === reward.id;
                   return (
-                    <View key={reward.id} style={[s.rewardRow, i === 0 && { borderTopWidth: 0 }]}>
-                      <View style={s.rewardInfo}>
-                        <Text style={[s.rewardTitle, !canAfford && { color: colors.muted }]}>
+                    <View
+                      key={reward.id}
+                      className={`flex-row items-center px-4 py-3 gap-3 ${i > 0 ? "border-t border-border" : ""}`}
+                    >
+                      <View className="flex-1">
+                        <Text className={`text-sm font-sans-medium ${!canAfford ? "text-muted-foreground" : "text-foreground"}`}>
                           {reward.title}
                         </Text>
                       </View>
-                      <View style={s.rewardCost}>
-                        <Text style={s.rewardCostText}>{reward.costPoints} pts</Text>
+                      <View className="bg-points/15 rounded-full px-2" style={{ paddingVertical: 3 }}>
+                        <Text className="text-xs font-sans-bold text-points">{reward.costPoints} pts</Text>
                       </View>
                       <Pressable
-                        style={({ pressed }) => [
-                          s.redeemBtn,
-                          (!canAfford || !!redeeming) && s.redeemBtnDisabled,
-                          pressed && canAfford && !redeeming && { opacity: 0.75 },
-                        ]}
+                        className={`bg-points rounded-xl px-3 py-2 active:opacity-75 ${(!canAfford || !!redeeming) ? "opacity-35" : ""}`}
                         onPress={() => canAfford && !redeeming && setConfirmReward(reward)}
                         disabled={!canAfford || !!redeeming}
                       >
-                        <Text style={s.redeemBtnText}>
+                        <Text className="text-xs font-sans-bold text-primary-foreground">
                           {isRedeeming ? "..." : "Canjear"}
                         </Text>
                       </Pressable>
@@ -442,21 +288,26 @@ export function MemberDashboardScreen({ route }: Props) {
           )}
 
           {/* Recent activity */}
-          <Text style={s.sectionTitle}>Actividad reciente</Text>
-          <View style={s.card}>
+          <Text className={sectionTitle}>Actividad reciente</Text>
+          <View className="bg-card border border-border rounded-xl mb-4 overflow-hidden">
             {(data?.recent ?? []).length === 0 ? (
-              <Text style={s.emptyText}>Sin actividad aún.</Text>
+              <Text className="text-sm text-muted-foreground text-center p-4">Sin actividad aún.</Text>
             ) : (
               (data?.recent ?? []).map((tx, i) => {
                 const isPositive = tx.amount > 0;
                 return (
-                  <View key={i} style={[s.txRow, i === 0 && { borderTopWidth: 0 }]}>
-                    <View style={[s.txDot, { backgroundColor: isPositive ? colors.success : colors.error }]} />
-                    <Text style={s.txReason} numberOfLines={1}>{formatReason(tx.reason)}</Text>
-                    <Text style={[s.txAmount, { color: isPositive ? colors.success : colors.error }]}>
+                  <View
+                    key={i}
+                    className={`flex-row items-center px-4 py-3 ${i > 0 ? "border-t border-border" : ""}`}
+                  >
+                    <View className={`w-2 h-2 rounded-full mr-3 ${isPositive ? "bg-success" : "bg-destructive"}`} />
+                    <Text className="flex-1 text-sm text-foreground" numberOfLines={1}>
+                      {formatReason(tx.reason)}
+                    </Text>
+                    <Text className={`text-sm font-sans-bold ${isPositive ? "text-success" : "text-destructive"}`}>
                       {isPositive ? "+" : ""}{tx.amount}
                     </Text>
-                    <Text style={{ fontSize: theme.fontSize.xxs, color: colors.muted, marginLeft: theme.spacing[2] }}>
+                    <Text className="text-[11px] text-muted-foreground ml-2">
                       {formatDate(tx.created_at)}
                     </Text>
                   </View>
@@ -475,24 +326,33 @@ export function MemberDashboardScreen({ route }: Props) {
         animationType="slide"
         onRequestClose={() => setConfirmReward(null)}
       >
-        <Pressable style={s.modalOverlay} onPress={() => setConfirmReward(null)}>
-          <Pressable style={s.modalSheet} onPress={() => {}}>
-            <Text style={s.modalTitle}>¿Confirmar canje?</Text>
-            <Text style={s.modalSub}>
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.45)", justifyContent: "flex-end" }}
+          onPress={() => setConfirmReward(null)}
+        >
+          <Pressable
+            className="bg-background rounded-t-[20px] p-5"
+            style={{ paddingBottom: 40 }}
+            onPress={() => {}}
+          >
+            <Text className="text-base font-sans-semibold text-foreground mb-2">
+              ¿Confirmar canje?
+            </Text>
+            <Text className="text-sm text-muted-foreground mb-5">
               Se descontarán {confirmReward?.costPoints} puntos a {memberName} por "{confirmReward?.title}".
             </Text>
-            <View style={s.modalActions}>
+            <View className="flex-row gap-3">
               <Pressable
-                style={({ pressed }) => [s.btnCancel, pressed && { opacity: 0.7 }]}
+                className="flex-1 rounded-xl py-4 items-center bg-card border border-border active:opacity-70"
                 onPress={() => setConfirmReward(null)}
               >
-                <Text style={s.btnCancelText}>Cancelar</Text>
+                <Text className="text-sm text-foreground">Cancelar</Text>
               </Pressable>
               <Pressable
-                style={({ pressed }) => [s.btnConfirm, pressed && { opacity: 0.75 }]}
+                className="flex-1 rounded-xl py-4 items-center bg-points active:opacity-75"
                 onPress={handleConfirmRedeem}
               >
-                <Text style={s.btnConfirmText}>Confirmar</Text>
+                <Text className="text-sm font-sans-bold text-primary-foreground">Confirmar</Text>
               </Pressable>
             </View>
           </Pressable>

@@ -3,7 +3,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  StyleSheet,
   Text,
   TextInput,
 } from "react-native";
@@ -11,72 +10,8 @@ import { useTheme } from "../../../core/theme/ThemeProvider";
 import { joinGroupByCode } from "../services/groups.service";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
 
-function makeStyles(theme: ReturnType<typeof useTheme>) {
-  const { colors, spacing, fontSize, fontWeight, radius } = theme;
-  return StyleSheet.create({
-    container: {
-      flex: 1,
-      justifyContent: "center",
-      backgroundColor: colors.background,
-      padding: spacing[6],             // 24
-    },
-    title: {
-      fontSize: fontSize.xl,           // 22
-      fontWeight: fontWeight.bold,
-      color: colors.textStrong,
-      textAlign: "center",
-      marginBottom: spacing[1],
-    },
-    subtitle: {
-      fontSize: fontSize.sm,
-      color: colors.muted,
-      textAlign: "center",
-      marginBottom: spacing[5],
-    },
-    input: {
-      backgroundColor: colors.surface,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.sm,
-      paddingHorizontal: spacing[3],
-      paddingVertical: spacing[3],
-      fontSize: fontSize.base,         // 16 — más grande para código
-      fontWeight: fontWeight.bold,
-      color: colors.text,
-      textAlign: "center",
-      letterSpacing: 4,
-      marginBottom: spacing[3],
-    },
-    errorText: {
-      fontSize: fontSize.xs,
-      color: colors.error,
-      textAlign: "center",
-      marginBottom: spacing[3],
-    },
-    successText: {
-      fontSize: fontSize.xs,
-      color: colors.success,
-      textAlign: "center",
-      marginBottom: spacing[3],
-    },
-    btnPrimary: {
-      backgroundColor: colors.primary,
-      borderRadius: radius.md,
-      paddingVertical: spacing[4],
-      alignItems: "center",
-    },
-    btnPrimaryText: {
-      fontSize: fontSize.base,
-      fontWeight: fontWeight.bold,
-      color: colors.primaryText,
-    },
-    btnDisabled: { opacity: 0.4 },
-  });
-}
-
 export function JoinGroupScreen() {
-  const theme = useTheme();
-  const s = makeStyles(theme);
+  const { colors } = useTheme();
   const { selectGroup } = useAppSession();
 
   const [inviteCode, setInviteCode] = useState("");
@@ -103,16 +38,21 @@ export function JoinGroupScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={s.container}
+      className="flex-1 bg-background justify-center px-6"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <Text style={s.title}>Unirse a un grupo</Text>
-      <Text style={s.subtitle}>Ingresa el código de invitación del grupo.</Text>
+      <Text className="text-[22px] font-sans-bold text-foreground text-center mb-1">
+        Unirse a un grupo
+      </Text>
+      <Text className="text-sm font-sans text-muted-foreground text-center mb-5">
+        Ingresa el código de invitación del grupo.
+      </Text>
 
       <TextInput
-        style={s.input}
+        className="bg-card border border-border rounded-lg px-3 py-3 text-base font-sans-bold text-foreground text-center mb-3"
+        style={{ letterSpacing: 4 }}
         placeholder="CÓDIGO"
-        placeholderTextColor={theme.colors.muted}
+        placeholderTextColor={colors.muted}
         autoCapitalize="characters"
         autoCorrect={false}
         editable={!isLoading}
@@ -121,15 +61,21 @@ export function JoinGroupScreen() {
         onSubmitEditing={handleJoin}
       />
 
-      {error ? <Text style={s.errorText}>{error}</Text> : null}
-      {successMessage ? <Text style={s.successText}>{successMessage}</Text> : null}
+      {error ? (
+        <Text className="text-destructive text-xs text-center mb-3 font-sans">{error}</Text>
+      ) : null}
+      {successMessage ? (
+        <Text className="text-success text-xs text-center mb-3 font-sans">{successMessage}</Text>
+      ) : null}
 
       <Pressable
-        style={({ pressed }) => [s.btnPrimary, isLoading && s.btnDisabled, pressed && !isLoading && { opacity: 0.8 }]}
+        className={`bg-primary rounded-xl py-4 items-center active:opacity-80 ${isLoading ? "opacity-40" : ""}`}
         onPress={handleJoin}
         disabled={isLoading}
       >
-        <Text style={s.btnPrimaryText}>{isLoading ? "Uniéndose..." : "Unirse al grupo"}</Text>
+        <Text className="text-base font-sans-bold text-primary-foreground">
+          {isLoading ? "Uniéndose..." : "Unirse al grupo"}
+        </Text>
       </Pressable>
     </KeyboardAvoidingView>
   );

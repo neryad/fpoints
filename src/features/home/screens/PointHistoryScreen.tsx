@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
-  StyleSheet,
   Text,
   View,
 } from "react-native";
@@ -19,17 +18,11 @@ type Props = NativeStackScreenProps<HomeStackParamList, "PointHistory">;
 
 const POINT_HISTORY_PAGE_SIZE = 80;
 
-function formatReason(
-  reason: string,
-  taskTitle: string | null,
-  rewardTitle: string | null,
-) {
-  if (reason.startsWith("task_approved:")) {
+function formatReason(reason: string, taskTitle: string | null, rewardTitle: string | null) {
+  if (reason.startsWith("task_approved:"))
     return taskTitle ? `Tarea aprobada: ${taskTitle}` : "Tarea aprobada";
-  }
-  if (reason.startsWith("reward_redeemed:")) {
+  if (reason.startsWith("reward_redeemed:"))
     return rewardTitle ? `Canje aprobado: ${rewardTitle}` : "Canje aprobado";
-  }
   return reason;
 }
 
@@ -42,8 +35,8 @@ function formatDate(value: string) {
 }
 
 export function PointHistoryScreen({ navigation }: Props) {
+  const { colors } = useTheme();
   const { activeGroupId } = useAppSession();
-  const { colors, spacing, radius, fontSize, fontWeight } = useTheme();
   const [history, setHistory] = useState<PointHistoryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -60,7 +53,6 @@ export function PointHistoryScreen({ navigation }: Props) {
       setIsLoading(false);
       return;
     }
-
     try {
       setError("");
       setIsLoading(true);
@@ -72,21 +64,14 @@ export function PointHistoryScreen({ navigation }: Props) {
       setHasMore(page.hasMore);
       setNextOffset(page.nextOffset);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "No se pudo cargar el historial de puntos.",
-      );
+      setError(err instanceof Error ? err.message : "No se pudo cargar el historial de puntos.");
     } finally {
       setIsLoading(false);
     }
   }, [activeGroupId]);
 
   const loadMoreHistory = useCallback(async () => {
-    if (!activeGroupId || isLoading || isLoadingMoreRef.current || !hasMore) {
-      return;
-    }
-
+    if (!activeGroupId || isLoading || isLoadingMoreRef.current || !hasMore) return;
     isLoadingMoreRef.current = true;
     setIsLoadingMore(true);
     try {
@@ -99,11 +84,7 @@ export function PointHistoryScreen({ navigation }: Props) {
       setHasMore(page.hasMore);
       setNextOffset(page.nextOffset);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "No se pudo cargar mas historial de puntos.",
-      );
+      setError(err instanceof Error ? err.message : "No se pudo cargar mas historial de puntos.");
     } finally {
       isLoadingMoreRef.current = false;
       setIsLoadingMore(false);
@@ -115,25 +96,25 @@ export function PointHistoryScreen({ navigation }: Props) {
     return unsubscribe;
   }, [navigation, loadHistory]);
 
-  const styles = makeStyles(colors, spacing, radius, fontSize, fontWeight);
-
   if (isLoading) {
     return (
-      <View style={styles.centered}>
+      <View className="flex-1 bg-background items-center justify-center">
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      {error ? <Text style={styles.errorText}>{error}</Text> : null}
+    <View className="flex-1 bg-background p-4">
+      {error ? (
+        <Text className="text-destructive text-center mb-3 font-sans">{error}</Text>
+      ) : null}
       {history.length === 0 ? (
-        <Text style={styles.infoText}>
+        <Text className="text-muted-foreground text-center">
           Todavia no tienes movimientos de puntos.
         </Text>
       ) : (
-        <Text style={styles.captionText}>
+        <Text className="text-xs text-muted-foreground text-center mb-2">
           Mostrando {history.length} movimientos.
         </Text>
       )}
@@ -141,121 +122,34 @@ export function PointHistoryScreen({ navigation }: Props) {
       <FlatList
         data={history}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={{ paddingBottom: 20 }}
         onEndReached={loadMoreHistory}
         onEndReachedThreshold={0.35}
         renderItem={({ item }) => (
-          <View style={styles.card}>
-            <View style={styles.row}>
-              <Text style={styles.reason}>
+          <View className="bg-card border border-border rounded-xl p-3 mb-3">
+            <View className="flex-row justify-between items-center">
+              <Text className="flex-1 text-base font-sans-semibold text-foreground mr-2">
                 {formatReason(item.reason, item.taskTitle, item.rewardTitle)}
               </Text>
-              <Text
-                style={[
-                  styles.amount,
-                  item.amount < 0
-                    ? styles.amountNegative
-                    : styles.amountPositive,
-                ]}
-              >
+              <Text className={`text-lg font-sans-bold ${item.amount < 0 ? "text-destructive" : "text-primary"}`}>
                 {formatAmount(item.amount)}
               </Text>
             </View>
-            <Text style={styles.date}>{formatDate(item.createdAt)}</Text>
+            <Text className="text-xs text-muted-foreground mt-2">
+              {formatDate(item.createdAt)}
+            </Text>
           </View>
         )}
         ListFooterComponent={
           isLoadingMore ? (
-            <ActivityIndicator
-              style={styles.loadingMore}
-              size="small"
-              color={colors.primary}
-            />
+            <ActivityIndicator className="mt-2 mb-3" size="small" color={colors.primary} />
           ) : hasMore ? (
-            <Text style={styles.captionText}>Desliza para cargar mas...</Text>
+            <Text className="text-xs text-muted-foreground text-center mb-2">Desliza para cargar mas...</Text>
           ) : history.length > 0 ? (
-            <Text style={styles.captionText}>Fin del historial.</Text>
+            <Text className="text-xs text-muted-foreground text-center mb-2">Fin del historial.</Text>
           ) : null
         }
       />
     </View>
   );
-}
-
-type C = ReturnType<typeof useTheme>["colors"];
-type S = ReturnType<typeof useTheme>["spacing"];
-type R = ReturnType<typeof useTheme>["radius"];
-type F = ReturnType<typeof useTheme>["fontSize"];
-type W = ReturnType<typeof useTheme>["fontWeight"];
-
-function makeStyles(colors: C, spacing: S, radius: R, fontSize: F, fontWeight: W) {
-  return StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-      padding: spacing[4],
-    },
-    centered: {
-      flex: 1,
-      backgroundColor: colors.background,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    listContent: {
-      paddingBottom: spacing[5],
-    },
-    card: {
-      backgroundColor: colors.surface,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.lg,
-      padding: spacing[3],
-      marginBottom: spacing[3],
-    },
-    row: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-    },
-    reason: {
-      color: colors.text,
-      fontSize: fontSize.base,
-      fontWeight: fontWeight.semibold,
-    },
-    amount: {
-      fontSize: fontSize.lg,
-      fontWeight: fontWeight.bold,
-    },
-    amountPositive: {
-      color: colors.primary,
-    },
-    amountNegative: {
-      color: colors.error,
-    },
-    date: {
-      marginTop: spacing[2],
-      color: colors.muted,
-      fontSize: fontSize.xs,
-    },
-    infoText: {
-      textAlign: "center",
-      color: colors.muted,
-      marginTop: spacing[6],
-    },
-    captionText: {
-      textAlign: "center",
-      color: colors.muted,
-      fontSize: fontSize.xs,
-      marginBottom: spacing[2],
-    },
-    loadingMore: {
-      marginTop: spacing[2],
-      marginBottom: spacing[3],
-    },
-    errorText: {
-      textAlign: "center",
-      color: colors.error,
-      marginBottom: spacing[3],
-    },
-  });
 }
