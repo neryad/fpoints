@@ -37,7 +37,7 @@ export function StatCard({
       className="flex-col rounded-xl border border-border bg-card p-4"
     >
       <View className="flex-row items-center justify-between">
-        <Text className={["text-lg", colorClass].join(" ")}>{icon}</Text>
+        <View>{icon}</View>
         {t ? (
           <View className={["rounded-full px-1.5 py-0.5", t.bg].join(" ")}>
             <Text className={["font-mono-bold text-[10px]", t.text].join(" ")}>
