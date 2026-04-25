@@ -19,9 +19,9 @@ export function GroupNavigator() {
         headerShadowVisible: false,
       }}
     >
-      <Stack.Screen name="GroupSelection" component={GroupSelectionScreen} options={{ title: 'Select Group' }} />
-      <Stack.Screen name="CreateGroup" component={CreateGroupScreen} options={{ title: 'Create Group' }} />
-      <Stack.Screen name="JoinGroup" component={JoinGroupScreen} options={{ title: 'Join Group' }} />
+      <Stack.Screen name="GroupSelection" component={GroupSelectionScreen} options={{ title: "Mis grupos" }} />
+      <Stack.Screen name="CreateGroup" component={CreateGroupScreen} options={{ title: "Crear grupo" }} />
+      <Stack.Screen name="JoinGroup" component={JoinGroupScreen} options={{ title: "Unirse a grupo" }} />
     </Stack.Navigator>
   );
 }

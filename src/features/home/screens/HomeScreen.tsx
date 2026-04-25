@@ -1,30 +1,13 @@
-import React, {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-  Pressable,
-} from "react-native";
+import React, { useCallback, useEffect, useState } from "react";
+import { Pressable, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import { Ionicons } from "@expo/vector-icons";
+import { Button, StatCard, XpProgress } from "../../../../design-system-rn/components";
+import shadows from "../../../../design-system-rn/tokens/shadows";
 import { HomeStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
 import { useTheme } from "../../../core/theme/ThemeProvider";
-import {
-  getMyStreakSummary,
-  type StreakSummary,
-} from "../../gamification/services/streak.service";
-import {
-  getMyXpSummary,
-  type XpSummary,
-} from "../../gamification/services/xp.service";
 import {
   getCurrentUserIdForPoints,
   getMyPointsBalance,
@@ -32,10 +15,12 @@ import {
   getWeeklyGroupPointsLeaderboard,
   type GroupPointsEntry,
 } from "../services/points.service";
+import { getMyStreakSummary, type StreakSummary } from "../../gamification/services/streak.service";
+import { getMyXpSummary, type XpSummary } from "../../gamification/services/xp.service";
 
 type Props = NativeStackScreenProps<HomeStackParamList, "HomeDashboard">;
 
-const WEEKLY_XP_GOAL = 200;
+const WEEKLY_POINTS_GOAL = 200;
 
 const DEFAULT_STREAK: StreakSummary = {
   currentStreak: 0,
@@ -55,10 +40,6 @@ const DEFAULT_XP: XpSummary = {
   progressPercent: 0,
   isMaxLevel: false,
 };
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function formatLocalDate(value: string) {
   const [year, month, day] = value.split("-").map(Number);
@@ -82,370 +63,30 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-// ---------------------------------------------------------------------------
-// Styles — makeStyles consumes the real theme tokens
-// ---------------------------------------------------------------------------
+/* -------------------------------------------------------------------------- */
+/*  SECTION CARD                                                               */
+/* -------------------------------------------------------------------------- */
 
-function makeStyles(theme: ReturnType<typeof useTheme>) {
-  const { colors, spacing, fontSize, fontWeight, radius } = theme;
-
-  return StyleSheet.create({
-    // ── Screen ──────────────────────────────────────────────────────────────
-    container: {
-      flexGrow: 1,
-      paddingHorizontal: spacing[4],   // 16
-      paddingBottom: spacing[8],       // 40
-      backgroundColor: colors.background,
-    },
-
-    // ── Header ──────────────────────────────────────────────────────────────
-    header: {
-      alignItems: "center",
-      paddingTop: spacing[4],          // 16
-      paddingBottom: spacing[5],       // 20
-      position: "relative",
-    },
-    groupLabel: {
-      fontSize: fontSize.xxs,          // 11
-      fontWeight: fontWeight.medium,   // "500"
-      color: colors.muted,
-      letterSpacing: 0.8,
-      textTransform: "uppercase",
-      marginBottom: spacing[1],        // 4
-      paddingHorizontal: spacing[9],
-      maxWidth: "100%",
-    },
-    heroPoints: {
-      fontSize: 52,
-      fontWeight: fontWeight.bold,     // "700"
-      color: colors.textStrong,
-      lineHeight: 58,
-      marginBottom: spacing[2],        // 8
-    },
-    deltaPill: {
-      flexDirection: "row",
-      alignItems: "center",
-      backgroundColor: colors.successSoft,
-      paddingHorizontal: spacing[3],   // 12
-      paddingVertical: spacing[1],     // 4
-      borderRadius: radius.full,       // 999
-    },
-    deltaPillText: {
-      fontSize: fontSize.xs,           // 12
-      fontWeight: fontWeight.semibold, // "600"
-      color: colors.success,
-    },
-    reloadBtn: {
-      position: "absolute",
-      right: 0,
-      top: spacing[4],                 // 16
-      width: 36,
-      height: 36,
-      borderRadius: radius.full,       // 999
-      backgroundColor: colors.surfaceMuted,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    reloadBtnText: {
-      fontSize: fontSize.base,         // 16
-      color: colors.muted,
-    },
-
-    // ── Card ────────────────────────────────────────────────────────────────
-    card: {
-      backgroundColor: colors.surface,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.lg,         // 16
-      padding: spacing[4],             // 16
-      marginBottom: spacing[3],        // 12
-    },
-    cardLabel: {
-      fontSize: fontSize.xxs,          // 11
-      fontWeight: fontWeight.medium,   // "500"
-      color: colors.muted,
-      letterSpacing: 0.8,
-      textTransform: "uppercase",
-      marginBottom: spacing[3],        // 12
-    },
-    loadingWrap: {
-      paddingVertical: spacing[3],     // 12
-      alignItems: "center",
-    },
-
-    // ── Weekly progress ──────────────────────────────────────────────────────
-    progressHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "baseline",
-      marginBottom: spacing[2],        // 8
-    },
-    progressNum: {
-      fontSize: fontSize.xl,           // 22
-      fontWeight: fontWeight.semibold, // "600"
-      color: colors.textStrong,
-    },
-    progressNumSub: {
-      fontSize: fontSize.sm,           // 14
-      fontWeight: fontWeight.regular,  // "400"
-      color: colors.muted,
-    },
-    progressGoalLabel: {
-      fontSize: fontSize.xs,           // 12
-      color: colors.muted,
-    },
-    track: {
-      height: 8,
-      backgroundColor: colors.border,
-      borderRadius: radius.full,
-      overflow: "hidden",
-      marginBottom: spacing[1],        // 4
-    },
-    trackFillSuccess: {
-      height: 8,
-      borderRadius: radius.full,
-      backgroundColor: colors.success,
-    },
-    trackFillPrimary: {
-      height: 8,
-      borderRadius: radius.full,
-      backgroundColor: colors.primary,
-    },
-    progressSub: {
-      fontSize: fontSize.xxs,          // 11
-      color: colors.muted,
-      marginBottom: spacing[4],        // 16
-    },
-
-    // ── Mini leaderboard ─────────────────────────────────────────────────────
-    lbDivider: {
-      borderTopWidth: 0.5,
-      borderTopColor: colors.border,
-      paddingTop: spacing[3],          // 12
-    },
-    lbSectionLabel: {
-      fontSize: fontSize.xxs,          // 11
-      fontWeight: fontWeight.medium,   // "500"
-      color: colors.muted,
-      letterSpacing: 0.8,
-      textTransform: "uppercase",
-      marginBottom: spacing[2],        // 8
-    },
-    lbRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[2],                 // 8
-      paddingVertical: spacing[1],     // 4
-    },
-    lbRank: {
-      fontSize: fontSize.xxs,          // 11
-      color: colors.muted,
-      width: 14,
-      textAlign: "center",
-    },
-    lbAvatar: {
-      width: 28,
-      height: 28,
-      borderRadius: radius.full,
-      backgroundColor: colors.primarySoft,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    lbAvatarMe: {
-      backgroundColor: colors.successSoft,
-    },
-    lbAvatarText: {
-      fontSize: fontSize.xxs,          // 11
-      fontWeight: fontWeight.semibold, // "600"
-      color: colors.primary,
-    },
-    lbAvatarTextMe: {
-      color: colors.success,
-    },
-    lbName: {
-      flex: 1,
-      fontSize: fontSize.sm,           // 14
-      color: colors.text,
-    },
-    lbNameMe: {
-      fontWeight: fontWeight.semibold, // "600"
-      color: colors.success,
-    },
-    lbPts: {
-      fontSize: fontSize.sm,           // 14
-      fontWeight: fontWeight.semibold, // "600"
-      color: colors.text,
-    },
-    lbPtsMe: {
-      color: colors.success,
-    },
-
-    // ── Streak ───────────────────────────────────────────────────────────────
-    streakMain: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[3],                 // 12
-      marginBottom: spacing[3],        // 12
-    },
-    streakNumber: {
-      fontSize: 36,
-      fontWeight: fontWeight.bold,     // "700"
-      color: colors.textStrong,
-      lineHeight: 40,
-    },
-    streakFire: {
-      fontSize: 28,
-    },
-    streakInfo: {
-      flex: 1,
-    },
-    streakStatusOk: {
-      fontSize: fontSize.sm,           // 14
-      fontWeight: fontWeight.semibold, // "600"
-      color: colors.success,
-      marginBottom: 2,
-    },
-    streakStatusRisk: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.semibold,
-      color: colors.warning,
-      marginBottom: 2,
-    },
-    streakStatusNeutral: {
-      fontSize: fontSize.sm,
-      color: colors.muted,
-      marginBottom: 2,
-    },
-    streakSub: {
-      fontSize: fontSize.xxs,          // 11
-      color: colors.muted,
-    },
-    weekRow: {
-      flexDirection: "row",
-      gap: spacing[1],                 // 4
-    },
-    dayPill: {
-      flex: 1,
-      height: 30,
-      borderRadius: radius.xs,         // 4
-      alignItems: "center",
-      justifyContent: "center",
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      backgroundColor: colors.surfaceMuted,
-    },
-    dayPillActive: {
-      backgroundColor: colors.successSoft,
-      borderColor: colors.success,
-    },
-    dayPillText: {
-      fontSize: fontSize.xxs,          // 11
-      fontWeight: fontWeight.bold,     // "700"
-      color: colors.muted,
-    },
-    dayPillTextActive: {
-      color: colors.success,
-    },
-    streakCta: {
-      marginTop: spacing[3],           // 12
-      backgroundColor: colors.primary,
-      borderRadius: radius.md,         // 12
-      paddingVertical: spacing[3],     // 12
-      alignItems: "center",
-    },
-    streakCtaText: {
-      fontSize: fontSize.sm,           // 14
-      fontWeight: fontWeight.bold,     // "700"
-      color: colors.primaryText,
-    },
-
-    // ── Level ────────────────────────────────────────────────────────────────
-    levelRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[3],                 // 12
-      marginBottom: spacing[3],        // 12
-    },
-    levelBadge: {
-      width: 46,
-      height: 46,
-      borderRadius: radius.full,
-      backgroundColor: colors.primarySoft,
-      borderWidth: 1.5,
-      borderColor: colors.primary,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    levelBadgeText: {
-      fontSize: fontSize.lg,           // 18
-      fontWeight: fontWeight.bold,     // "700"
-      color: colors.primary,
-    },
-    levelInfo: {
-      flex: 1,
-    },
-    levelName: {
-      fontSize: fontSize.base,         // 16
-      fontWeight: fontWeight.semibold, // "600"
-      color: colors.textStrong,
-      marginBottom: 2,
-    },
-    levelXpLabel: {
-      fontSize: fontSize.xxs,          // 11
-      color: colors.muted,
-    },
-    levelNextRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      marginTop: spacing[1],           // 4
-    },
-    levelNextText: {
-      fontSize: fontSize.xxs,          // 11
-      color: colors.muted,
-    },
-    levelNextHighlight: {
-      fontSize: fontSize.xxs,          // 11
-      fontWeight: fontWeight.semibold, // "600"
-      color: colors.textStrong,
-    },
-    levelMaxText: {
-      fontSize: fontSize.xxs,          // 11
-      color: colors.success,
-      textAlign: "center",
-      marginTop: spacing[1],
-    },
-
-    // ── CTA ──────────────────────────────────────────────────────────────────
-    ctaBtn: {
-      backgroundColor: colors.primary,
-      borderRadius: radius.md,         // 12
-      paddingVertical: spacing[4],     // 16
-      alignItems: "center",
-      justifyContent: "center",
-      marginTop: spacing[2],           // 8
-    },
-    ctaBtnText: {
-      fontSize: fontSize.base,         // 16
-      fontWeight: fontWeight.bold,     // "700"
-      color: colors.primaryText,
-    },
-
-    // ── Error ────────────────────────────────────────────────────────────────
-    errorText: {
-      marginTop: spacing[4],           // 16
-      color: colors.error,
-      textAlign: "center",
-      fontSize: fontSize.sm,           // 14
-      fontWeight: fontWeight.medium,   // "500"
-    },
-  });
+function SectionCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <View style={shadows.card} className="rounded-2xl border border-border bg-card p-4">
+      <View className="mb-3 flex-row items-center justify-between">
+        <Text className="font-sans-semibold text-sm text-foreground">{title}</Text>
+      </View>
+      {children}
+    </View>
+  );
 }
 
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
+/* -------------------------------------------------------------------------- */
+/*  HEADER                                                                     */
+/* -------------------------------------------------------------------------- */
 
 function Header({
   groupName,
@@ -460,31 +101,44 @@ function Header({
   isLoading: boolean;
   onReload: () => void;
 }) {
-  const theme = useTheme();
-  const s = makeStyles(theme);
-
+  const { colors } = useTheme();
   return (
-    <View style={s.header}>
-      {groupName ? <Text style={s.groupLabel} numberOfLines={1}>{groupName}</Text> : null}
-      <Text style={s.heroPoints}>{isLoading ? "--" : points}</Text>
-      {!isLoading && weeklyEarned > 0 && (
-        <View style={s.deltaPill}>
-          <Text style={s.deltaPillText}>↑ +{weeklyEarned} esta semana</Text>
-        </View>
-      )}
+    <View className="mb-4 flex-row items-start justify-between">
+      <View className="flex-1">
+        {groupName ? (
+          <Text className="font-sans text-xs uppercase tracking-wider text-muted-foreground">
+            {groupName}
+          </Text>
+        ) : null}
+        <Text className="font-sans text-sm text-muted-foreground">Tus puntos</Text>
+        <Text
+          className="font-mono-bold text-4xl text-points"
+          style={{ fontVariant: ["tabular-nums"] }}
+        >
+          {isLoading ? "--" : points}
+        </Text>
+        {!isLoading && weeklyEarned > 0 ? (
+          <View className="mt-1 self-start rounded-full bg-success/15 px-2 py-0.5">
+            <Text className="font-mono-bold text-[11px] text-success">
+              ↑ +{weeklyEarned} esta semana
+            </Text>
+          </View>
+        ) : null}
+      </View>
+
       <Pressable
-        style={({ pressed }) => [s.reloadBtn, pressed && { opacity: 0.6 }]}
         onPress={onReload}
-        disabled={isLoading}
-        accessibilityLabel="Recargar datos"
+        className="h-10 w-10 items-center justify-center rounded-full border border-border bg-card active:opacity-70"
       >
-        <Text style={s.reloadBtnText}>↻</Text>
+        <Ionicons name="refresh" size={18} color={colors.text} />
       </Pressable>
     </View>
   );
 }
 
-// ---------------------------------------------------------------------------
+/* -------------------------------------------------------------------------- */
+/*  WEEKLY PROGRESS                                                            */
+/* -------------------------------------------------------------------------- */
 
 function WeeklyProgressCard({
   isLoading,
@@ -497,68 +151,83 @@ function WeeklyProgressCard({
   weeklyLeaderboard: GroupPointsEntry[];
   myUserId: string | null;
 }) {
-  const theme = useTheme();
-  const s = makeStyles(theme);
-  const percent = Math.min(100, Math.round((earned / WEEKLY_XP_GOAL) * 100));
-  const remaining = Math.max(0, WEEKLY_XP_GOAL - earned);
+  const percent = Math.min(100, Math.round((earned / WEEKLY_POINTS_GOAL) * 100));
+  const remaining = Math.max(0, WEEKLY_POINTS_GOAL - earned);
   const top3 = weeklyLeaderboard.slice(0, 3);
 
   return (
-    <View style={s.card}>
-      <Text style={s.cardLabel}>Progreso semanal</Text>
+    <SectionCard title="Progreso semanal">
       {isLoading ? (
-        <View style={s.loadingWrap}>
-          <ActivityIndicator size="small" color={theme.colors.primary} />
-        </View>
+        <View className="h-24 rounded-lg bg-muted/50" />
       ) : (
         <>
-          <View style={s.progressHeader}>
-            <Text style={s.progressNum}>
-              {earned}{" "}
-              <Text style={s.progressNumSub}>/ {WEEKLY_XP_GOAL} XP</Text>
+          <View className="mb-2">
+            <Text
+              className="font-mono-bold text-2xl text-foreground"
+              style={{ fontVariant: ["tabular-nums"] }}
+            >
+              {earned}
+              <Text className="font-mono text-sm text-muted-foreground"> / {WEEKLY_POINTS_GOAL} pts</Text>
             </Text>
-            <Text style={s.progressGoalLabel}>Meta semanal</Text>
+            <Text className="font-sans text-xs text-muted-foreground">Meta semanal</Text>
           </View>
-          <View style={s.track}>
-            <View style={[s.trackFillSuccess, { width: `${percent}%` as any }]} />
+
+          <View className="mb-2 h-2.5 w-full overflow-hidden rounded-full bg-secondary">
+            <View className="h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
           </View>
-          <Text style={s.progressSub}>
-            {earned >= WEEKLY_XP_GOAL
-              ? `¡Meta alcanzada! (${WEEKLY_XP_GOAL} XP)`
-              : `${percent}% completado · ${remaining} XP para la meta`}
+
+          <Text className="font-sans text-[11px] text-muted-foreground">
+            {earned >= WEEKLY_POINTS_GOAL
+              ? `¡Meta alcanzada! (${WEEKLY_POINTS_GOAL} pts)`
+              : `${percent}% completado · ${remaining} pts para la meta`}
           </Text>
 
-          {top3.length > 0 && (
-            <View style={s.lbDivider}>
-              <Text style={s.lbSectionLabel}>Top semanal</Text>
+          {top3.length > 0 ? (
+            <View className="mt-4 border-t border-border pt-3">
+              <Text className="mb-2 font-sans-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                Top semanal
+              </Text>
               {top3.map((entry, idx) => {
                 const isMe = entry.userId === myUserId;
                 return (
-                  <View key={entry.userId} style={s.lbRow}>
-                    <Text style={s.lbRank}>{idx + 1}</Text>
-                    <View style={[s.lbAvatar, isMe && s.lbAvatarMe]}>
-                      <Text style={[s.lbAvatarText, isMe && s.lbAvatarTextMe]}>
+                  <View
+                    key={entry.userId}
+                    className={`mb-1.5 flex-row items-center rounded-lg px-2 py-1.5 ${isMe ? "bg-primary/10" : ""}`}
+                  >
+                    <Text
+                      className="w-6 font-mono-bold text-sm text-muted-foreground"
+                      style={{ fontVariant: ["tabular-nums"] }}
+                    >
+                      {idx + 1}
+                    </Text>
+                    <View className="mr-2 h-7 w-7 items-center justify-center rounded-full bg-muted">
+                      <Text className="font-sans-bold text-[10px] text-foreground">
                         {isMe ? "TÚ" : getInitials(entry.displayName)}
                       </Text>
                     </View>
-                    <Text style={[s.lbName, isMe && s.lbNameMe]}>
+                    <Text className="flex-1 font-sans text-sm text-foreground">
                       {isMe ? "Tú" : entry.displayName}
                     </Text>
-                    <Text style={[s.lbPts, isMe && s.lbPtsMe]}>
+                    <Text
+                      className="font-mono-bold text-sm text-points"
+                      style={{ fontVariant: ["tabular-nums"] }}
+                    >
                       {entry.points} pts
                     </Text>
                   </View>
                 );
               })}
             </View>
-          )}
+          ) : null}
         </>
       )}
-    </View>
+    </SectionCard>
   );
 }
 
-// ---------------------------------------------------------------------------
+/* -------------------------------------------------------------------------- */
+/*  STREAK                                                                     */
+/* -------------------------------------------------------------------------- */
 
 function StreakCard({
   isLoading,
@@ -569,129 +238,144 @@ function StreakCard({
   streak: StreakSummary;
   onGoToTasks: () => void;
 }) {
-  const theme = useTheme();
-  const s = makeStyles(theme);
+  const { colors } = useTheme();
 
   return (
-    <View style={s.card}>
-      <Text style={s.cardLabel}>Racha diaria</Text>
+    <SectionCard title="Racha diaria">
       {isLoading ? (
-        <View style={s.loadingWrap}>
-          <ActivityIndicator size="small" color={theme.colors.primary} />
-        </View>
+        <View className="h-24 rounded-lg bg-muted/50" />
       ) : (
         <>
-          <View style={s.streakMain}>
-            <Text style={s.streakNumber}>{streak.currentStreak}</Text>
-            <Text style={s.streakFire}>🔥</Text>
-            <View style={s.streakInfo}>
+          <View className="flex-row items-center">
+            <View className="mr-3 h-14 w-14 items-center justify-center rounded-full bg-streak/15 border-2 border-streak">
+              <Ionicons name="flame" size={22} color={colors.streak} />
+              <Text
+                className="font-mono-bold text-xs text-streak"
+                style={{ fontVariant: ["tabular-nums"] }}
+              >
+                {streak.currentStreak}
+              </Text>
+            </View>
+            <View className="flex-1">
               {streak.isActiveToday ? (
-                <Text style={s.streakStatusOk}>¡Hoy ya sumaste actividad!</Text>
+                <Text className="font-sans-semibold text-sm text-success">
+                  ¡Hoy ya sumaste actividad!
+                </Text>
               ) : streak.isAtRisk ? (
-                <Text style={s.streakStatusRisk}>¡En riesgo! Completa algo hoy</Text>
+                <Text className="font-sans-semibold text-sm text-destructive">
+                  ¡En riesgo! Completa algo hoy
+                </Text>
               ) : (
-                <Text style={s.streakStatusNeutral}>
-                  {streak.currentStreak > 0
-                    ? "¡Vamos por una nueva racha!"
-                    : "Aún no tienes actividad."}
+                <Text className="font-sans-semibold text-sm text-foreground">
+                  {streak.currentStreak > 0 ? "¡Vamos por una nueva racha!" : "Aún no tienes actividad."}
                 </Text>
               )}
-              <Text style={s.streakSub}>
+              <Text className="mt-0.5 font-sans text-[11px] text-muted-foreground">
                 {streak.lastActiveDate
-                  ? `Última actividad: ${formatLocalDate(streak.lastActiveDate)}`
+                  ? `Última: ${formatLocalDate(streak.lastActiveDate)}`
                   : "Sin actividad registrada"}
               </Text>
             </View>
           </View>
 
-          {streak.recent7Days.length > 0 && (
-            <View style={s.weekRow}>
+          {streak.recent7Days.length > 0 ? (
+            <View className="mt-4 flex-row justify-between">
               {streak.recent7Days.map((day) => (
-                <View
-                  key={day.dateKey}
-                  style={[s.dayPill, day.isActive && s.dayPillActive]}
-                >
-                  <Text style={[s.dayPillText, day.isActive && s.dayPillTextActive]}>
+                <View key={day.dateKey} className="items-center">
+                  <View
+                    className={`h-7 w-7 items-center justify-center rounded-md ${day.isActive ? "bg-streak" : "bg-muted"}`}
+                  >
+                    {day.isActive ? (
+                      <Ionicons name="checkmark" size={12} color="#fff" />
+                    ) : (
+                      <Text className="font-mono-bold text-[10px] text-muted-foreground">·</Text>
+                    )}
+                  </View>
+                  <Text className="mt-1 font-sans text-[9px] text-muted-foreground">
                     {formatWeekday(day.dateKey)}
                   </Text>
                 </View>
               ))}
             </View>
-          )}
+          ) : null}
 
-          {streak.isAtRisk && (
-            <Pressable
-              style={({ pressed }) => [s.streakCta, pressed && { opacity: 0.75 }]}
-              onPress={onGoToTasks}
-            >
-              <Text style={s.streakCtaText}>Completar tarea hoy</Text>
-            </Pressable>
-          )}
+          {streak.isAtRisk ? (
+            <View className="mt-4">
+              <Button
+                label="Hacer una tarea ahora"
+                variant="primary"
+                size="md"
+                fullWidth
+                onPress={onGoToTasks}
+              />
+            </View>
+          ) : null}
         </>
       )}
-    </View>
+    </SectionCard>
   );
 }
 
-// ---------------------------------------------------------------------------
+/* -------------------------------------------------------------------------- */
+/*  LEVEL / XP                                                                 */
+/* -------------------------------------------------------------------------- */
 
-function LevelCard({
-  isLoading,
-  xp,
-}: {
-  isLoading: boolean;
-  xp: XpSummary;
-}) {
-  const theme = useTheme();
-  const s = makeStyles(theme);
+function LevelCard({ isLoading, xp }: { isLoading: boolean; xp: XpSummary }) {
   const remaining = xp.xpNeededForNextLevel - xp.xpInCurrentLevel;
 
   return (
-    <View style={s.card}>
-      <Text style={s.cardLabel}>Nivel</Text>
+    <SectionCard title="Nivel">
       {isLoading ? (
-        <View style={s.loadingWrap}>
-          <ActivityIndicator size="small" color={theme.colors.primary} />
-        </View>
+        <View className="h-20 rounded-lg bg-muted/50" />
       ) : (
         <>
-          <View style={s.levelRow}>
-            <View style={s.levelBadge}>
-              <Text style={s.levelBadgeText}>{xp.levelName}</Text>
+          <View className="mb-3 flex-row items-center">
+            <View className="mr-3 h-14 w-14 items-center justify-center rounded-2xl bg-xp/15 border-2 border-xp">
+              <Text className="font-mono-bold text-2xl text-xp">{xp.levelName}</Text>
             </View>
-            <View style={s.levelInfo}>
-              <Text style={s.levelName}>Rango {xp.levelName}</Text>
-              <Text style={s.levelXpLabel}>{xp.totalXp} XP acumulados</Text>
-            </View>
-          </View>
-          <View style={s.track}>
-            <View
-              style={[s.trackFillPrimary, { width: `${xp.progressPercent}%` as any }]}
-            />
-          </View>
-          {xp.isMaxLevel ? (
-            <Text style={s.levelMaxText}>Nivel máximo alcanzado 🎉</Text>
-          ) : (
-            <View style={s.levelNextRow}>
-              <Text style={s.levelNextText}>
-                {xp.xpInCurrentLevel} / {xp.xpNeededForNextLevel} XP
+            <View className="flex-1">
+              <Text className="font-sans-bold text-base text-foreground">
+                Rango {xp.levelName}
               </Text>
-              <Text style={s.levelNextHighlight}>{remaining} XP para subir</Text>
+              <Text
+                className="font-mono text-xs text-muted-foreground"
+                style={{ fontVariant: ["tabular-nums"] }}
+              >
+                {xp.totalXp} XP acumulados
+              </Text>
             </View>
+          </View>
+
+          {xp.isMaxLevel ? (
+            <View className="rounded-lg bg-xp/10 p-3">
+              <Text className="text-center font-sans-semibold text-sm text-xp">
+                ¡Nivel máximo alcanzado!
+              </Text>
+            </View>
+          ) : (
+            <>
+              <XpProgress
+                level={xp.currentLevel}
+                currentXp={xp.xpInCurrentLevel}
+                requiredXp={xp.xpNeededForNextLevel}
+              />
+              <Text className="mt-2 text-right font-sans text-[11px] text-muted-foreground">
+                {remaining} XP para subir
+              </Text>
+            </>
           )}
         </>
       )}
-    </View>
+    </SectionCard>
   );
 }
 
-// ---------------------------------------------------------------------------
-// HomeScreen
-// ---------------------------------------------------------------------------
+/* -------------------------------------------------------------------------- */
+/*  HOMESCREEN                                                                 */
+/* -------------------------------------------------------------------------- */
 
 export function HomeScreen({ navigation }: Props) {
-  const theme = useTheme();
-  const s = makeStyles(theme);
+  const { colors } = useTheme();
   const { activeGroupId, activeGroupName } = useAppSession();
 
   const [myPoints, setMyPoints] = useState(0);
@@ -703,10 +387,8 @@ export function HomeScreen({ navigation }: Props) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const prevRankRef = useRef<{ groupId: string; levelNumber: number } | null>(null);
-
   const handleGoToTasks = useCallback(() => {
-    navigation.getParent()?.navigate("Tasks");
+    navigation.getParent()?.navigate("Tasks" as never);
   }, [navigation]);
 
   const handleGoToHistory = useCallback(() => {
@@ -715,7 +397,6 @@ export function HomeScreen({ navigation }: Props) {
 
   const loadData = useCallback(async () => {
     if (!activeGroupId) {
-      prevRankRef.current = null;
       setMyPoints(0);
       setMyWeeklyEarned(0);
       setMyUserId(null);
@@ -730,83 +411,116 @@ export function HomeScreen({ navigation }: Props) {
       setError("");
       setIsLoading(true);
 
-      const [balance, weekEarned, weekRanking, userId, myXp] = await Promise.all([
+      const [balance, weekEarned, weekLeaderboard, userId, myXp, myStreak] = await Promise.all([
         getMyPointsBalance(activeGroupId),
         getMyWeeklyPointsEarned(activeGroupId),
         getWeeklyGroupPointsLeaderboard(activeGroupId),
         getCurrentUserIdForPoints(),
         getMyXpSummary(activeGroupId),
+        getMyStreakSummary(activeGroupId),
       ]);
-
-      let myStreak: StreakSummary = DEFAULT_STREAK;
-      try {
-        myStreak = await getMyStreakSummary(activeGroupId);
-      } catch {
-        // streak es no-crítico — falla silenciosamente
-      }
 
       setMyPoints(balance);
       setMyWeeklyEarned(weekEarned);
-      setWeeklyLeaderboard(weekRanking);
+      setWeeklyLeaderboard(weekLeaderboard);
       setMyUserId(userId);
-      setStreak(myStreak);
       setXp(myXp);
-
-      const prev = prevRankRef.current;
-      if (prev && prev.groupId === activeGroupId && myXp.currentLevel > prev.levelNumber) {
-        // TODO: mostrar toast o modal de subida de nivel
-      }
-      prevRankRef.current = { groupId: activeGroupId, levelNumber: myXp.currentLevel };
+      setStreak(myStreak);
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "No se pudieron cargar los datos del grupo."
-      );
+      setError(err instanceof Error ? err.message : "No se pudieron cargar los datos.");
     } finally {
       setIsLoading(false);
     }
   }, [activeGroupId]);
 
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    const unsubscribe = navigation.addListener("focus", loadData);
+    return unsubscribe;
+  }, [navigation, loadData]);
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={["top"]}>
-    <ScrollView contentContainerStyle={s.container}>
-      <Header
-        groupName={activeGroupName}
-        points={myPoints}
-        weeklyEarned={myWeeklyEarned}
-        isLoading={isLoading}
-        onReload={loadData}
-      />
-
-      <WeeklyProgressCard
-        isLoading={isLoading}
-        earned={myWeeklyEarned}
-        weeklyLeaderboard={weeklyLeaderboard}
-        myUserId={myUserId}
-      />
-
-      <StreakCard
-        isLoading={isLoading}
-        streak={streak}
-        onGoToTasks={handleGoToTasks}
-      />
-
-      <LevelCard isLoading={isLoading} xp={xp} />
-
-      <Pressable
-        style={({ pressed }) => [s.ctaBtn, pressed && { opacity: 0.75 }]}
-        onPress={handleGoToHistory}
+    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+      <ScrollView
+        contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 32 }}
+        showsVerticalScrollIndicator={false}
       >
-        <Text style={s.ctaBtnText}>Ver historial de puntos</Text>
-      </Pressable>
+        <Header
+          groupName={activeGroupName}
+          points={myPoints}
+          weeklyEarned={myWeeklyEarned}
+          isLoading={isLoading}
+          onReload={loadData}
+        />
 
-      {error ? <Text style={s.errorText}>{error}</Text> : null}
-    </ScrollView>
+        {/* Resumen rápido */}
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <StatCard
+              icon={<Ionicons name="flame" size={20} color={colors.streak} />}
+              label="Racha"
+              value={streak.currentStreak}
+              subtitle={streak.isActiveToday ? "Activa hoy" : "Pendiente"}
+              colorClass="text-streak"
+              trend={streak.isAtRisk ? "down" : "up"}
+            />
+          </View>
+          <View className="flex-1">
+            <StatCard
+              icon={<Ionicons name="star" size={20} color={colors.xp} />}
+              label="Nivel"
+              value={xp.levelName}
+              subtitle={`${xp.totalXp} XP`}
+              colorClass="text-xp"
+              trend="neutral"
+            />
+          </View>
+        </View>
+
+        <WeeklyProgressCard
+          isLoading={isLoading}
+          earned={myWeeklyEarned}
+          weeklyLeaderboard={weeklyLeaderboard}
+          myUserId={myUserId}
+        />
+
+        <LevelCard isLoading={isLoading} xp={xp} />
+
+        <StreakCard
+          isLoading={isLoading}
+          streak={streak}
+          onGoToTasks={handleGoToTasks}
+        />
+
+        {/* Acciones */}
+        <View className="flex-row gap-3">
+          <View className="flex-1">
+            <Button
+              label="Ver historial"
+              variant="outline"
+              size="md"
+              fullWidth
+              onPress={handleGoToHistory}
+            />
+          </View>
+          <View className="flex-1">
+            <Button
+              label="Ir a tareas"
+              variant="primary"
+              size="md"
+              fullWidth
+              onPress={handleGoToTasks}
+            />
+          </View>
+        </View>
+
+        {error ? (
+          <View className="rounded-lg border border-destructive/30 bg-destructive/10 p-3">
+            <Text className="font-sans-medium text-sm text-destructive">{error}</Text>
+          </View>
+        ) : null}
+      </ScrollView>
     </SafeAreaView>
   );
 }
+
+export default HomeScreen;

@@ -22,7 +22,7 @@ export function RewardsNavigator() {
       <Stack.Screen
         name="RewardsList"
         component={RewardsScreen}
-        options={{ title: "Rewards" }}
+        options={{ title: "Premios" }}
       />
       <Stack.Screen
         name="ManageRewards"

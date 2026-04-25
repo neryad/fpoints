@@ -1,25 +1,31 @@
 import React from "react";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { useTheme } from 'src/core/theme/ThemeProvider';
+import { useTheme } from "src/core/theme/ThemeProvider";
+import { Ionicons } from "@expo/vector-icons";
 
 import { HomeNavigator } from "./HomeNavigator";
 import { TasksNavigator } from "./TasksNavigator";
 import { ProfileNavigator } from "./ProfileNavigator";
 import { RewardsNavigator } from "./RewardsNavigator";
 import { MainTabParamList } from "./types";
-import { Ionicons } from '@expo/vector-icons';
+
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export function MainTabsNavigator() {
-  const theme = useTheme();
+  const { colors } = useTheme();
   return (
     <Tab.Navigator
       screenOptions={{
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.muted,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.muted,
         tabBarStyle: {
-          backgroundColor: theme.colors.surface,
-          borderTopColor: theme.colors.border,
+          backgroundColor: colors.surface,
+          borderTopColor: colors.border,
+          borderTopWidth: 0.5,
+        },
+        tabBarLabelStyle: {
+          fontFamily: "DMSans_500Medium",
+          fontSize: 11,
         },
       }}
     >
@@ -28,6 +34,7 @@ export function MainTabsNavigator() {
         component={HomeNavigator}
         options={{
           headerShown: false,
+          tabBarLabel: "Inicio",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home-outline" color={color} size={size} />
           ),
@@ -38,6 +45,7 @@ export function MainTabsNavigator() {
         component={TasksNavigator}
         options={{
           headerShown: false,
+          tabBarLabel: "Tareas",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="checkmark-done-outline" color={color} size={size} />
           ),
@@ -48,6 +56,7 @@ export function MainTabsNavigator() {
         component={RewardsNavigator}
         options={{
           headerShown: false,
+          tabBarLabel: "Premios",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="gift-outline" color={color} size={size} />
           ),
@@ -58,6 +67,7 @@ export function MainTabsNavigator() {
         component={ProfileNavigator}
         options={{
           headerShown: false,
+          tabBarLabel: "Perfil",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-outline" color={color} size={size} />
           ),

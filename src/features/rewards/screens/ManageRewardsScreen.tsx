@@ -4,13 +4,14 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
-  StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import shadows from "../../../../design-system-rn/tokens/shadows";
+import { Button, GameBadge } from "../../../../design-system-rn/components";
 import { RewardsStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
 import { useTheme } from "../../../core/theme/ThemeProvider";
@@ -25,228 +26,8 @@ import type { Reward } from "../types";
 
 type Props = NativeStackScreenProps<RewardsStackParamList, "ManageRewards">;
 
-// ---------------------------------------------------------------------------
-// Styles
-// ---------------------------------------------------------------------------
-
-function makeStyles(theme: ReturnType<typeof useTheme>) {
-  const { colors, spacing, fontSize, fontWeight, radius } = theme;
-
-  return StyleSheet.create({
-    // ── Screen ──────────────────────────────────────────────────────────────
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    centered: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: colors.background,
-      padding: spacing[6],             // 24
-    },
-    infoText: {
-      fontSize: fontSize.sm,           // 14
-      color: colors.muted,
-      textAlign: "center",
-    },
-    scrollContent: {
-      padding: spacing[4],             // 16
-      paddingBottom: spacing[8],       // 40
-    },
-
-    // ── Section label ────────────────────────────────────────────────────────
-    sectionLabel: {
-      fontSize: fontSize.xxs,          // 11
-      fontWeight: fontWeight.medium,   // "500"
-      color: colors.muted,
-      letterSpacing: 0.8,
-      textTransform: "uppercase",
-      marginBottom: spacing[3],        // 12
-      marginTop: spacing[5],           // 20
-    },
-
-    // ── Create card ──────────────────────────────────────────────────────────
-    createCard: {
-      backgroundColor: colors.surface,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.lg,         // 16
-      padding: spacing[4],             // 16
-      marginBottom: spacing[2],        // 8
-    },
-
-    // ── Inputs ───────────────────────────────────────────────────────────────
-    input: {
-      backgroundColor: colors.background,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.sm,         // 8
-      paddingHorizontal: spacing[3],   // 12
-      paddingVertical: spacing[3],     // 12
-      marginBottom: spacing[2],        // 8
-      color: colors.text,
-      fontSize: fontSize.sm,           // 14
-    },
-    inputDisabled: {
-      opacity: 0.5,
-    },
-
-    // ── Buttons ──────────────────────────────────────────────────────────────
-    btnPrimary: {
-      backgroundColor: colors.primary,
-      borderRadius: radius.md,         // 12
-      paddingVertical: spacing[3],     // 12
-      alignItems: "center",
-      marginTop: spacing[1],           // 4
-    },
-    btnPrimaryText: {
-      fontSize: fontSize.sm,           // 14
-      fontWeight: fontWeight.bold,     // "700"
-      color: colors.primaryText,
-    },
-    btnSecondary: {
-      flex: 1,
-      backgroundColor: colors.surfaceMuted,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.md,         // 12
-      paddingVertical: spacing[3],     // 12
-      alignItems: "center",
-    },
-    btnSecondaryText: {
-      fontSize: fontSize.sm,           // 14
-      fontWeight: fontWeight.semibold, // "600"
-      color: colors.text,
-    },
-    btnSave: {
-      flex: 1,
-      backgroundColor: colors.primary,
-      borderRadius: radius.md,         // 12
-      paddingVertical: spacing[3],     // 12
-      alignItems: "center",
-    },
-    btnSaveText: {
-      fontSize: fontSize.sm,           // 14
-      fontWeight: fontWeight.bold,     // "700"
-      color: colors.primaryText,
-    },
-    btnToggleActive: {
-      flex: 1,
-      backgroundColor: colors.errorSoft,
-      borderWidth: 0.5,
-      borderColor: colors.error,
-      borderRadius: radius.md,         // 12
-      paddingVertical: spacing[3],     // 12
-      alignItems: "center",
-    },
-    btnToggleActiveText: {
-      fontSize: fontSize.sm,           // 14
-      fontWeight: fontWeight.semibold, // "600"
-      color: colors.error,
-    },
-    btnToggleInactive: {
-      flex: 1,
-      backgroundColor: colors.successSoft,
-      borderWidth: 0.5,
-      borderColor: colors.success,
-      borderRadius: radius.md,         // 12
-      paddingVertical: spacing[3],     // 12
-      alignItems: "center",
-    },
-    btnToggleInactiveText: {
-      fontSize: fontSize.sm,           // 14
-      fontWeight: fontWeight.semibold, // "600"
-      color: colors.success,
-    },
-    btnDisabled: {
-      opacity: 0.4,
-    },
-    actionsRow: {
-      flexDirection: "row",
-      gap: spacing[2],                 // 8
-      marginTop: spacing[3],           // 12
-    },
-
-    // ── Reward card ──────────────────────────────────────────────────────────
-    card: {
-      backgroundColor: colors.surface,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.lg,         // 16
-      padding: spacing[4],             // 16
-      marginBottom: spacing[3],        // 12
-    },
-    cardInactive: {
-      opacity: 0.55,
-    },
-    cardHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "flex-start",
-      gap: spacing[2],                 // 8
-      marginBottom: spacing[2],        // 8
-    },
-    rewardTitle: {
-      flex: 1,
-      fontSize: fontSize.base,         // 16
-      fontWeight: fontWeight.semibold, // "600"
-      color: colors.textStrong,
-    },
-    costPill: {
-      backgroundColor: colors.rewardSoft,
-      borderRadius: radius.full,
-      paddingHorizontal: spacing[2],   // 8
-      paddingVertical: 3,
-    },
-    costPillText: {
-      fontSize: fontSize.xs,           // 12
-      fontWeight: fontWeight.bold,     // "700"
-      color: colors.reward,
-    },
-    statusDot: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[1],                 // 4
-    },
-    dot: {
-      width: 6,
-      height: 6,
-      borderRadius: radius.full,
-    },
-    statusText: {
-      fontSize: fontSize.xxs,          // 11
-      fontWeight: fontWeight.medium,   // "500"
-      color: colors.muted,
-    },
-
-    // ── Feedback ─────────────────────────────────────────────────────────────
-    feedbackWrap: {
-      marginTop: spacing[3],           // 12
-    },
-    errorText: {
-      fontSize: fontSize.xs,           // 12
-      color: colors.error,
-      textAlign: "center",
-    },
-    successText: {
-      fontSize: fontSize.xs,           // 12
-      color: colors.success,
-      textAlign: "center",
-    },
-    listContent: {
-      paddingBottom: spacing[2],       // 8
-    },
-  });
-}
-
-// ---------------------------------------------------------------------------
-// ManageRewardsScreen
-// ---------------------------------------------------------------------------
-
 export function ManageRewardsScreen({ navigation }: Props) {
-  const theme = useTheme();
-  const s = makeStyles(theme);
+  const { colors } = useTheme();
   const { activeGroupId } = useAppSession();
 
   const [rewards, setRewards] = useState<Reward[]>([]);
@@ -260,8 +41,6 @@ export function ManageRewardsScreen({ navigation }: Props) {
   const [editCostPoints, setEditCostPoints] = useState("");
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-
-  // ── Data ───────────────────────────────────────────────────────────────────
 
   const loadData = useCallback(async () => {
     if (!activeGroupId) {
@@ -284,7 +63,9 @@ export function ManageRewardsScreen({ navigation }: Props) {
       setRewards(data);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "No se pudo cargar la gestión de premios."
+        err instanceof Error
+          ? err.message
+          : "No se pudo cargar la gestión de premios.",
       );
     } finally {
       setIsLoading(false);
@@ -296,12 +77,13 @@ export function ManageRewardsScreen({ navigation }: Props) {
     return unsubscribe;
   }, [navigation, loadData]);
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
-
   const handleCreate = useCallback(async () => {
     if (!activeGroupId) return;
     const trimmed = title.trim();
-    if (!trimmed) { setError("El nombre del premio es obligatorio."); return; }
+    if (!trimmed) {
+      setError("El nombre del premio es obligatorio.");
+      return;
+    }
     const parsed = Number(costPoints);
     if (!Number.isInteger(parsed) || parsed < 1) {
       setError("El costo debe ser un número entero mayor a 0.");
@@ -317,24 +99,31 @@ export function ManageRewardsScreen({ navigation }: Props) {
       setSuccessMessage("Premio creado correctamente.");
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo crear el premio.");
+      setError(
+        err instanceof Error ? err.message : "No se pudo crear el premio.",
+      );
     } finally {
       setIsSaving(false);
     }
   }, [activeGroupId, title, costPoints, loadData]);
 
-  const handleToggle = useCallback(async (item: Reward) => {
-    if (!activeGroupId) return;
-    try {
-      setError("");
-      setSuccessMessage("");
-      await setRewardActive(activeGroupId, item.id, !item.active);
-      setSuccessMessage(!item.active ? "Premio activado." : "Premio desactivado.");
-      await loadData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo actualizar el premio.");
-    }
-  }, [activeGroupId, loadData]);
+  const handleToggle = useCallback(
+    async (item: Reward) => {
+      if (!activeGroupId) return;
+      try {
+        setError("");
+        setSuccessMessage("");
+        await setRewardActive(activeGroupId, item.id, !item.active);
+        setSuccessMessage(!item.active ? "Premio activado." : "Premio desactivado.");
+        await loadData();
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "No se pudo actualizar el premio.",
+        );
+      }
+    },
+    [activeGroupId, loadData],
+  );
 
   const startEditing = useCallback((item: Reward) => {
     setError("");
@@ -350,111 +139,137 @@ export function ManageRewardsScreen({ navigation }: Props) {
     setEditCostPoints("");
   }, []);
 
-  const handleSaveEdit = useCallback(async (item: Reward) => {
-    if (!activeGroupId) return;
-    const trimmed = editTitle.trim();
-    if (!trimmed) { setError("El nombre del premio es obligatorio."); return; }
-    const parsed = Number(editCostPoints);
-    if (!Number.isInteger(parsed) || parsed < 1) {
-      setError("El costo debe ser un número entero mayor a 0.");
-      return;
-    }
-    try {
-      setError("");
-      setSuccessMessage("");
-      setIsSaving(true);
-      await updateReward(activeGroupId, item.id, { title: trimmed, costPoints: parsed });
-      setSuccessMessage("Premio actualizado correctamente.");
-      cancelEditing();
-      await loadData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo actualizar el premio.");
-    } finally {
-      setIsSaving(false);
-    }
-  }, [activeGroupId, editTitle, editCostPoints, cancelEditing, loadData]);
-
-  // ── Guards ────────────────────────────────────────────────────────────────
+  const handleSaveEdit = useCallback(
+    async (item: Reward) => {
+      if (!activeGroupId) return;
+      const trimmed = editTitle.trim();
+      if (!trimmed) {
+        setError("El nombre del premio es obligatorio.");
+        return;
+      }
+      const parsed = Number(editCostPoints);
+      if (!Number.isInteger(parsed) || parsed < 1) {
+        setError("El costo debe ser un número entero mayor a 0.");
+        return;
+      }
+      try {
+        setError("");
+        setSuccessMessage("");
+        setIsSaving(true);
+        await updateReward(activeGroupId, item.id, {
+          title: trimmed,
+          costPoints: parsed,
+        });
+        setSuccessMessage("Premio actualizado correctamente.");
+        cancelEditing();
+        await loadData();
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "No se pudo actualizar el premio.",
+        );
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [activeGroupId, editTitle, editCostPoints, cancelEditing, loadData],
+  );
 
   if (isLoading) {
     return (
-      <View style={s.centered}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+      <View className="flex-1 items-center justify-center bg-background p-6">
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   if (!canManage) {
     return (
-      <View style={s.centered}>
-        <Text style={s.infoText}>
+      <View className="flex-1 items-center justify-center bg-background p-6">
+        <View className="mb-4 h-14 w-14 items-center justify-center rounded-full bg-muted">
+          <Ionicons name="lock-closed-outline" size={26} color={colors.muted} />
+        </View>
+        <Text className="text-center font-sans text-sm text-muted-foreground">
           Solo owner o sub_owner puede gestionar el catálogo de premios.
         </Text>
       </View>
     );
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
-
   return (
     <KeyboardAvoidingView
-      style={s.container}
+      className="flex-1 bg-background"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <FlatList
         data={rewards}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={s.scrollContent}
+        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <>
-            {/* ── Crear premio ── */}
-            <Text style={[s.sectionLabel, { marginTop: 0 }]}>Crear premio</Text>
-            <View style={s.createCard}>
+            {/* Form crear */}
+            <Text className="mb-2 font-sans-semibold text-xs uppercase tracking-wider text-muted-foreground">
+              Nuevo premio
+            </Text>
+            <View
+              style={shadows.card}
+              className="mb-2 rounded-2xl border border-border bg-card p-4"
+            >
               <TextInput
                 value={title}
                 onChangeText={setTitle}
-                style={s.input}
+                className="mb-3 rounded-xl border border-border bg-background px-3 py-3 font-sans text-sm text-foreground"
                 placeholder="Nombre del premio"
-                placeholderTextColor={theme.colors.muted}
+                placeholderTextColor={colors.muted}
                 editable={!isSaving}
               />
               <TextInput
                 value={costPoints}
                 onChangeText={setCostPoints}
-                style={s.input}
+                className="mb-3 rounded-xl border border-border bg-background px-3 py-3 font-sans text-sm text-foreground"
                 keyboardType="numeric"
                 placeholder="Costo en puntos"
-                placeholderTextColor={theme.colors.muted}
+                placeholderTextColor={colors.muted}
                 editable={!isSaving}
               />
-              <Pressable
-                style={({ pressed }) => [
-                  s.btnPrimary,
-                  isSaving && s.btnDisabled,
-                  pressed && !isSaving && { opacity: 0.8 },
-                ]}
-                onPress={handleCreate}
+              <Button
+                label={isSaving ? "Guardando..." : "Crear premio"}
+                variant="primary"
+                size="md"
+                fullWidth
                 disabled={isSaving}
-              >
-                <Text style={s.btnPrimaryText}>
-                  {isSaving ? "Guardando..." : "Crear premio"}
-                </Text>
-              </Pressable>
+                onPress={handleCreate}
+                iconLeft={
+                  isSaving ? undefined : (
+                    <Ionicons name="add" size={16} color={colors.primaryText} />
+                  )
+                }
+              />
             </View>
 
-            {/* Feedback */}
-            {(error || successMessage) ? (
-              <View style={s.feedbackWrap}>
-                {error ? <Text style={s.errorText}>{error}</Text> : null}
-                {successMessage ? <Text style={s.successText}>{successMessage}</Text> : null}
+            {error ? (
+              <View className="mb-3 mt-1 rounded-xl border border-destructive/30 bg-destructive/10 p-3">
+                <Text className="text-center font-sans-medium text-sm text-destructive">
+                  {error}
+                </Text>
+              </View>
+            ) : null}
+            {successMessage ? (
+              <View className="mb-3 mt-1 rounded-xl border border-success/30 bg-success/10 p-3">
+                <Text className="text-center font-sans-medium text-sm text-success">
+                  {successMessage}
+                </Text>
               </View>
             ) : null}
 
-            {/* ── Catálogo ── */}
-            <Text style={s.sectionLabel}>Catálogo actual</Text>
+            <Text className="mb-3 mt-5 font-sans-semibold text-xs uppercase tracking-wider text-muted-foreground">
+              Catálogo actual
+            </Text>
             {rewards.length === 0 ? (
-              <Text style={s.infoText}>Aún no hay premios creados.</Text>
+              <Text className="font-sans text-sm text-muted-foreground">
+                Aún no hay premios creados.
+              </Text>
             ) : null}
           </>
         }
@@ -463,108 +278,106 @@ export function ManageRewardsScreen({ navigation }: Props) {
 
           if (isEditing) {
             return (
-              <View style={s.card}>
+              <View
+                style={shadows.card}
+                className="mb-3 rounded-2xl border border-border bg-card p-4"
+              >
+                <Text className="mb-3 font-sans-semibold text-sm text-foreground">
+                  Editando premio
+                </Text>
                 <TextInput
                   value={editTitle}
                   onChangeText={setEditTitle}
-                  style={s.input}
+                  className="mb-3 rounded-xl border border-border bg-background px-3 py-3 font-sans text-sm text-foreground"
                   placeholder="Nombre del premio"
-                  placeholderTextColor={theme.colors.muted}
+                  placeholderTextColor={colors.muted}
                   editable={!isSaving}
                 />
                 <TextInput
                   value={editCostPoints}
                   onChangeText={setEditCostPoints}
-                  style={s.input}
+                  className="mb-3 rounded-xl border border-border bg-background px-3 py-3 font-sans text-sm text-foreground"
                   keyboardType="numeric"
                   placeholder="Costo en puntos"
-                  placeholderTextColor={theme.colors.muted}
+                  placeholderTextColor={colors.muted}
                   editable={!isSaving}
                 />
-                <View style={s.actionsRow}>
-                  <Pressable
-                    style={({ pressed }) => [
-                      s.btnSave,
-                      isSaving && s.btnDisabled,
-                      pressed && !isSaving && { opacity: 0.8 },
-                    ]}
-                    onPress={() => handleSaveEdit(item)}
-                    disabled={isSaving}
-                  >
-                    <Text style={s.btnSaveText}>
-                      {isSaving ? "Guardando..." : "Guardar"}
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    style={({ pressed }) => [
-                      s.btnSecondary,
-                      isSaving && s.btnDisabled,
-                      pressed && !isSaving && { opacity: 0.7 },
-                    ]}
-                    onPress={cancelEditing}
-                    disabled={isSaving}
-                  >
-                    <Text style={s.btnSecondaryText}>Cancelar</Text>
-                  </Pressable>
+                <View className="flex-row gap-2">
+                  <View className="flex-1">
+                    <Button
+                      label={isSaving ? "Guardando..." : "Guardar"}
+                      variant="primary"
+                      size="md"
+                      fullWidth
+                      disabled={isSaving}
+                      onPress={() => handleSaveEdit(item)}
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Button
+                      label="Cancelar"
+                      variant="outline"
+                      size="md"
+                      fullWidth
+                      disabled={isSaving}
+                      onPress={cancelEditing}
+                    />
+                  </View>
                 </View>
               </View>
             );
           }
 
           return (
-            <View style={[s.card, !item.active && s.cardInactive]}>
-              {/* Header */}
-              <View style={s.cardHeader}>
-                <Text style={s.rewardTitle}>{item.title}</Text>
-                <View style={s.costPill}>
-                  <Text style={s.costPillText}>{item.costPoints} pts</Text>
-                </View>
+            <View
+              style={[shadows.card, !item.active && { opacity: 0.55 }]}
+              className="mb-3 rounded-2xl border border-border bg-card p-4"
+            >
+              <View className="mb-3 flex-row items-start justify-between gap-2">
+                <Text
+                  className="flex-1 font-sans-semibold text-base text-foreground"
+                  numberOfLines={2}
+                >
+                  {item.title}
+                </Text>
+                <GameBadge type="points" value={`${item.costPoints} pts`} size="sm" />
               </View>
 
-              {/* Estado */}
-              <View style={s.statusDot}>
+              <View className="mb-3 flex-row items-center gap-1.5">
                 <View
-                  style={[
-                    s.dot,
-                    {
-                      backgroundColor: item.active
-                        ? theme.colors.success
-                        : theme.colors.muted,
-                    },
-                  ]}
+                  className={`h-1.5 w-1.5 rounded-full ${item.active ? "bg-success" : "bg-muted-foreground"}`}
                 />
-                <Text style={s.statusText}>
+                <Text className="font-sans-medium text-xs text-muted-foreground">
                   {item.active ? "Activo" : "Inactivo"}
                 </Text>
               </View>
 
-              {/* Acciones */}
-              <View style={s.actionsRow}>
-                <Pressable
-                  style={({ pressed }) => [
-                    s.btnSecondary,
-                    pressed && { opacity: 0.7 },
-                  ]}
-                  onPress={() => startEditing(item)}
-                >
-                  <Text style={s.btnSecondaryText}>Editar</Text>
-                </Pressable>
-
-                <Pressable
-                  style={({ pressed }) => [
-                    item.active ? s.btnToggleActive : s.btnToggleInactive,
-                    pressed && { opacity: 0.8 },
-                  ]}
-                  onPress={() => handleToggle(item)}
-                >
-                  <Text
-                    style={
-                      item.active ? s.btnToggleActiveText : s.btnToggleInactiveText
+              <View className="flex-row gap-2">
+                <View className="flex-1">
+                  <Button
+                    label="Editar"
+                    variant="outline"
+                    size="sm"
+                    fullWidth
+                    onPress={() => startEditing(item)}
+                    iconLeft={
+                      <Ionicons
+                        name="pencil-outline"
+                        size={13}
+                        color={colors.text}
+                      />
                     }
-                  >
-                    {item.active ? "Desactivar" : "Activar"}
-                  </Text>
-                </Pressable>
+                  />
+                </View>
+                <View className="flex-1">
+                  <Button
+                    label={item.active ? "Desactivar" : "Activar"}
+                    variant={item.active ? "destructive" : "secondary"}
+                    size="sm"
+                    fullWidth
+                    onPress={() => handleToggle(item)}
+                  />
+                </View>
               </View>
             </View>
           );

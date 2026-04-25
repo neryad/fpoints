@@ -1,22 +1,24 @@
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
-  FlatList,
   KeyboardAvoidingView,
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import shadows from "../../../../design-system-rn/tokens/shadows";
+import { Button } from "../../../../design-system-rn/components";
 import { ProfileStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
 import { useTheme } from "../../../core/theme/ThemeProvider";
 import { getMyRoleInGroup } from "../../tasks/services/tasks.service";
 import {
+  createChildInvitation,
   getGroupDetails,
   listGroupMembers,
   updateGroupName,
@@ -31,163 +33,8 @@ const ROLE_LABELS: Record<string, string> = {
   member: "Miembro",
 };
 
-function makeStyles(theme: ReturnType<typeof useTheme>) {
-  const { colors, spacing, fontSize, fontWeight, radius } = theme;
-  return StyleSheet.create({
-    centered: {
-      flex: 1,
-      justifyContent: "center",
-      alignItems: "center",
-      backgroundColor: colors.background,
-    },
-    scrollContent: {
-      backgroundColor: colors.background,
-      padding: spacing[4],             // 16
-      paddingBottom: spacing[8],       // 40
-    },
-
-    // ── Card ────────────────────────────────────────────────────────────────
-    card: {
-      backgroundColor: colors.surface,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.lg,
-      padding: spacing[4],
-      marginBottom: spacing[3],
-    },
-    cardLabel: {
-      fontSize: fontSize.xxs,
-      fontWeight: fontWeight.medium,
-      color: colors.muted,
-      letterSpacing: 0.8,
-      textTransform: "uppercase",
-      marginBottom: spacing[3],
-    },
-
-    // ── Input ────────────────────────────────────────────────────────────────
-    input: {
-      backgroundColor: colors.background,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.sm,
-      paddingHorizontal: spacing[3],
-      paddingVertical: spacing[3],
-      fontSize: fontSize.sm,
-      color: colors.text,
-      marginBottom: spacing[3],
-    },
-    inputDisabled: { opacity: 0.5 },
-
-    // ── Invite code ──────────────────────────────────────────────────────────
-    codeBox: {
-      backgroundColor: colors.primarySoft,
-      borderRadius: radius.md,
-      paddingVertical: spacing[4],
-      alignItems: "center",
-      marginBottom: spacing[2],
-    },
-    codeText: {
-      fontSize: 26,
-      fontWeight: fontWeight.bold,
-      letterSpacing: 6,
-      color: colors.primary,
-    },
-    hint: {
-      fontSize: fontSize.xxs,
-      color: colors.muted,
-      textAlign: "center",
-    },
-
-    // ── Members ──────────────────────────────────────────────────────────────
-    memberRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[3],
-      paddingVertical: spacing[3],
-      borderTopWidth: 0.5,
-      borderTopColor: colors.border,
-    },
-    memberAvatar: {
-      width: 34,
-      height: 34,
-      borderRadius: radius.full,
-      backgroundColor: colors.primarySoft,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    memberAvatarText: {
-      fontSize: fontSize.xs,
-      fontWeight: fontWeight.bold,
-      color: colors.primary,
-    },
-    memberInfo: { flex: 1 },
-    memberName: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.medium,
-      color: colors.textStrong,
-    },
-    rolePill: {
-      backgroundColor: colors.surfaceMuted,
-      borderRadius: radius.full,
-      paddingHorizontal: spacing[2],
-      paddingVertical: 2,
-    },
-    rolePillOwner: {
-      backgroundColor: colors.primarySoft,
-    },
-    rolePillText: {
-      fontSize: fontSize.xxs,
-      fontWeight: fontWeight.medium,
-      color: colors.muted,
-    },
-    rolePillTextOwner: {
-      color: colors.primary,
-    },
-
-    // ── Buttons ──────────────────────────────────────────────────────────────
-    btnPrimary: {
-      backgroundColor: colors.primary,
-      borderRadius: radius.md,
-      paddingVertical: spacing[3],
-      alignItems: "center",
-    },
-    btnPrimaryText: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.bold,
-      color: colors.primaryText,
-    },
-    btnDisabled: { opacity: 0.4 },
-
-    // ── Feedback ─────────────────────────────────────────────────────────────
-    errorText: {
-      fontSize: fontSize.xs,
-      color: colors.error,
-      textAlign: "center",
-      marginBottom: spacing[3],
-    },
-    successText: {
-      fontSize: fontSize.xs,
-      color: colors.success,
-      textAlign: "center",
-      marginBottom: spacing[3],
-    },
-    membersHeader: {
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      marginBottom: spacing[2],
-    },
-    membersCount: {
-      fontSize: fontSize.xxs,
-      color: colors.muted,
-      fontWeight: fontWeight.medium,
-    },
-  });
-}
-
 export function GroupSettingsScreen({ navigation }: Props) {
-  const theme = useTheme();
-  const s = makeStyles(theme);
+  const { colors } = useTheme();
   const { activeGroupId } = useAppSession();
 
   const [groupName, setGroupName] = useState("");
@@ -198,6 +45,14 @@ export function GroupSettingsScreen({ navigation }: Props) {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+
+  const [showChildForm, setShowChildForm] = useState(false);
+  const [childUsername, setChildUsername] = useState("");
+  const [childPin, setChildPin] = useState("");
+  const [childDisplayName, setChildDisplayName] = useState("");
+  const [isSavingChild, setIsSavingChild] = useState(false);
+  const [childError, setChildError] = useState("");
+  const [childSuccess, setChildSuccess] = useState("");
 
   const loadData = useCallback(async () => {
     if (!activeGroupId) { setIsLoading(false); return; }
@@ -240,85 +95,237 @@ export function GroupSettingsScreen({ navigation }: Props) {
     }
   }, [activeGroupId, groupName]);
 
+  const handleCreateChild = useCallback(async () => {
+    if (!activeGroupId) return;
+    try {
+      setChildError("");
+      setChildSuccess("");
+      setIsSavingChild(true);
+      await createChildInvitation(childUsername, childPin, childDisplayName, activeGroupId);
+      setChildSuccess(`¡Invitación creada! El niño puede entrar con usuario "${childUsername.trim().toLowerCase()}" y su PIN.`);
+      setChildUsername("");
+      setChildPin("");
+      setChildDisplayName("");
+    } catch (err) {
+      setChildError(err instanceof Error ? err.message : "No se pudo crear la invitación.");
+    } finally {
+      setIsSavingChild(false);
+    }
+  }, [activeGroupId, childUsername, childPin, childDisplayName]);
+
   if (isLoading) {
     return (
-      <View style={s.centered}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+      <View className="flex-1 items-center justify-center bg-background">
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: theme.colors.background }}
+      className="flex-1 bg-background"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-    <ScrollView
-      style={{ flex: 1, backgroundColor: theme.colors.background }}
-      contentContainerStyle={s.scrollContent}
-    >
-
-      {/* ── Nombre ── */}
-      <View style={s.card}>
-        <Text style={s.cardLabel}>Nombre del grupo</Text>
-        <TextInput
-          style={[s.input, !isOwner && s.inputDisabled]}
-          value={groupName}
-          onChangeText={setGroupName}
-          editable={isOwner && !isSaving}
-          placeholder="Nombre del grupo"
-          placeholderTextColor={theme.colors.muted}
-        />
-        {isOwner ? (
-          <Pressable
-            style={({ pressed }) => [s.btnPrimary, isSaving && s.btnDisabled, pressed && !isSaving && { opacity: 0.8 }]}
-            onPress={handleSaveName}
-            disabled={isSaving}
-          >
-            <Text style={s.btnPrimaryText}>{isSaving ? "Guardando..." : "Guardar nombre"}</Text>
-          </Pressable>
-        ) : null}
-        {error ? <Text style={[s.errorText, { marginTop: theme.spacing[2], marginBottom: 0 }]}>{error}</Text> : null}
-        {successMessage ? <Text style={[s.successText, { marginTop: theme.spacing[2], marginBottom: 0 }]}>{successMessage}</Text> : null}
-      </View>
-
-      {/* ── Código de invitación ── */}
-      <View style={s.card}>
-        <Text style={s.cardLabel}>Código de invitación</Text>
-        <View style={s.codeBox}>
-          <Text style={s.codeText} selectable>{inviteCode}</Text>
-        </View>
-        <Text style={s.hint}>Comparte este código para que otros se unan al grupo.</Text>
-      </View>
-
-      {/* ── Miembros ── */}
-      <View style={s.card}>
-        <View style={s.membersHeader}>
-          <Text style={s.cardLabel}>Miembros</Text>
-          <Text style={s.membersCount}>{members.length} en total</Text>
-        </View>
-        {members.map((item, idx) => {
-          const isElevated = item.role === "owner" || item.role === "sub_owner";
-          const initial = (item.displayName ?? "?").charAt(0).toUpperCase();
-          return (
-            <View key={item.userId} style={[s.memberRow, idx === 0 && { borderTopWidth: 0 }]}>
-              <View style={s.memberAvatar}>
-                <Text style={s.memberAvatarText}>{initial}</Text>
-              </View>
-              <View style={s.memberInfo}>
-                <Text style={s.memberName}>{item.displayName}</Text>
-              </View>
-              <View style={[s.rolePill, isElevated && s.rolePillOwner]}>
-                <Text style={[s.rolePillText, isElevated && s.rolePillTextOwner]}>
-                  {ROLE_LABELS[item.role] ?? item.role}
-                </Text>
-              </View>
+      <ScrollView
+        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Nombre del grupo */}
+        <Text className="mb-2 font-sans-semibold text-xs uppercase tracking-wider text-muted-foreground">
+          Nombre del grupo
+        </Text>
+        <View style={shadows.card} className="mb-4 rounded-2xl border border-border bg-card p-4">
+          <TextInput
+            className={`mb-3 rounded-xl border border-border bg-background px-3 py-3 font-sans text-sm text-foreground ${!isOwner ? "opacity-50" : ""}`}
+            value={groupName}
+            onChangeText={setGroupName}
+            editable={isOwner && !isSaving}
+            placeholder="Nombre del grupo"
+            placeholderTextColor={colors.muted}
+          />
+          {error ? (
+            <View className="mb-3 rounded-xl border border-destructive/30 bg-destructive/10 p-3">
+              <Text className="font-sans-medium text-center text-sm text-destructive">{error}</Text>
             </View>
-          );
-        })}
-      </View>
+          ) : null}
+          {successMessage ? (
+            <View className="mb-3 rounded-xl border border-success/30 bg-success/10 p-3">
+              <Text className="font-sans-medium text-center text-sm text-success">{successMessage}</Text>
+            </View>
+          ) : null}
+          {isOwner ? (
+            <Button
+              label={isSaving ? "Guardando..." : "Guardar nombre"}
+              variant="primary"
+              size="md"
+              fullWidth
+              disabled={isSaving}
+              onPress={handleSaveName}
+              iconLeft={
+                isSaving ? undefined : (
+                  <Ionicons name="checkmark" size={16} color={colors.primaryText} />
+                )
+              }
+            />
+          ) : null}
+        </View>
 
-    </ScrollView>
+        {/* Código de invitación */}
+        <Text className="mb-2 font-sans-semibold text-xs uppercase tracking-wider text-muted-foreground">
+          Código de invitación
+        </Text>
+        <View style={shadows.card} className="mb-4 rounded-2xl border border-border bg-card p-4">
+          <View className="rounded-xl bg-primary/10 py-4 items-center mb-3">
+            <Text
+              className="font-sans-bold text-[26px] text-primary"
+              style={{ letterSpacing: 6 }}
+              selectable
+            >
+              {inviteCode}
+            </Text>
+          </View>
+          <View className="flex-row items-center gap-2">
+            <Ionicons name="information-circle-outline" size={14} color={colors.muted} />
+            <Text className="font-sans text-[11px] text-muted-foreground flex-1">
+              Comparte este código para que otros se unan al grupo.
+            </Text>
+          </View>
+        </View>
+
+        {/* Agregar miembro sin email (solo owners) */}
+        {isOwner ? (
+          <>
+            <Text className="mb-2 font-sans-semibold text-xs uppercase tracking-wider text-muted-foreground">
+              Miembro sin email
+            </Text>
+            <View style={shadows.card} className="mb-4 rounded-2xl border border-border bg-card p-4">
+              <Pressable
+                className="flex-row items-center justify-between active:opacity-80"
+                onPress={() => { setShowChildForm((v) => !v); setChildError(""); setChildSuccess(""); }}
+                accessibilityRole="button"
+                accessibilityLabel="Agregar miembro sin email"
+              >
+                <View className="flex-row items-center gap-2">
+                  <Ionicons name="person-add-outline" size={16} color={colors.primary} />
+                  <Text className="font-sans-medium text-sm text-foreground">
+                    Agregar miembro sin email
+                  </Text>
+                </View>
+                <Ionicons
+                  name={showChildForm ? "chevron-up" : "chevron-down"}
+                  size={16}
+                  color={colors.muted}
+                />
+              </Pressable>
+
+              {showChildForm ? (
+                <View className="mt-4 gap-3">
+                  <TextInput
+                    className="rounded-xl border border-border bg-background px-3 py-3 font-sans text-sm text-foreground"
+                    value={childDisplayName}
+                    onChangeText={setChildDisplayName}
+                    placeholder="Nombre visible (ej: Ana)"
+                    placeholderTextColor={colors.muted}
+                    editable={!isSavingChild}
+                    secureTextEntry={false}
+                    textContentType="name"
+                    autoComplete="name"
+                  />
+                  <TextInput
+                    className="rounded-xl border border-border bg-background px-3 py-3 font-sans text-sm text-foreground"
+                    value={childUsername}
+                    onChangeText={(t) => setChildUsername(t.toLowerCase().replace(/[^a-z0-9_]/g, ""))}
+                    placeholder="Nombre de usuario (ej: ana)"
+                    placeholderTextColor={colors.muted}
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                    editable={!isSavingChild}
+                    secureTextEntry={false}
+                    textContentType="username"
+                    autoComplete="username"
+                  />
+                  <TextInput
+                    className="rounded-xl border border-border bg-background px-3 py-3 font-sans text-sm text-foreground"
+                    value={childPin}
+                    onChangeText={setChildPin}
+                    placeholder="PIN (4-6 dígitos)"
+                    placeholderTextColor={colors.muted}
+                    keyboardType="number-pad"
+                    secureTextEntry
+                    maxLength={6}
+                    editable={!isSavingChild}
+                  />
+                  {childError ? (
+                    <View className="rounded-xl border border-destructive/30 bg-destructive/10 p-3">
+                      <Text className="font-sans-medium text-sm text-destructive">{childError}</Text>
+                    </View>
+                  ) : null}
+                  {childSuccess ? (
+                    <View className="rounded-xl border border-success/30 bg-success/10 p-3">
+                      <Text className="font-sans-medium text-sm text-success">{childSuccess}</Text>
+                    </View>
+                  ) : null}
+                  <Button
+                    label={isSavingChild ? "Creando..." : "Crear invitación"}
+                    variant="primary"
+                    size="md"
+                    fullWidth
+                    disabled={isSavingChild}
+                    onPress={handleCreateChild}
+                    iconLeft={
+                      isSavingChild ? undefined : (
+                        <Ionicons name="add" size={16} color={colors.primaryText} />
+                      )
+                    }
+                  />
+                </View>
+              ) : (
+                <Text className="mt-3 font-sans text-[11px] text-muted-foreground">
+                  Crea acceso por usuario y PIN para miembros que no tienen correo.
+                </Text>
+              )}
+            </View>
+          </>
+        ) : null}
+
+        {/* Miembros */}
+        <Text className="mb-2 font-sans-semibold text-xs uppercase tracking-wider text-muted-foreground">
+          Miembros ({members.length})
+        </Text>
+        <View style={shadows.card} className="rounded-2xl border border-border bg-card overflow-hidden">
+          {members.map((item, idx) => {
+            const isElevated = item.role === "owner" || item.role === "sub_owner";
+            const initial = (item.displayName ?? "?").charAt(0).toUpperCase();
+            return (
+              <Pressable
+                key={item.userId}
+                className={`flex-row items-center gap-3 px-4 py-3 active:opacity-70 ${idx > 0 ? "border-t border-border" : ""}`}
+                onPress={() => navigation.navigate("MemberDashboard", {
+                  memberId: item.userId,
+                  memberName: item.displayName,
+                  memberRole: item.role,
+                })}
+                accessibilityRole="button"
+                accessibilityLabel={`Ver miembro ${item.displayName}`}
+              >
+                <View className="h-9 w-9 items-center justify-center rounded-full bg-primary/15">
+                  <Text className="font-sans-bold text-xs text-primary">{initial}</Text>
+                </View>
+                <View className="flex-1">
+                  <Text className="font-sans-medium text-sm text-foreground">{item.displayName}</Text>
+                </View>
+                <View className={`rounded-full px-2.5 py-0.5 ${isElevated ? "bg-primary/15" : "bg-muted"}`}>
+                  <Text className={`font-sans-medium text-[11px] ${isElevated ? "text-primary" : "text-muted-foreground"}`}>
+                    {ROLE_LABELS[item.role] ?? item.role}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={14} color={colors.muted} />
+              </Pressable>
+            );
+          })}
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }

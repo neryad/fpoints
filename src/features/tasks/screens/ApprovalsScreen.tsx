@@ -1,9 +1,8 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
   Pressable,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -27,171 +26,15 @@ type Props = NativeStackScreenProps<TasksStackParamList, "Approvals">;
 type PendingApprovalItem = { submission: TaskSubmission; task: Task };
 type ProofFilter = "all" | "withProof" | "withoutProof";
 
-function makeStyles(theme: ReturnType<typeof useTheme>) {
-  const { colors, spacing, fontSize, fontWeight, radius } = theme;
-  return StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-      padding: spacing[4],
-    },
-    centered: {
-      flex: 1,
-      backgroundColor: colors.background,
-      alignItems: "center",
-      justifyContent: "center",
-      padding: spacing[6],
-    },
-    infoText: {
-      textAlign: "center",
-      fontSize: fontSize.sm,
-      color: colors.muted,
-      marginTop: spacing[6],
-    },
-    errorText: {
-      textAlign: "center",
-      fontSize: fontSize.xs,
-      color: colors.error,
-      marginBottom: spacing[3],
-    },
-    filterInput: {
-      backgroundColor: colors.surface,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.sm,
-      paddingHorizontal: spacing[3],
-      paddingVertical: spacing[3],
-      marginBottom: spacing[2],
-      color: colors.text,
-      fontSize: fontSize.sm,
-    },
-    chipsRow: {
-      flexDirection: "row",
-      gap: spacing[2],
-      marginBottom: spacing[3],
-    },
-    chip: {
-      borderRadius: radius.full,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      paddingHorizontal: spacing[3],
-      paddingVertical: spacing[2],
-      backgroundColor: colors.surface,
-    },
-    chipActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
-    },
-    chipText: {
-      fontSize: fontSize.xs,
-      fontWeight: fontWeight.semibold,
-      color: colors.muted,
-    },
-    chipTextActive: {
-      color: colors.primaryText,
-    },
-    listContent: {
-      paddingBottom: spacing[7],
-    },
-    card: {
-      backgroundColor: colors.surface,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.lg,
-      padding: spacing[4],
-      marginBottom: spacing[3],
-    },
-    cardHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "flex-start",
-      gap: spacing[2],
-      marginBottom: spacing[3],
-    },
-    taskTitle: {
-      flex: 1,
-      fontSize: fontSize.base,
-      fontWeight: fontWeight.semibold,
-      color: colors.textStrong,
-    },
-    pointsPill: {
-      backgroundColor: colors.rewardSoft,
-      borderRadius: radius.full,
-      paddingHorizontal: spacing[2],
-      paddingVertical: 3,
-    },
-    pointsPillText: {
-      fontSize: fontSize.xs,
-      fontWeight: fontWeight.bold,
-      color: colors.reward,
-    },
-    metaRow: {
-      flexDirection: "row",
-      gap: spacing[2],
-      marginBottom: spacing[1],
-    },
-    metaLabel: {
-      fontSize: fontSize.xxs,
-      fontWeight: fontWeight.medium,
-      color: colors.muted,
-      width: 52,
-    },
-    metaValue: {
-      flex: 1,
-      fontSize: fontSize.xs,
-      color: colors.text,
-    },
-    proofBadge: {
-      alignSelf: "flex-start",
-      marginTop: spacing[2],
-      backgroundColor: colors.infoSoft,
-      borderRadius: radius.full,
-      paddingHorizontal: spacing[2],
-      paddingVertical: 2,
-    },
-    proofBadgeText: {
-      fontSize: fontSize.xxs,
-      fontWeight: fontWeight.medium,
-      color: colors.info,
-    },
-    actionsRow: {
-      flexDirection: "row",
-      gap: spacing[2],
-      marginTop: spacing[3],
-    },
-    btnApprove: {
-      flex: 1,
-      backgroundColor: colors.success,
-      borderRadius: radius.md,
-      paddingVertical: spacing[3],
-      alignItems: "center",
-    },
-    btnApproveText: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.bold,
-      color: colors.primaryText,
-    },
-    btnReject: {
-      flex: 1,
-      backgroundColor: colors.errorSoft,
-      borderWidth: 0.5,
-      borderColor: colors.error,
-      borderRadius: radius.md,
-      paddingVertical: spacing[3],
-      alignItems: "center",
-    },
-    btnRejectText: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.bold,
-      color: colors.error,
-    },
-    btnDisabled: { opacity: 0.4 },
-  });
-}
+const PROOF_FILTERS: ProofFilter[] = ["all", "withProof", "withoutProof"];
+const PROOF_LABELS: Record<ProofFilter, string> = {
+  all: "Todas",
+  withProof: "Con prueba",
+  withoutProof: "Sin prueba",
+};
 
 export function ApprovalsScreen({ navigation }: Props) {
-  const theme = useTheme();
-  const s = makeStyles(theme);
+  const { colors } = useTheme();
   const { activeGroupId } = useAppSession();
 
   const [isReviewer, setIsReviewer] = useState(false);
@@ -208,6 +51,12 @@ export function ApprovalsScreen({ navigation }: Props) {
     destructive?: boolean; onConfirm: () => void;
   }>(null);
 
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
+
   const loadPending = useCallback(async () => {
     if (!activeGroupId) { setPending([]); setIsLoading(false); return; }
     try {
@@ -215,6 +64,7 @@ export function ApprovalsScreen({ navigation }: Props) {
       setIsLoading(true);
       const role = await getMyRoleInGroup(activeGroupId);
       const canReview = role === "owner" || role === "sub_owner";
+      if (!isMountedRef.current) return;
       setIsReviewer(canReview);
       if (!canReview) { setPending([]); return; }
       const tasks = await listGroupTasks(activeGroupId);
@@ -224,16 +74,17 @@ export function ApprovalsScreen({ navigation }: Props) {
           return subs.filter((s) => s.status === "pending").map((submission) => ({ submission, task }));
         }),
       );
+      if (!isMountedRef.current) return;
       const flat = byTask.flat().sort((a, b) =>
         a.submission.createdAt > b.submission.createdAt ? -1 : 1,
       );
       setPending(flat);
       const labels = await getUserDisplayNames(flat.map((i) => i.submission.userId), activeGroupId);
-      setUserDisplayNames(labels);
+      if (isMountedRef.current) setUserDisplayNames(labels);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudieron cargar las aprobaciones.");
+      if (isMountedRef.current) setError(err instanceof Error ? err.message : "No se pudieron cargar las aprobaciones.");
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) setIsLoading(false);
     }
   }, [activeGroupId]);
 
@@ -270,16 +121,18 @@ export function ApprovalsScreen({ navigation }: Props) {
 
   if (isLoading) {
     return (
-      <View style={s.centered}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
+      <View className="flex-1 bg-background items-center justify-center p-6">
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
 
   if (!isReviewer) {
     return (
-      <View style={s.centered}>
-        <Text style={s.infoText}>Solo owner o sub_owner puede revisar envíos.</Text>
+      <View className="flex-1 bg-background items-center justify-center p-6">
+        <Text className="text-sm text-muted-foreground text-center">
+          Solo owner o sub_owner puede revisar envíos.
+        </Text>
       </View>
     );
   }
@@ -296,7 +149,7 @@ export function ApprovalsScreen({ navigation }: Props) {
   });
 
   return (
-    <View style={s.container}>
+    <View className="flex-1 bg-background p-4">
       <ConfirmDialog
         visible={dialog !== null}
         title={dialog?.title ?? ""}
@@ -306,87 +159,100 @@ export function ApprovalsScreen({ navigation }: Props) {
         onConfirm={() => dialog?.onConfirm()}
         onCancel={() => setDialog(null)}
       />
-      {error ? <Text style={s.errorText}>{error}</Text> : null}
+      {error ? (
+        <Text className="text-destructive text-xs text-center mb-3 font-sans">{error}</Text>
+      ) : null}
 
       <TextInput
-        style={s.filterInput}
+        className="bg-card border border-border rounded-lg px-3 py-3 mb-2 text-sm text-foreground"
         placeholder="Filtrar por tarea"
-        placeholderTextColor={theme.colors.muted}
+        placeholderTextColor={colors.muted}
         value={taskFilter}
         onChangeText={setTaskFilter}
       />
       <TextInput
-        style={s.filterInput}
+        className="bg-card border border-border rounded-lg px-3 py-3 mb-3 text-sm text-foreground"
         placeholder="Filtrar por usuario"
-        placeholderTextColor={theme.colors.muted}
+        placeholderTextColor={colors.muted}
         value={userFilter}
         onChangeText={setUserFilter}
         autoCapitalize="none"
       />
 
-      <View style={s.chipsRow}>
-        {(["all", "withProof", "withoutProof"] as ProofFilter[]).map((f) => {
-          const labels: Record<ProofFilter, string> = { all: "Todas", withProof: "Con prueba", withoutProof: "Sin prueba" };
+      <View className="flex-row gap-2 mb-3">
+        {PROOF_FILTERS.map((f) => {
           const active = proofFilter === f;
           return (
             <Pressable
               key={f}
-              style={({ pressed }) => [s.chip, active && s.chipActive, pressed && { opacity: 0.7 }]}
+              className={`rounded-full border px-3 py-2 active:opacity-70 ${active ? "bg-primary border-primary" : "bg-card border-border"}`}
               onPress={() => setProofFilter(f)}
             >
-              <Text style={[s.chipText, active && s.chipTextActive]}>{labels[f]}</Text>
+              <Text className={`text-xs font-sans-semibold ${active ? "text-primary-foreground" : "text-muted-foreground"}`}>
+                {PROOF_LABELS[f]}
+              </Text>
             </Pressable>
           );
         })}
       </View>
 
       {filtered.length === 0 ? (
-        <Text style={s.infoText}>No hay aprobaciones pendientes.</Text>
+        <Text className="text-sm text-muted-foreground text-center mt-6">
+          No hay aprobaciones pendientes.
+        </Text>
       ) : (
         <FlatList
           data={filtered}
           keyExtractor={(item) => item.submission.id}
-          contentContainerStyle={s.listContent}
+          contentContainerStyle={{ paddingBottom: 32 }}
           renderItem={({ item }) => {
             const isBusy = reviewingId === item.submission.id;
             const displayName = userDisplayNames[item.submission.userId] ?? item.submission.userId;
             return (
-              <View style={s.card}>
-                <View style={s.cardHeader}>
-                  <Text style={s.taskTitle}>{item.task.title}</Text>
-                  <View style={s.pointsPill}>
-                    <Text style={s.pointsPillText}>{item.task.pointsValue} pts</Text>
+              <View className="bg-card border border-border rounded-xl p-4 mb-3">
+                <View className="flex-row justify-between items-start gap-2 mb-3">
+                  <Text className="flex-1 text-base font-sans-semibold text-foreground">
+                    {item.task.title}
+                  </Text>
+                  <View className="bg-points/15 rounded-full px-2" style={{ paddingVertical: 3 }}>
+                    <Text className="text-xs font-sans-bold text-points">{item.task.pointsValue} pts</Text>
                   </View>
                 </View>
-                <View style={s.metaRow}>
-                  <Text style={s.metaLabel}>Usuario</Text>
-                  <Text style={s.metaValue}>{displayName}</Text>
+                <View className="flex-row gap-2 mb-1">
+                  <Text className="text-[11px] font-sans-medium text-muted-foreground w-[52px]">Usuario</Text>
+                  <Text className="flex-1 text-xs text-foreground">{displayName}</Text>
                 </View>
                 {item.submission.note ? (
-                  <View style={s.metaRow}>
-                    <Text style={s.metaLabel}>Nota</Text>
-                    <Text style={s.metaValue}>{item.submission.note}</Text>
+                  <View className="flex-row gap-2 mb-1">
+                    <Text className="text-[11px] font-sans-medium text-muted-foreground w-[52px]">Nota</Text>
+                    <Text className="flex-1 text-xs text-foreground">{item.submission.note}</Text>
                   </View>
                 ) : null}
                 {item.submission.proofImageUrl ? (
-                  <View style={s.proofBadge}>
-                    <Text style={s.proofBadgeText}>Incluye prueba fotográfica</Text>
+                  <View className="self-start mt-2 bg-secondary rounded-full px-2" style={{ paddingVertical: 2 }}>
+                    <Text className="text-[11px] font-sans-medium text-secondary-foreground">
+                      Incluye prueba fotográfica
+                    </Text>
                   </View>
                 ) : null}
-                <View style={s.actionsRow}>
+                <View className="flex-row gap-2 mt-3">
                   <Pressable
-                    style={({ pressed }) => [s.btnApprove, isBusy && s.btnDisabled, pressed && !isBusy && { opacity: 0.8 }]}
+                    className={`flex-1 bg-success rounded-xl py-3 items-center active:opacity-80 ${isBusy ? "opacity-40" : ""}`}
                     onPress={() => handleReview(item, "approved")}
                     disabled={isBusy}
                   >
-                    <Text style={s.btnApproveText}>{isBusy ? "..." : "Aprobar"}</Text>
+                    <Text className="text-sm font-sans-bold text-primary-foreground">
+                      {isBusy ? "..." : "Aprobar"}
+                    </Text>
                   </Pressable>
                   <Pressable
-                    style={({ pressed }) => [s.btnReject, isBusy && s.btnDisabled, pressed && !isBusy && { opacity: 0.8 }]}
+                    className={`flex-1 bg-destructive/15 border border-destructive rounded-xl py-3 items-center active:opacity-80 ${isBusy ? "opacity-40" : ""}`}
                     onPress={() => handleReview(item, "rejected")}
                     disabled={isBusy}
                   >
-                    <Text style={s.btnRejectText}>{isBusy ? "..." : "Rechazar"}</Text>
+                    <Text className="text-sm font-sans-bold text-destructive">
+                      {isBusy ? "..." : "Rechazar"}
+                    </Text>
                   </Pressable>
                 </View>
               </View>

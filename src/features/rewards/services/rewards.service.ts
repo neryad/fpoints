@@ -272,6 +272,38 @@ export async function listPendingRewardRedemptions(
   );
 }
 
+export async function redeemRewardForMember(
+  groupId: string,
+  rewardId: string,
+  memberId: string,
+): Promise<{ pointsSpent: number; newBalance: number; rewardTitle: string }> {
+  const client = ensureSupabase();
+
+  const { data, error } = await client.rpc("redeem_reward_for_member", {
+    p_group_id: groupId,
+    p_reward_id: rewardId,
+    p_member_id: memberId,
+  });
+
+  if (error) {
+    const msg = error.message.toLowerCase();
+    if (msg.includes("insufficient_points"))
+      throw new Error("El miembro no tiene puntos suficientes para este premio.");
+    if (msg.includes("reward_not_found_or_inactive"))
+      throw new Error("El premio está inactivo o no existe.");
+    if (msg.includes("permission_denied"))
+      throw new Error("No tienes permisos para canjear en nombre de otro miembro.");
+    throw new Error("No se pudo realizar el canje.");
+  }
+
+  const result = data as { points_spent: number; new_balance: number; reward_title: string };
+  return {
+    pointsSpent: result.points_spent,
+    newBalance: result.new_balance,
+    rewardTitle: result.reward_title,
+  };
+}
+
 export async function reviewRewardRedemption(
   redemptionId: string,
   status: Exclude<RewardRedemptionStatus, "pending">,

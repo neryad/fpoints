@@ -176,6 +176,31 @@ export async function getMyRoleInGroup(
   return (data?.role as GroupRole | undefined) ?? null;
 }
 
+export async function listMySubmissionsForTasks(
+  taskIds: string[],
+): Promise<Record<string, TaskSubmissionStatus>> {
+  if (taskIds.length === 0) return {};
+  const client = ensureSupabase();
+  const userId = await getCurrentUserId();
+
+  const { data, error } = await client
+    .from("task_submissions")
+    .select("task_id, status")
+    .eq("user_id", userId)
+    .in("task_id", taskIds)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+
+  const result: Record<string, TaskSubmissionStatus> = {};
+  for (const row of (data ?? []) as Array<{ task_id: string; status: string }>) {
+    if (!result[row.task_id]) {
+      result[row.task_id] = row.status as TaskSubmissionStatus;
+    }
+  }
+  return result;
+}
+
 export async function reviewTaskSubmission(
   submissionId: string,
   status: Exclude<TaskSubmissionStatus, "pending">,

@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { signInWithEmail, signUpWithEmail } from "../services/auth.service";
+import {
+  signInWithEmail,
+  signInWithUsername,
+  signUpWithEmail,
+  setupChildAccount,
+} from "../services/auth.service";
 
 export function useAuth() {
   const [isLoading, setIsLoading] = useState(false);
@@ -43,11 +48,54 @@ export function useAuth() {
     }
   }
 
+  async function signInAsChild(
+    username: string,
+    pin: string,
+  ): Promise<boolean> {
+    try {
+      setError("");
+      setIsLoading(true);
+      await signInWithUsername(username, pin);
+      return true;
+    } catch (err) {
+      // "notFound" means no account yet — let caller try invitation activation silently
+      if (err instanceof Error && (err as any).notFound) {
+        return false;
+      }
+      setError(
+        err instanceof Error ? err.message : "Usuario o PIN incorrecto.",
+      );
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function setupChild(
+    username: string,
+    pin: string,
+  ): Promise<{ groupId: string } | null> {
+    try {
+      setError("");
+      setIsLoading(true);
+      return await setupChildAccount(username, pin);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "No se pudo configurar la cuenta.",
+      );
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   return {
     isLoading,
     error,
     clearError,
     signIn,
     signUp,
+    signInAsChild,
+    setupChild,
   };
 }

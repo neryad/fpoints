@@ -1,172 +1,91 @@
 import React, { useCallback, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  StyleSheet,
-  Text,
-  type TextStyle,
-  View,
-  type ViewStyle,
-} from "react-native";
+import { ActivityIndicator, FlatList, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import shadows from "../../../../design-system-rn/tokens/shadows";
+import { GameBadge } from "../../../../design-system-rn/components";
 import { RewardsStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
 import { useTheme } from "../../../core/theme/ThemeProvider";
 import { listMyRewardRedemptions } from "../services/rewards.service";
-import type { RewardRedemption } from "../types";
+import type { RewardRedemption, RewardRedemptionStatus } from "../types";
 
 type Props = NativeStackScreenProps<RewardsStackParamList, "MyRedemptions">;
 
-// ---------------------------------------------------------------------------
-// Status config
-// ---------------------------------------------------------------------------
-
-type StatusKey = "pending" | "approved" | "rejected";
-
 const STATUS_CONFIG: Record<
-  StatusKey,
-  { label: string; dotColor: string; textColor: string }
+  RewardRedemptionStatus,
+  { label: string; dot: string; text: string; bg: string }
 > = {
   pending: {
     label: "Pendiente",
-    dotColor: "#F0872F",   // warning[400]
-    textColor: "#E5730A",  // warning[500]
+    dot: "bg-warning",
+    text: "text-warning",
+    bg: "bg-warning/10",
   },
   approved: {
     label: "Aprobado",
-    dotColor: "#4CCB86",   // success[400]
-    textColor: "#26B765",  // success[500]
+    dot: "bg-success",
+    text: "text-success",
+    bg: "bg-success/10",
   },
   rejected: {
     label: "Rechazado",
-    dotColor: "#D94A42",   // error[400]
-    textColor: "#B3261E",  // error[500]
+    dot: "bg-destructive",
+    text: "text-destructive",
+    bg: "bg-destructive/10",
   },
 };
 
-function getStatusConfig(status: string) {
-  return STATUS_CONFIG[status as StatusKey] ?? {
-    label: status,
-    dotColor: "#8A8791",
-    textColor: "#8A8791",
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Styles
-// ---------------------------------------------------------------------------
-
-function makeStyles(theme: ReturnType<typeof useTheme>) {
-  const { colors, spacing, fontSize, fontWeight, radius } = theme;
-
-  return StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-      padding: spacing[4],             // 16
-    },
-    centered: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: colors.background,
-    },
-    listContent: {
-      paddingBottom: spacing[7],       // 32
-    },
-
-    // ── Card ─────────────────────────────────────────────────────────────────
-    card: {
-      backgroundColor: colors.surface,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.lg,         // 16
-      padding: spacing[4],             // 16
-      marginBottom: spacing[3],        // 12
-    },
-    cardHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "flex-start",
-      gap: spacing[2],                 // 8
-      marginBottom: spacing[3],        // 12
-    },
-    rewardTitle: {
-      flex: 1,
-      fontSize: fontSize.base,         // 16
-      fontWeight: fontWeight.semibold, // "600"
-      color: colors.textStrong,
-    },
-    costPill: {
-      backgroundColor: colors.rewardSoft,
-      borderRadius: radius.full,
-      paddingHorizontal: spacing[2],   // 8
-      paddingVertical: 3,
-    },
-    costPillText: {
-      fontSize: fontSize.xs,           // 12
-      fontWeight: fontWeight.bold,     // "700"
-      color: colors.reward,
-    },
-
-    // ── Meta ─────────────────────────────────────────────────────────────────
-    metaRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[2],                 // 8
-      marginBottom: spacing[1],        // 4
-    },
-    metaLabel: {
-      fontSize: fontSize.xxs,          // 11
-      fontWeight: fontWeight.medium,   // "500"
-      color: colors.muted,
-      width: 48,
-    },
-    metaValue: {
-      flex: 1,
-      fontSize: fontSize.xs,           // 12
-      color: colors.text,
-    },
-
-    // ── Status ───────────────────────────────────────────────────────────────
-    statusRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[1],                 // 4
-    },
-    statusDot: {
-      width: 7,
-      height: 7,
-      borderRadius: radius.full,
-    },
-    statusText: {
-      fontSize: fontSize.xs,           // 12
-      fontWeight: fontWeight.semibold, // "600"
-    },
-
-    // ── Feedback ─────────────────────────────────────────────────────────────
-    infoText: {
-      marginTop: spacing[6],           // 24
-      textAlign: "center",
-      fontSize: fontSize.sm,           // 14
-      color: colors.muted,
-    },
-    errorText: {
-      marginBottom: spacing[3],        // 12
-      textAlign: "center",
-      fontSize: fontSize.xs,           // 12
-      color: colors.error,
-    },
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
   });
 }
 
-// ---------------------------------------------------------------------------
-// MyRedemptionsScreen
-// ---------------------------------------------------------------------------
+function RedemptionRow({ item }: { item: RewardRedemption }) {
+  const status =
+    STATUS_CONFIG[item.status] ?? {
+      label: item.status,
+      dot: "bg-muted",
+      text: "text-muted-foreground",
+      bg: "bg-muted",
+    };
+
+  return (
+    <View
+      style={shadows.card}
+      className="mb-3 rounded-2xl border border-border bg-card p-4"
+    >
+      <View className="mb-3 flex-row items-start justify-between gap-2">
+        <Text
+          className="flex-1 font-sans-semibold text-base text-foreground"
+          numberOfLines={2}
+        >
+          {item.rewardTitle}
+        </Text>
+        <GameBadge type="points" value={`${item.rewardCostPoints} pts`} size="sm" />
+      </View>
+
+      <View className="flex-row items-center justify-between">
+        <View className={`flex-row items-center gap-1.5 rounded-full px-2.5 py-1 ${status.bg}`}>
+          <View className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />
+          <Text className={`font-sans-semibold text-xs ${status.text}`}>
+            {status.label}
+          </Text>
+        </View>
+        <Text className="font-sans text-[11px] text-muted-foreground">
+          {formatDate(item.createdAt)}
+        </Text>
+      </View>
+    </View>
+  );
+}
 
 export function MyRedemptionsScreen({ navigation }: Props) {
-  const theme = useTheme();
-  const s = makeStyles(theme);
+  const { colors } = useTheme();
   const { activeGroupId } = useAppSession();
 
   const [items, setItems] = useState<RewardRedemption[]>([]);
@@ -185,7 +104,9 @@ export function MyRedemptionsScreen({ navigation }: Props) {
       const data = await listMyRewardRedemptions(activeGroupId);
       setItems(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo cargar tus canjes.");
+      setError(
+        err instanceof Error ? err.message : "No se pudo cargar tus canjes.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -198,68 +119,58 @@ export function MyRedemptionsScreen({ navigation }: Props) {
 
   if (isLoading) {
     return (
-      <View style={s.centered}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-      </View>
+      <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={s.container}>
-      {error ? <Text style={s.errorText}>{error}</Text> : null}
-
-      {items.length === 0 ? (
-        <Text style={s.infoText}>Aún no tienes solicitudes de canje.</Text>
-      ) : (
-        <FlatList
-          data={items}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={s.listContent}
-          renderItem={({ item }) => {
-            const status = getStatusConfig(item.status);
-            const date = new Date(item.createdAt).toLocaleString();
-
-            return (
-              <View style={s.card}>
-                {/* Título + costo */}
-                <View style={s.cardHeader}>
-                  <Text style={s.rewardTitle}>{item.rewardTitle}</Text>
-                  <View style={s.costPill}>
-                    <Text style={s.costPillText}>{item.rewardCostPoints} pts</Text>
-                  </View>
-                </View>
-
-                {/* Estado */}
-                <View style={[s.metaRow, { marginBottom: theme.spacing[2] }]}>
-                  <Text style={s.metaLabel}>Estado</Text>
-                  <View style={s.statusRow}>
-                    <View
-                      style={[
-                        s.statusDot,
-                        { backgroundColor: status.dotColor } as ViewStyle,
-                      ]}
-                    />
-                    <Text
-                      style={[
-                        s.statusText,
-                        { color: status.textColor } as TextStyle,
-                      ]}
-                    >
-                      {status.label}
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Fecha */}
-                <View style={s.metaRow}>
-                  <Text style={s.metaLabel}>Fecha</Text>
-                  <Text style={s.metaValue}>{date}</Text>
-                </View>
+    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+      <FlatList
+        data={items}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          <>
+            {error ? (
+              <View className="mb-3 rounded-xl border border-destructive/30 bg-destructive/10 p-3">
+                <Text className="text-center font-sans-medium text-sm text-destructive">
+                  {error}
+                </Text>
               </View>
-            );
-          }}
-        />
-      )}
-    </View>
+            ) : null}
+            {items.length > 0 ? (
+              <Text className="mb-3 font-sans text-xs text-muted-foreground">
+                {items.length} {items.length === 1 ? "solicitud" : "solicitudes"}
+              </Text>
+            ) : null}
+          </>
+        }
+        ListEmptyComponent={
+          !error ? (
+            <View className="items-center px-6 py-16">
+              <View className="mb-4 h-16 w-16 items-center justify-center rounded-2xl bg-muted">
+                <Ionicons
+                  name="receipt-outline"
+                  size={32}
+                  color={colors.muted}
+                />
+              </View>
+              <Text className="text-center font-sans-semibold text-base text-foreground">
+                Sin solicitudes aún
+              </Text>
+              <Text className="mt-1 text-center font-sans text-sm text-muted-foreground">
+                Cuando canjees un premio aparecerá aquí con su estado.
+              </Text>
+            </View>
+          ) : null
+        }
+        renderItem={({ item }) => <RedemptionRow item={item} />}
+      />
+    </SafeAreaView>
   );
 }

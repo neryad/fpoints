@@ -1,0 +1,98 @@
+/**
+ * QuestHome global stylesheet for NativeWind v4.
+ * Move this file to your project root and import it once in App.tsx:
+ *   import "./global.css";
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 36 33% 97%;
+    --foreground: 220 20% 14%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 20% 14%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 20% 14%;
+
+    --primary: 8 85% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 36 30% 92%;
+    --secondary-foreground: 220 20% 14%;
+
+    --muted: 36 20% 94%;
+    --muted-foreground: 220 10% 50%;
+
+    --accent: 36 40% 90%;
+    --accent-foreground: 220 20% 14%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 36 20% 88%;
+    --input: 36 20% 88%;
+    --ring: 8 85% 60%;
+
+    --radius: 12px;
+
+    --xp: 210 90% 56%;
+    --xp-foreground: 0 0% 100%;
+    --streak: 28 95% 55%;
+    --streak-foreground: 0 0% 100%;
+    --points: 8 85% 60%;
+    --points-foreground: 0 0% 100%;
+
+    --success: 152 60% 42%;
+    --success-foreground: 0 0% 100%;
+    --warning: 40 96% 56%;
+    --warning-foreground: 220 20% 14%;
+
+    --surface: 0 0% 100%;
+    --surface-elevated: 0 0% 100%;
+  }
+
+  .dark:root {
+    --background: 220 20% 8%;
+    --foreground: 36 20% 94%;
+
+    --card: 220 18% 12%;
+    --card-foreground: 36 20% 94%;
+
+    --popover: 220 18% 12%;
+    --popover-foreground: 36 20% 94%;
+
+    --primary: 8 85% 60%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 220 15% 18%;
+    --secondary-foreground: 36 20% 94%;
+
+    --muted: 220 15% 18%;
+    --muted-foreground: 220 10% 55%;
+
+    --accent: 220 15% 20%;
+    --accent-foreground: 36 20% 94%;
+
+    --destructive: 0 62% 40%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 8 85% 60%;
+
+    --xp: 210 90% 56%;
+    --streak: 28 95% 55%;
+    --points: 8 85% 60%;
+
+    --success: 152 60% 42%;
+    --warning: 40 96% 56%;
+
+    --surface: 220 18% 12%;
+    --surface-elevated: 220 16% 16%;
+  }
+}

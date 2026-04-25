@@ -1,13 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, FlatList, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import shadows from "../../../../design-system-rn/tokens/shadows";
+import { Button, GameBadge } from "../../../../design-system-rn/components";
 import { RewardsStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
 import { useTheme } from "../../../core/theme/ThemeProvider";
@@ -22,162 +19,42 @@ import type { RewardRedemption } from "../types";
 
 type Props = NativeStackScreenProps<RewardsStackParamList, "RewardApprovals">;
 
-// ---------------------------------------------------------------------------
-// Styles
-// ---------------------------------------------------------------------------
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .slice(0, 2)
+    .map((n) => n[0] ?? "")
+    .join("")
+    .toUpperCase();
+}
 
-function makeStyles(theme: ReturnType<typeof useTheme>) {
-  const { colors, spacing, fontSize, fontWeight, radius } = theme;
-
-  return StyleSheet.create({
-    // ── Screen ──────────────────────────────────────────────────────────────
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-      padding: spacing[4],             // 16
-    },
-    centered: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: colors.background,
-      padding: spacing[6],             // 24
-    },
-    infoText: {
-      fontSize: fontSize.sm,           // 14
-      color: colors.muted,
-      textAlign: "center",
-    },
-
-    // ── Feedback ─────────────────────────────────────────────────────────────
-    errorText: {
-      fontSize: fontSize.xs,           // 12
-      color: colors.error,
-      textAlign: "center",
-      marginBottom: spacing[3],        // 12
-    },
-    successText: {
-      fontSize: fontSize.xs,           // 12
-      color: colors.success,
-      textAlign: "center",
-      marginBottom: spacing[3],        // 12
-    },
-
-    // ── List ─────────────────────────────────────────────────────────────────
-    listContent: {
-      paddingBottom: spacing[7],       // 32
-    },
-
-    // ── Card ─────────────────────────────────────────────────────────────────
-    card: {
-      backgroundColor: colors.surface,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.lg,         // 16
-      padding: spacing[4],             // 16
-      marginBottom: spacing[3],        // 12
-    },
-    cardHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "flex-start",
-      gap: spacing[2],                 // 8
-      marginBottom: spacing[3],        // 12
-    },
-    rewardTitle: {
-      flex: 1,
-      fontSize: fontSize.base,         // 16
-      fontWeight: fontWeight.semibold, // "600"
-      color: colors.textStrong,
-    },
-    costPill: {
-      backgroundColor: colors.rewardSoft,
-      borderRadius: radius.full,
-      paddingHorizontal: spacing[2],   // 8
-      paddingVertical: 3,
-    },
-    costPillText: {
-      fontSize: fontSize.xs,           // 12
-      fontWeight: fontWeight.bold,     // "700"
-      color: colors.reward,
-    },
-
-    // ── Meta rows ────────────────────────────────────────────────────────────
-    metaRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: spacing[2],                 // 8
-      marginBottom: spacing[1],        // 4
-    },
-    metaLabel: {
-      fontSize: fontSize.xxs,          // 11
-      fontWeight: fontWeight.medium,   // "500"
-      color: colors.muted,
-      width: 72,
-    },
-    metaValue: {
-      flex: 1,
-      fontSize: fontSize.xs,           // 12
-      color: colors.text,
-    },
-
-    // ── Action buttons ───────────────────────────────────────────────────────
-    actionsRow: {
-      flexDirection: "row",
-      gap: spacing[2],                 // 8
-      marginTop: spacing[4],           // 16
-    },
-    btnApprove: {
-      flex: 1,
-      backgroundColor: colors.success,
-      borderRadius: radius.md,         // 12
-      paddingVertical: spacing[3],     // 12
-      alignItems: "center",
-    },
-    btnApproveText: {
-      fontSize: fontSize.sm,           // 14
-      fontWeight: fontWeight.bold,     // "700"
-      color: colors.primaryText,
-    },
-    btnReject: {
-      flex: 1,
-      backgroundColor: colors.errorSoft,
-      borderWidth: 0.5,
-      borderColor: colors.error,
-      borderRadius: radius.md,         // 12
-      paddingVertical: spacing[3],     // 12
-      alignItems: "center",
-    },
-    btnRejectText: {
-      fontSize: fontSize.sm,           // 14
-      fontWeight: fontWeight.bold,     // "700"
-      color: colors.error,
-    },
-    btnDisabled: {
-      opacity: 0.4,
-    },
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
   });
 }
 
-// ---------------------------------------------------------------------------
-// RewardApprovalsScreen
-// ---------------------------------------------------------------------------
-
 export function RewardApprovalsScreen({ navigation }: Props) {
-  const theme = useTheme();
-  const s = makeStyles(theme);
+  const { colors } = useTheme();
   const { activeGroupId } = useAppSession();
 
   const [items, setItems] = useState<RewardRedemption[]>([]);
   const [canReview, setCanReview] = useState(false);
-  const [userDisplayNames, setUserDisplayNames] = useState<Record<string, string>>({});
+  const [userDisplayNames, setUserDisplayNames] = useState<
+    Record<string, string>
+  >({});
   const [isLoading, setIsLoading] = useState(true);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [dialog, setDialog] = useState<null | {
-    title: string; message: string; confirmText: string;
-    destructive?: boolean; onConfirm: () => void;
+    title: string;
+    message: string;
+    confirmText: string;
+    destructive?: boolean;
+    onConfirm: () => void;
   }>(null);
 
   const loadData = useCallback(async () => {
@@ -191,18 +68,14 @@ export function RewardApprovalsScreen({ navigation }: Props) {
       setError("");
       setSuccessMessage("");
       setIsLoading(true);
-
       const manager = await canManageRewards(activeGroupId);
       setCanReview(manager);
-
       if (!manager) {
         setItems([]);
         return;
       }
-
       const data = await listPendingRewardRedemptions(activeGroupId);
       setItems(data);
-
       const labels = await getUserDisplayNames(
         data.map((item) => item.userId),
         activeGroupId,
@@ -258,30 +131,33 @@ export function RewardApprovalsScreen({ navigation }: Props) {
     return unsubscribe;
   }, [navigation, loadData]);
 
-  // ── Loading ────────────────────────────────────────────────────────────────
-
   if (isLoading) {
     return (
-      <View style={s.centered}>
-        <ActivityIndicator size="large" color={theme.colors.primary} />
-      </View>
+      <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (!canReview) {
     return (
-      <View style={s.centered}>
-        <Text style={s.infoText}>
-          Solo owner o sub_owner puede aprobar o rechazar canjes.
-        </Text>
-      </View>
+      <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+        <View className="flex-1 items-center justify-center px-6">
+          <View className="mb-4 h-14 w-14 items-center justify-center rounded-full bg-muted">
+            <Ionicons name="lock-closed-outline" size={26} color={colors.muted} />
+          </View>
+          <Text className="text-center font-sans text-sm text-muted-foreground">
+            Solo owner o sub_owner puede aprobar o rechazar canjes.
+          </Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
-  // ── Render ────────────────────────────────────────────────────────────────
-
   return (
-    <View style={s.container}>
+    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
       <ConfirmDialog
         visible={dialog !== null}
         title={dialog?.title ?? ""}
@@ -291,76 +167,140 @@ export function RewardApprovalsScreen({ navigation }: Props) {
         onConfirm={() => dialog?.onConfirm()}
         onCancel={() => setDialog(null)}
       />
-      {error ? <Text style={s.errorText}>{error}</Text> : null}
-      {successMessage ? <Text style={s.successText}>{successMessage}</Text> : null}
 
-      {items.length === 0 ? (
-        <Text style={s.infoText}>No hay canjes pendientes.</Text>
-      ) : (
-        <FlatList
-          data={items}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={s.listContent}
-          renderItem={({ item }) => {
-            const isBusy = reviewingId === item.id;
-            const displayName = userDisplayNames[item.userId] ?? item.userId;
-            const date = new Date(item.createdAt).toLocaleString();
+      <FlatList
+        data={items}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          <>
+            {error ? (
+              <View className="mb-3 rounded-xl border border-destructive/30 bg-destructive/10 p-3">
+                <Text className="text-center font-sans-medium text-sm text-destructive">
+                  {error}
+                </Text>
+              </View>
+            ) : null}
+            {successMessage ? (
+              <View className="mb-3 rounded-xl border border-success/30 bg-success/10 p-3">
+                <Text className="text-center font-sans-medium text-sm text-success">
+                  {successMessage}
+                </Text>
+              </View>
+            ) : null}
+            {items.length > 0 ? (
+              <Text className="mb-3 font-sans text-xs text-muted-foreground">
+                {items.length} {items.length === 1 ? "canje pendiente" : "canjes pendientes"}
+              </Text>
+            ) : null}
+          </>
+        }
+        ListEmptyComponent={
+          !error ? (
+            <View className="items-center px-6 py-16">
+              <View className="mb-4 h-16 w-16 items-center justify-center rounded-2xl bg-muted">
+                <Ionicons
+                  name="checkmark-done-outline"
+                  size={32}
+                  color={colors.muted}
+                />
+              </View>
+              <Text className="text-center font-sans-semibold text-base text-foreground">
+                Todo al día
+              </Text>
+              <Text className="mt-1 text-center font-sans text-sm text-muted-foreground">
+                No hay canjes pendientes de revisión.
+              </Text>
+            </View>
+          ) : null
+        }
+        renderItem={({ item }) => {
+          const isBusy = reviewingId === item.id;
+          const displayName = userDisplayNames[item.userId] ?? item.userId;
+          const initials = getInitials(displayName);
 
-            return (
-              <View style={s.card}>
-                {/* Header: título + costo */}
-                <View style={s.cardHeader}>
-                  <Text style={s.rewardTitle}>{item.rewardTitle}</Text>
-                  <View style={s.costPill}>
-                    <Text style={s.costPillText}>{item.rewardCostPoints} pts</Text>
-                  </View>
+          return (
+            <View
+              style={shadows.card}
+              className="mb-3 rounded-2xl border border-border bg-card p-4"
+            >
+              {/* Header: premio + costo */}
+              <View className="mb-3 flex-row items-start justify-between gap-2">
+                <Text
+                  className="flex-1 font-sans-semibold text-base text-foreground"
+                  numberOfLines={2}
+                >
+                  {item.rewardTitle}
+                </Text>
+                <GameBadge
+                  type="points"
+                  value={`${item.rewardCostPoints} pts`}
+                  size="sm"
+                />
+              </View>
+
+              {/* Solicitante */}
+              <View className="mb-3 flex-row items-center gap-2">
+                <View className="h-8 w-8 items-center justify-center rounded-full bg-primary/15">
+                  <Text className="font-sans-bold text-[11px] text-primary">
+                    {initials}
+                  </Text>
                 </View>
-
-                {/* Meta */}
-                <View style={s.metaRow}>
-                  <Text style={s.metaLabel}>Solicitado</Text>
-                  <Text style={s.metaValue}>{displayName}</Text>
-                </View>
-                <View style={s.metaRow}>
-                  <Text style={s.metaLabel}>Fecha</Text>
-                  <Text style={s.metaValue}>{date}</Text>
-                </View>
-
-                {/* Acciones */}
-                <View style={s.actionsRow}>
-                  <Pressable
-                    style={({ pressed }) => [
-                      s.btnApprove,
-                      isBusy && s.btnDisabled,
-                      pressed && !isBusy && { opacity: 0.8 },
-                    ]}
-                    onPress={() => handleReview(item, "approved")}
-                    disabled={isBusy}
+                <View className="flex-1">
+                  <Text
+                    className="font-sans-medium text-sm text-foreground"
+                    numberOfLines={1}
                   >
-                    <Text style={s.btnApproveText}>
-                      {isBusy ? "..." : "Aprobar"}
-                    </Text>
-                  </Pressable>
-
-                  <Pressable
-                    style={({ pressed }) => [
-                      s.btnReject,
-                      isBusy && s.btnDisabled,
-                      pressed && !isBusy && { opacity: 0.8 },
-                    ]}
-                    onPress={() => handleReview(item, "rejected")}
-                    disabled={isBusy}
-                  >
-                    <Text style={s.btnRejectText}>
-                      {isBusy ? "..." : "Rechazar"}
-                    </Text>
-                  </Pressable>
+                    {displayName}
+                  </Text>
+                  <Text className="font-sans text-[11px] text-muted-foreground">
+                    {formatDate(item.createdAt)}
+                  </Text>
                 </View>
               </View>
-            );
-          }}
-        />
-      )}
-    </View>
+
+              {/* Acciones */}
+              <View className="flex-row gap-2">
+                <View className="flex-1">
+                  <Button
+                    label={isBusy ? "..." : "Aprobar"}
+                    variant="primary"
+                    size="md"
+                    fullWidth
+                    disabled={isBusy}
+                    onPress={() => handleReview(item, "approved")}
+                    iconLeft={
+                      isBusy ? undefined : (
+                        <Ionicons
+                          name="checkmark"
+                          size={15}
+                          color={colors.primaryText}
+                        />
+                      )
+                    }
+                  />
+                </View>
+                <View className="flex-1">
+                  <Button
+                    label={isBusy ? "..." : "Rechazar"}
+                    variant="destructive"
+                    size="md"
+                    fullWidth
+                    disabled={isBusy}
+                    onPress={() => handleReview(item, "rejected")}
+                    iconLeft={
+                      isBusy ? undefined : (
+                        <Ionicons name="close" size={15} color="#fff" />
+                      )
+                    }
+                  />
+                </View>
+              </View>
+            </View>
+          );
+        }}
+      />
+    </SafeAreaView>
   );
 }

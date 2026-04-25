@@ -26,7 +26,7 @@ export function HomeNavigator() {
       <Stack.Screen
         name="PointHistory"
         component={PointHistoryScreen}
-        options={{ title: "Point History" }}
+        options={{ title: "Historial de puntos" }}
       />
     </Stack.Navigator>
   );

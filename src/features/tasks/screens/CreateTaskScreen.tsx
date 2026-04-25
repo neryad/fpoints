@@ -1,10 +1,10 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
-  StyleSheet,
   Switch,
   Text,
   TextInput,
@@ -15,109 +15,35 @@ import { TasksStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
 import { useTheme } from "../../../core/theme/ThemeProvider";
 import { createTask } from "../services/tasks.service";
+import { listGroupMembers, type GroupMember } from "../../groups/services/groups.service";
 
 type Props = NativeStackScreenProps<TasksStackParamList, "CreateTask">;
 
-function makeStyles(theme: ReturnType<typeof useTheme>) {
-  const { colors, spacing, fontSize, fontWeight, radius } = theme;
-  return StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: colors.background,
-    },
-    scrollContent: {
-      padding: spacing[4],
-      paddingBottom: spacing[8],
-    },
-    fieldWrap: {
-      marginBottom: spacing[4],
-    },
-    label: {
-      fontSize: fontSize.xxs,
-      fontWeight: fontWeight.medium,
-      color: colors.muted,
-      letterSpacing: 0.8,
-      textTransform: "uppercase",
-      marginBottom: spacing[2],
-    },
-    input: {
-      backgroundColor: colors.surface,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.sm,
-      paddingHorizontal: spacing[3],
-      paddingVertical: spacing[3],
-      fontSize: fontSize.sm,
-      color: colors.text,
-    },
-    inputInvalid: {
-      borderColor: colors.error,
-      borderWidth: 0.5,
-    },
-    inputMultiline: {
-      height: 88,
-      textAlignVertical: "top",
-    },
-    fieldError: {
-      fontSize: fontSize.xxs,
-      color: colors.error,
-      marginTop: spacing[1],
-    },
-    switchCard: {
-      backgroundColor: colors.surface,
-      borderWidth: 0.5,
-      borderColor: colors.border,
-      borderRadius: radius.lg,
-      padding: spacing[4],
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      marginBottom: spacing[4],
-    },
-    switchLabelWrap: { flex: 1, marginRight: spacing[3] },
-    switchLabel: {
-      fontSize: fontSize.sm,
-      fontWeight: fontWeight.semibold,
-      color: colors.textStrong,
-      marginBottom: 2,
-    },
-    switchSub: {
-      fontSize: fontSize.xxs,
-      color: colors.muted,
-    },
-    errorText: {
-      fontSize: fontSize.xs,
-      color: colors.error,
-      textAlign: "center",
-      marginBottom: spacing[3],
-    },
-    btnPrimary: {
-      backgroundColor: colors.primary,
-      borderRadius: radius.md,
-      paddingVertical: spacing[4],
-      alignItems: "center",
-    },
-    btnPrimaryText: {
-      fontSize: fontSize.base,
-      fontWeight: fontWeight.bold,
-      color: colors.primaryText,
-    },
-    btnDisabled: { opacity: 0.4 },
-  });
-}
-
 export function CreateTaskScreen({ navigation }: Props) {
-  const theme = useTheme();
-  const s = makeStyles(theme);
+  const { colors } = useTheme();
   const { activeGroupId } = useAppSession();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [pointsValue, setPointsValue] = useState("10");
   const [requiresProof, setRequiresProof] = useState(false);
+  const [assignedTo, setAssignedTo] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<{ title?: string; pointsValue?: string }>({});
+  const [members, setMembers] = useState<GroupMember[]>([]);
+  const [showMemberPicker, setShowMemberPicker] = useState(false);
+
+  useEffect(() => {
+    if (!activeGroupId) return;
+    let isMounted = true;
+    listGroupMembers(activeGroupId)
+      .then((data) => { if (isMounted) setMembers(data); })
+      .catch(() => { if (isMounted) setMembers([]); });
+    return () => { isMounted = false; };
+  }, [activeGroupId]);
+
+  const selectedMember = members.find((m) => m.userId === assignedTo) ?? null;
 
   const validate = useCallback((): boolean => {
     const errs: { title?: string; pointsValue?: string } = {};
@@ -140,6 +66,7 @@ export function CreateTaskScreen({ navigation }: Props) {
         description,
         pointsValue: parseInt(pointsValue, 10),
         requiresProof,
+        assignedTo,
       });
       navigation.goBack();
     } catch (err) {
@@ -147,40 +74,50 @@ export function CreateTaskScreen({ navigation }: Props) {
     } finally {
       setIsLoading(false);
     }
-  }, [activeGroupId, title, description, pointsValue, requiresProof, validate, navigation]);
+  }, [activeGroupId, title, description, pointsValue, requiresProof, assignedTo, validate, navigation]);
+
+  const handleSelectMember = useCallback((userId: string | null) => {
+    setAssignedTo(userId);
+    setShowMemberPicker(false);
+  }, []);
+
+  const fieldLabel = "text-[11px] font-sans-medium text-muted-foreground uppercase tracking-[0.8px] mb-2";
+  const fieldInput = "bg-card border border-border rounded-lg px-3 py-3 text-sm text-foreground";
 
   return (
     <KeyboardAvoidingView
-      style={s.container}
+      className="flex-1 bg-background"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={s.scrollContent}
+        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         keyboardShouldPersistTaps="handled"
       >
-
         {/* Título */}
-        <View style={s.fieldWrap}>
-          <Text style={s.label}>Título *</Text>
+        <View className="mb-4">
+          <Text className={fieldLabel}>Título *</Text>
           <TextInput
-            style={[s.input, fieldErrors.title ? s.inputInvalid : null]}
+            className={`${fieldInput} ${fieldErrors.title ? "border-destructive" : ""}`}
             placeholder="Ej: Lavar los platos"
-            placeholderTextColor={theme.colors.muted}
+            placeholderTextColor={colors.muted}
             value={title}
             onChangeText={(t) => { setTitle(t); setFieldErrors((e) => ({ ...e, title: undefined })); }}
             editable={!isLoading}
           />
-          {fieldErrors.title ? <Text style={s.fieldError}>{fieldErrors.title}</Text> : null}
+          {fieldErrors.title ? (
+            <Text className="text-destructive text-[11px] mt-1 font-sans">{fieldErrors.title}</Text>
+          ) : null}
         </View>
 
         {/* Descripción */}
-        <View style={s.fieldWrap}>
-          <Text style={s.label}>Descripción</Text>
+        <View className="mb-4">
+          <Text className={fieldLabel}>Descripción</Text>
           <TextInput
-            style={[s.input, s.inputMultiline]}
+            className={fieldInput}
+            style={{ height: 88, textAlignVertical: "top" }}
             placeholder="Opcional"
-            placeholderTextColor={theme.colors.muted}
+            placeholderTextColor={colors.muted}
             value={description}
             onChangeText={setDescription}
             editable={!isLoading}
@@ -190,45 +127,121 @@ export function CreateTaskScreen({ navigation }: Props) {
         </View>
 
         {/* Puntos */}
-        <View style={s.fieldWrap}>
-          <Text style={s.label}>Puntos</Text>
+        <View className="mb-4">
+          <Text className={fieldLabel}>Puntos</Text>
           <TextInput
-            style={[s.input, fieldErrors.pointsValue ? s.inputInvalid : null]}
+            className={`${fieldInput} ${fieldErrors.pointsValue ? "border-destructive" : ""}`}
             placeholder="10"
-            placeholderTextColor={theme.colors.muted}
+            placeholderTextColor={colors.muted}
             value={pointsValue}
             onChangeText={(t) => { setPointsValue(t); setFieldErrors((e) => ({ ...e, pointsValue: undefined })); }}
             editable={!isLoading}
             keyboardType="numeric"
           />
-          {fieldErrors.pointsValue ? <Text style={s.fieldError}>{fieldErrors.pointsValue}</Text> : null}
+          {fieldErrors.pointsValue ? (
+            <Text className="text-destructive text-[11px] mt-1 font-sans">{fieldErrors.pointsValue}</Text>
+          ) : null}
         </View>
 
+        {/* Asignar a */}
+        {members.length > 0 && (
+          <View className="mb-4">
+            <Text className={fieldLabel}>Asignar a</Text>
+            <Pressable
+              className="bg-card border border-border rounded-lg px-3 py-3 flex-row items-center justify-between active:opacity-80"
+              onPress={() => setShowMemberPicker(true)}
+              disabled={isLoading}
+            >
+              <Text className={`text-sm ${selectedMember ? "text-foreground" : "text-muted-foreground"}`}>
+                {selectedMember ? selectedMember.displayName : "Sin asignar (cualquiera puede hacerla)"}
+              </Text>
+              <Text className="text-xs text-muted-foreground">▾</Text>
+            </Pressable>
+          </View>
+        )}
+
         {/* Switch requiere prueba */}
-        <View style={s.switchCard}>
-          <View style={s.switchLabelWrap}>
-            <Text style={s.switchLabel}>Requiere prueba fotográfica</Text>
-            <Text style={s.switchSub}>El miembro deberá adjuntar una URL de imagen.</Text>
+        <View className="bg-card border border-border rounded-xl p-4 flex-row items-center justify-between mb-4">
+          <View className="flex-1 mr-3">
+            <Text className="text-sm font-sans-semibold text-foreground mb-[2px]">
+              Requiere prueba fotográfica
+            </Text>
+            <Text className="text-[11px] text-muted-foreground">
+              El miembro deberá adjuntar una URL de imagen.
+            </Text>
           </View>
           <Switch
             value={requiresProof}
             onValueChange={setRequiresProof}
             disabled={isLoading}
-            trackColor={{ true: theme.colors.primary }}
+            trackColor={{ true: colors.primary }}
           />
         </View>
 
-        {error ? <Text style={s.errorText}>{error}</Text> : null}
+        {error ? (
+          <Text className="text-destructive text-xs text-center mb-3 font-sans">{error}</Text>
+        ) : null}
 
         <Pressable
-          style={({ pressed }) => [s.btnPrimary, isLoading && s.btnDisabled, pressed && !isLoading && { opacity: 0.8 }]}
+          className={`bg-primary rounded-xl py-4 items-center active:opacity-80 ${isLoading ? "opacity-40" : ""}`}
           onPress={handleCreate}
           disabled={isLoading}
         >
-          <Text style={s.btnPrimaryText}>{isLoading ? "Creando..." : "Crear tarea"}</Text>
+          <Text className="text-base font-sans-bold text-primary-foreground">
+            {isLoading ? "Creando..." : "Crear tarea"}
+          </Text>
         </Pressable>
-
       </ScrollView>
+
+      {/* Modal selector de miembro */}
+      <Modal
+        visible={showMemberPicker}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowMemberPicker(false)}
+      >
+        <Pressable
+          style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "flex-end" }}
+          onPress={() => setShowMemberPicker(false)}
+        >
+          <Pressable
+            className="bg-background rounded-t-[20px] pt-4"
+            style={{ paddingBottom: 40, maxHeight: "60%" }}
+            onPress={() => {}}
+          >
+            <Text className="text-base font-sans-semibold text-foreground text-center mb-3 px-4">
+              Asignar tarea a
+            </Text>
+            <ScrollView>
+              <Pressable
+                className={`px-4 py-3 active:opacity-70 ${!assignedTo ? "bg-primary/10" : ""}`}
+                onPress={() => handleSelectMember(null)}
+              >
+                <Text className={`text-sm ${!assignedTo ? "font-sans-semibold text-primary" : "font-sans text-muted-foreground"}`}>
+                  Sin asignar
+                </Text>
+              </Pressable>
+              <View className="h-px bg-border mx-4" />
+              {members.map((member, index) => (
+                <View key={member.userId}>
+                  <Pressable
+                    className={`px-4 py-3 flex-row items-center justify-between active:opacity-70 ${assignedTo === member.userId ? "bg-primary/10" : ""}`}
+                    onPress={() => handleSelectMember(member.userId)}
+                  >
+                    <Text className={`text-sm ${assignedTo === member.userId ? "font-sans-semibold text-primary" : "font-sans text-foreground"}`}>
+                      {member.displayName}
+                    </Text>
+                    {assignedTo === member.userId && (
+                      <Text className="text-sm text-primary">✓</Text>
+                    )}
+                  </Pressable>
+                  {index < members.length - 1 && <View className="h-px bg-border mx-4" />}
+                </View>
+              ))}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }

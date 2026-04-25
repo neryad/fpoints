@@ -4,6 +4,8 @@ import { useTheme } from "../../core/theme/ThemeProvider";
 import { ProfileStackParamList } from "./types";
 import { ProfileScreen } from "../../features/profile/screens/ProfileScreen";
 import { GroupSettingsScreen } from "../../features/groups/screens/GroupSettingsScreen";
+import { MemberDashboardScreen } from "../../features/groups/screens/MemberDashboardScreen";
+import HomeScreenExample from "../../../design-system-rn/examples/HomeScreen.example";
 
 const Stack = createNativeStackNavigator<ProfileStackParamList>();
 
@@ -26,6 +28,16 @@ export function ProfileNavigator() {
         name="GroupSettings"
         component={GroupSettingsScreen}
         options={{ title: "Configuración del grupo" }}
+      />
+      <Stack.Screen
+        name="MemberDashboard"
+        component={MemberDashboardScreen}
+        options={({ route }) => ({ title: route.params.memberName })}
+      />
+      <Stack.Screen
+        name="DesignSystem"
+        component={HomeScreenExample}
+        options={{ title: "Design System" }}
       />
     </Stack.Navigator>
   );
