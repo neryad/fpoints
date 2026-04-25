@@ -75,10 +75,11 @@ export function LoginScreen({ navigation }: Props) {
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       className="bg-background"
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
         style={{ flex: 1 }}
+        className="bg-background"
         contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 24 }}
         keyboardShouldPersistTaps="handled"
       >
@@ -113,6 +114,7 @@ export function LoginScreen({ navigation }: Props) {
           {!isChildMode ? (
             <>
               <Input
+                key="adult-email"
                 label="Email"
                 value={email}
                 onChangeText={(t) => { setEmail(t); setFieldErrors((e) => ({ ...e, email: undefined })); }}
@@ -126,6 +128,7 @@ export function LoginScreen({ navigation }: Props) {
                 disabled={isLoading}
               />
               <Input
+                key="adult-password"
                 label="Contraseña"
                 value={password}
                 onChangeText={(t) => { setPassword(t); setFieldErrors((e) => ({ ...e, password: undefined })); }}
@@ -158,6 +161,7 @@ export function LoginScreen({ navigation }: Props) {
                 </Text>
               </View>
               <Input
+                key="child-username"
                 label="Nombre de usuario"
                 value={username}
                 onChangeText={(t) => { setUsername(t); setFieldErrors((e) => ({ ...e, username: undefined })); }}
@@ -166,9 +170,13 @@ export function LoginScreen({ navigation }: Props) {
                 leftIcon="person-outline"
                 autoCapitalize="none"
                 autoCorrect={false}
+                secureTextEntry={false}
+                textContentType="username"
+                autoComplete="username"
                 disabled={isLoading}
               />
               <Input
+                key="child-pin"
                 label="PIN"
                 value={pin}
                 onChangeText={(t) => { setPin(t); setFieldErrors((e) => ({ ...e, pin: undefined })); }}

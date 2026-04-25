@@ -47,6 +47,8 @@ export function GameBadge({
   label,
   style,
 }: GameBadgeProps) {
+  const isStreakOff = type === "streak" && Number(value) === 0;
+
   return (
     <View
       style={style}
@@ -54,6 +56,7 @@ export function GameBadge({
         "flex-row items-center rounded-full border",
         wrapperByType[type],
         sizePadding[size],
+        isStreakOff ? "opacity-40" : "",
       ].join(" ")}
     >
       {icon ? <View className="mr-1.5">{icon}</View> : null}

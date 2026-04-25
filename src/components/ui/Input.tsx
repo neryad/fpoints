@@ -88,19 +88,19 @@ export function Input({
           onChangeText={onChangeText}
           placeholder={placeholder}
           placeholderTextColor={colors.muted}
-          secureTextEntry={hidden}
           editable={!disabled}
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           style={[
             styles.input,
             {
-              color: colors.textPrimary,
+              color: colors.text,
               fontSize: fontSize.sm,
               paddingVertical: spacing[3],
             },
           ]}
           {...rest}
+          secureTextEntry={hidden}
         />
 
         {secureTextEntry ? (

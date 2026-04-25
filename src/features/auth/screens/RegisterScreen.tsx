@@ -48,16 +48,17 @@ export function RegisterScreen({ navigation }: Props) {
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       className="bg-background"
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
         style={{ flex: 1 }}
+        className="bg-background"
         contentContainerStyle={{ flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 24 }}
         keyboardShouldPersistTaps="handled"
       >
         <View className="w-full mb-6">
-          <Text className="font-sans-bold text-xl text-foreground mb-1">
-            Crear cuenta
+          <Text className="font-sans-bold text-[34px] text-primary mb-1">
+            fpoints
           </Text>
           <Text className="font-sans text-sm text-muted-foreground">
             Regístrate para empezar

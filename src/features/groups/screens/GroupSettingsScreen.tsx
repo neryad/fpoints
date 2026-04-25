@@ -228,6 +228,9 @@ export function GroupSettingsScreen({ navigation }: Props) {
                     placeholder="Nombre visible (ej: Ana)"
                     placeholderTextColor={colors.muted}
                     editable={!isSavingChild}
+                    secureTextEntry={false}
+                    textContentType="name"
+                    autoComplete="name"
                   />
                   <TextInput
                     className="rounded-xl border border-border bg-background px-3 py-3 font-sans text-sm text-foreground"
@@ -238,6 +241,9 @@ export function GroupSettingsScreen({ navigation }: Props) {
                     autoCapitalize="none"
                     autoCorrect={false}
                     editable={!isSavingChild}
+                    secureTextEntry={false}
+                    textContentType="username"
+                    autoComplete="username"
                   />
                   <TextInput
                     className="rounded-xl border border-border bg-background px-3 py-3 font-sans text-sm text-foreground"
