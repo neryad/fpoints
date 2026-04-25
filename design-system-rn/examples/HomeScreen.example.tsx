@@ -99,14 +99,12 @@ export default function HomeScreenExample() {
             title="1 hora extra de pantalla"
             description="Disfruta de tiempo libre extra"
             cost={500}
-            emoji="📱"
             userPoints={1240}
           />
           <RewardCard
             title="Salida al cine"
             description="Elige tú la película"
             cost={2000}
-            emoji="🎬"
             userPoints={1240}
           />
         </View>

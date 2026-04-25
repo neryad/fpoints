@@ -1,12 +1,8 @@
 import React, { useCallback, useState } from "react";
-import {
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  Text,
-  TextInput,
-} from "react-native";
+import { KeyboardAvoidingView, Platform, Text, TextInput, View } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useTheme } from "../../../core/theme/ThemeProvider";
+import { Button } from "../../../../design-system-rn/components";
 import { joinGroupByCode } from "../services/groups.service";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
 
@@ -41,15 +37,20 @@ export function JoinGroupScreen() {
       className="flex-1 bg-background justify-center px-6"
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      <Text className="text-[22px] font-sans-bold text-foreground text-center mb-1">
-        Unirse a un grupo
-      </Text>
-      <Text className="text-sm font-sans text-muted-foreground text-center mb-5">
-        Ingresa el código de invitación del grupo.
-      </Text>
+      <View className="items-center mb-8">
+        <View className="h-16 w-16 items-center justify-center rounded-2xl bg-primary/15 mb-4">
+          <Ionicons name="enter-outline" size={32} color={colors.primary} />
+        </View>
+        <Text className="font-sans-bold text-[22px] text-foreground text-center mb-1">
+          Unirse a un grupo
+        </Text>
+        <Text className="font-sans text-sm text-muted-foreground text-center">
+          Ingresa el código de invitación del grupo.
+        </Text>
+      </View>
 
       <TextInput
-        className="bg-card border border-border rounded-lg px-3 py-3 text-base font-sans-bold text-foreground text-center mb-3"
+        className="mb-3 rounded-xl border border-border bg-card px-3 py-3 font-sans-bold text-base text-foreground text-center"
         style={{ letterSpacing: 4 }}
         placeholder="CÓDIGO"
         placeholderTextColor={colors.muted}
@@ -62,21 +63,29 @@ export function JoinGroupScreen() {
       />
 
       {error ? (
-        <Text className="text-destructive text-xs text-center mb-3 font-sans">{error}</Text>
+        <View className="mb-3 rounded-xl border border-destructive/30 bg-destructive/10 p-3">
+          <Text className="font-sans-medium text-center text-sm text-destructive">{error}</Text>
+        </View>
       ) : null}
       {successMessage ? (
-        <Text className="text-success text-xs text-center mb-3 font-sans">{successMessage}</Text>
+        <View className="mb-3 rounded-xl border border-success/30 bg-success/10 p-3">
+          <Text className="font-sans-medium text-center text-sm text-success">{successMessage}</Text>
+        </View>
       ) : null}
 
-      <Pressable
-        className={`bg-primary rounded-xl py-4 items-center active:opacity-80 ${isLoading ? "opacity-40" : ""}`}
-        onPress={handleJoin}
+      <Button
+        label={isLoading ? "Uniéndose..." : "Unirse al grupo"}
+        variant="primary"
+        size="lg"
+        fullWidth
         disabled={isLoading}
-      >
-        <Text className="text-base font-sans-bold text-primary-foreground">
-          {isLoading ? "Uniéndose..." : "Unirse al grupo"}
-        </Text>
-      </Pressable>
+        onPress={handleJoin}
+        iconLeft={
+          isLoading ? undefined : (
+            <Ionicons name="log-in-outline" size={20} color={colors.primaryText} />
+          )
+        }
+      />
     </KeyboardAvoidingView>
   );
 }
