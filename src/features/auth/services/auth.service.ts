@@ -98,6 +98,7 @@ async function ensureUserRow(userId: string, email: string) {
   if (error) {
     throw new Error(
       "No se pudo inicializar el perfil de usuario. Verifica tabla/politicas de users.",
+      { cause: error },
     );
   }
 }

@@ -9,7 +9,7 @@ import {
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { HomeStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
-import { colors } from "../../../core/theme/colors";
+import { useTheme } from "../../../core/theme/ThemeProvider";
 import {
   listMyPointHistoryPage,
   type PointHistoryEntry,
@@ -43,6 +43,7 @@ function formatDate(value: string) {
 
 export function PointHistoryScreen({ navigation }: Props) {
   const { activeGroupId } = useAppSession();
+  const { colors, spacing, radius, fontSize, fontWeight } = useTheme();
   const [history, setHistory] = useState<PointHistoryEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -114,6 +115,8 @@ export function PointHistoryScreen({ navigation }: Props) {
     return unsubscribe;
   }, [navigation, loadHistory]);
 
+  const styles = makeStyles(colors, spacing, radius, fontSize, fontWeight);
+
   if (isLoading) {
     return (
       <View style={styles.centered}>
@@ -179,72 +182,80 @@ export function PointHistoryScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    padding: 16,
-  },
-  centered: {
-    flex: 1,
-    backgroundColor: colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  listContent: {
-    paddingBottom: 20,
-  },
-  card: {
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 12,
-  },
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  reason: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  amount: {
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  amountPositive: {
-    color: colors.primary,
-  },
-  amountNegative: {
-    color: "#B42318",
-  },
-  date: {
-    marginTop: 8,
-    color: colors.muted,
-    fontSize: 12,
-  },
-  infoText: {
-    textAlign: "center",
-    color: colors.muted,
-    marginTop: 24,
-  },
-  captionText: {
-    textAlign: "center",
-    color: colors.muted,
-    fontSize: 12,
-    marginBottom: 10,
-  },
-  loadingMore: {
-    marginTop: 8,
-    marginBottom: 14,
-  },
-  errorText: {
-    textAlign: "center",
-    color: "#B42318",
-    marginBottom: 12,
-  },
-});
+type C = ReturnType<typeof useTheme>["colors"];
+type S = ReturnType<typeof useTheme>["spacing"];
+type R = ReturnType<typeof useTheme>["radius"];
+type F = ReturnType<typeof useTheme>["fontSize"];
+type W = ReturnType<typeof useTheme>["fontWeight"];
+
+function makeStyles(colors: C, spacing: S, radius: R, fontSize: F, fontWeight: W) {
+  return StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+      padding: spacing[4],
+    },
+    centered: {
+      flex: 1,
+      backgroundColor: colors.background,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    listContent: {
+      paddingBottom: spacing[5],
+    },
+    card: {
+      backgroundColor: colors.surface,
+      borderWidth: 0.5,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      padding: spacing[3],
+      marginBottom: spacing[3],
+    },
+    row: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    },
+    reason: {
+      color: colors.text,
+      fontSize: fontSize.base,
+      fontWeight: fontWeight.semibold,
+    },
+    amount: {
+      fontSize: fontSize.lg,
+      fontWeight: fontWeight.bold,
+    },
+    amountPositive: {
+      color: colors.primary,
+    },
+    amountNegative: {
+      color: colors.error,
+    },
+    date: {
+      marginTop: spacing[2],
+      color: colors.muted,
+      fontSize: fontSize.xs,
+    },
+    infoText: {
+      textAlign: "center",
+      color: colors.muted,
+      marginTop: spacing[6],
+    },
+    captionText: {
+      textAlign: "center",
+      color: colors.muted,
+      fontSize: fontSize.xs,
+      marginBottom: spacing[2],
+    },
+    loadingMore: {
+      marginTop: spacing[2],
+      marginBottom: spacing[3],
+    },
+    errorText: {
+      textAlign: "center",
+      color: colors.error,
+      marginBottom: spacing[3],
+    },
+  });
+}

@@ -1,5 +1,6 @@
 import React from "react";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useTheme } from "src/core/theme/ThemeProvider";
 
 import { TasksStackParamList } from "./types";
 import { TasksScreen } from "src/features/tasks/screens/TasksScreen";
@@ -11,8 +12,15 @@ import { ApprovalsScreen } from "src/features/tasks/screens/ApprovalsScreen";
 const Stack = createNativeStackNavigator<TasksStackParamList>();
 
 export function TasksNavigator() {
+  const { colors } = useTheme();
   return (
-    <Stack.Navigator>
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: { backgroundColor: colors.surface },
+        headerTintColor: colors.textStrong,
+        headerShadowVisible: false,
+      }}
+    >
       <Stack.Screen
         name="TasksList"
         component={TasksScreen}

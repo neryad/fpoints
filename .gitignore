@@ -42,3 +42,7 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Claude Code — settings.local.json contiene tokens, nunca commitear
+.claude/settings.local.json
+.claude/settings.json

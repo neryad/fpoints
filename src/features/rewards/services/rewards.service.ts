@@ -1,5 +1,5 @@
-import { supabase } from "../../../core/supabase/client";
-import { getMyPointsBalance } from "../../home/services/points.service";
+import { ensureSupabase } from "../../../core/supabase/client";
+import { getCurrentUserId } from "../../../core/supabase/auth";
 import { getMyRoleInGroup } from "../../tasks/services/tasks.service";
 import type {
   CreateRewardInput,
@@ -8,23 +8,6 @@ import type {
   RewardRedemptionStatus,
   UpdateRewardInput,
 } from "../types";
-
-function ensureSupabase() {
-  if (!supabase) {
-    throw new Error(
-      "Supabase no esta configurado. Revisa EXPO_PUBLIC_SUPABASE_URL y EXPO_PUBLIC_SUPABASE_ANON_KEY.",
-    );
-  }
-  return supabase;
-}
-
-async function getCurrentUserId() {
-  const client = ensureSupabase();
-  const { data, error } = await client.auth.getUser();
-  if (error) throw error;
-  if (!data.user) throw new Error("No hay usuario autenticado.");
-  return data.user.id;
-}
 
 function canManageRole(role: string | null) {
   return role === "owner" || role === "sub_owner";
@@ -210,27 +193,27 @@ export async function requestRewardRedemption(
   reward: Reward,
 ): Promise<void> {
   const client = ensureSupabase();
-  const userId = await getCurrentUserId();
 
   if (!reward.active) {
     throw new Error("Este premio esta inactivo por ahora.");
   }
 
-  const myBalance = await getMyPointsBalance(groupId);
-  if (myBalance < reward.costPoints) {
-    throw new Error("No tienes puntos suficientes para solicitar este canje.");
-  }
-
-  const { error } = await client.from("reward_redemptions").insert({
-    group_id: groupId,
-    reward_id: reward.id,
-    user_id: userId,
-    reward_title: reward.title,
-    reward_cost_points: reward.costPoints,
-    status: "pending",
+  const { error } = await client.rpc("request_reward_redemption", {
+    input_group_id: groupId,
+    input_reward_id: reward.id,
   });
 
   if (error) {
+    const message = error.message.toLowerCase();
+    if (message.includes("insufficient points")) {
+      throw new Error("No tienes puntos suficientes para solicitar este canje.");
+    }
+    if (message.includes("not authorized")) {
+      throw new Error("No tienes permisos para solicitar este canje.");
+    }
+    if (message.includes("reward not found or inactive")) {
+      throw new Error("Este premio esta inactivo o no existe.");
+    }
     throw new Error(
       "No se pudo crear la solicitud de canje. Verifica tabla/politicas de reward_redemptions.",
     );
