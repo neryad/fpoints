@@ -4,12 +4,14 @@ import {
   FlatList,
   KeyboardAvoidingView,
   Platform,
-  Pressable,
   Text,
   TextInput,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import shadows from "../../../../design-system-rn/tokens/shadows";
+import { Button, GameBadge } from "../../../../design-system-rn/components";
 import { RewardsStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
 import { useTheme } from "../../../core/theme/ThemeProvider";
@@ -53,11 +55,18 @@ export function ManageRewardsScreen({ navigation }: Props) {
       setIsLoading(true);
       const manager = await canManageRewards(activeGroupId);
       setCanManage(manager);
-      if (!manager) { setRewards([]); return; }
+      if (!manager) {
+        setRewards([]);
+        return;
+      }
       const data = await listGroupRewards(activeGroupId, true);
       setRewards(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo cargar la gestión de premios.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "No se pudo cargar la gestión de premios.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -71,9 +80,15 @@ export function ManageRewardsScreen({ navigation }: Props) {
   const handleCreate = useCallback(async () => {
     if (!activeGroupId) return;
     const trimmed = title.trim();
-    if (!trimmed) { setError("El nombre del premio es obligatorio."); return; }
+    if (!trimmed) {
+      setError("El nombre del premio es obligatorio.");
+      return;
+    }
     const parsed = Number(costPoints);
-    if (!Number.isInteger(parsed) || parsed < 1) { setError("El costo debe ser un número entero mayor a 0."); return; }
+    if (!Number.isInteger(parsed) || parsed < 1) {
+      setError("El costo debe ser un número entero mayor a 0.");
+      return;
+    }
     try {
       setError("");
       setSuccessMessage("");
@@ -84,24 +99,31 @@ export function ManageRewardsScreen({ navigation }: Props) {
       setSuccessMessage("Premio creado correctamente.");
       await loadData();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo crear el premio.");
+      setError(
+        err instanceof Error ? err.message : "No se pudo crear el premio.",
+      );
     } finally {
       setIsSaving(false);
     }
   }, [activeGroupId, title, costPoints, loadData]);
 
-  const handleToggle = useCallback(async (item: Reward) => {
-    if (!activeGroupId) return;
-    try {
-      setError("");
-      setSuccessMessage("");
-      await setRewardActive(activeGroupId, item.id, !item.active);
-      setSuccessMessage(!item.active ? "Premio activado." : "Premio desactivado.");
-      await loadData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo actualizar el premio.");
-    }
-  }, [activeGroupId, loadData]);
+  const handleToggle = useCallback(
+    async (item: Reward) => {
+      if (!activeGroupId) return;
+      try {
+        setError("");
+        setSuccessMessage("");
+        await setRewardActive(activeGroupId, item.id, !item.active);
+        setSuccessMessage(!item.active ? "Premio activado." : "Premio desactivado.");
+        await loadData();
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "No se pudo actualizar el premio.",
+        );
+      }
+    },
+    [activeGroupId, loadData],
+  );
 
   const startEditing = useCallback((item: Reward) => {
     setError("");
@@ -117,30 +139,44 @@ export function ManageRewardsScreen({ navigation }: Props) {
     setEditCostPoints("");
   }, []);
 
-  const handleSaveEdit = useCallback(async (item: Reward) => {
-    if (!activeGroupId) return;
-    const trimmed = editTitle.trim();
-    if (!trimmed) { setError("El nombre del premio es obligatorio."); return; }
-    const parsed = Number(editCostPoints);
-    if (!Number.isInteger(parsed) || parsed < 1) { setError("El costo debe ser un número entero mayor a 0."); return; }
-    try {
-      setError("");
-      setSuccessMessage("");
-      setIsSaving(true);
-      await updateReward(activeGroupId, item.id, { title: trimmed, costPoints: parsed });
-      setSuccessMessage("Premio actualizado correctamente.");
-      cancelEditing();
-      await loadData();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudo actualizar el premio.");
-    } finally {
-      setIsSaving(false);
-    }
-  }, [activeGroupId, editTitle, editCostPoints, cancelEditing, loadData]);
+  const handleSaveEdit = useCallback(
+    async (item: Reward) => {
+      if (!activeGroupId) return;
+      const trimmed = editTitle.trim();
+      if (!trimmed) {
+        setError("El nombre del premio es obligatorio.");
+        return;
+      }
+      const parsed = Number(editCostPoints);
+      if (!Number.isInteger(parsed) || parsed < 1) {
+        setError("El costo debe ser un número entero mayor a 0.");
+        return;
+      }
+      try {
+        setError("");
+        setSuccessMessage("");
+        setIsSaving(true);
+        await updateReward(activeGroupId, item.id, {
+          title: trimmed,
+          costPoints: parsed,
+        });
+        setSuccessMessage("Premio actualizado correctamente.");
+        cancelEditing();
+        await loadData();
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "No se pudo actualizar el premio.",
+        );
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [activeGroupId, editTitle, editCostPoints, cancelEditing, loadData],
+  );
 
   if (isLoading) {
     return (
-      <View className="flex-1 bg-background items-center justify-center p-6">
+      <View className="flex-1 items-center justify-center bg-background p-6">
         <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
@@ -148,15 +184,16 @@ export function ManageRewardsScreen({ navigation }: Props) {
 
   if (!canManage) {
     return (
-      <View className="flex-1 bg-background items-center justify-center p-6">
-        <Text className="text-sm text-muted-foreground text-center">
+      <View className="flex-1 items-center justify-center bg-background p-6">
+        <View className="mb-4 h-14 w-14 items-center justify-center rounded-full bg-muted">
+          <Ionicons name="lock-closed-outline" size={26} color={colors.muted} />
+        </View>
+        <Text className="text-center font-sans text-sm text-muted-foreground">
           Solo owner o sub_owner puede gestionar el catálogo de premios.
         </Text>
       </View>
     );
   }
-
-  const inputClass = "bg-background border border-border rounded-lg px-3 py-3 mb-2 text-sm text-foreground";
 
   return (
     <KeyboardAvoidingView
@@ -168,16 +205,21 @@ export function ManageRewardsScreen({ navigation }: Props) {
         keyExtractor={(item) => item.id}
         contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <>
-            <Text className="text-[11px] font-sans-medium text-muted-foreground uppercase tracking-[0.8px] mb-3">
-              Crear premio
+            {/* Form crear */}
+            <Text className="mb-2 font-sans-semibold text-xs uppercase tracking-wider text-muted-foreground">
+              Nuevo premio
             </Text>
-            <View className="bg-card border border-border rounded-xl p-4 mb-2">
+            <View
+              style={shadows.card}
+              className="mb-2 rounded-2xl border border-border bg-card p-4"
+            >
               <TextInput
                 value={title}
                 onChangeText={setTitle}
-                className={inputClass}
+                className="mb-3 rounded-xl border border-border bg-background px-3 py-3 font-sans text-sm text-foreground"
                 placeholder="Nombre del premio"
                 placeholderTextColor={colors.muted}
                 editable={!isSaving}
@@ -185,35 +227,49 @@ export function ManageRewardsScreen({ navigation }: Props) {
               <TextInput
                 value={costPoints}
                 onChangeText={setCostPoints}
-                className={inputClass}
+                className="mb-3 rounded-xl border border-border bg-background px-3 py-3 font-sans text-sm text-foreground"
                 keyboardType="numeric"
                 placeholder="Costo en puntos"
                 placeholderTextColor={colors.muted}
                 editable={!isSaving}
               />
-              <Pressable
-                className={`bg-primary rounded-xl py-3 items-center mt-1 active:opacity-80 ${isSaving ? "opacity-40" : ""}`}
-                onPress={handleCreate}
+              <Button
+                label={isSaving ? "Guardando..." : "Crear premio"}
+                variant="primary"
+                size="md"
+                fullWidth
                 disabled={isSaving}
-              >
-                <Text className="text-sm font-sans-bold text-primary-foreground">
-                  {isSaving ? "Guardando..." : "Crear premio"}
-                </Text>
-              </Pressable>
+                onPress={handleCreate}
+                iconLeft={
+                  isSaving ? undefined : (
+                    <Ionicons name="add" size={16} color={colors.primaryText} />
+                  )
+                }
+              />
             </View>
 
-            {(error || successMessage) ? (
-              <View className="mt-3">
-                {error ? <Text className="text-destructive text-xs text-center font-sans">{error}</Text> : null}
-                {successMessage ? <Text className="text-success text-xs text-center font-sans">{successMessage}</Text> : null}
+            {error ? (
+              <View className="mb-3 mt-1 rounded-xl border border-destructive/30 bg-destructive/10 p-3">
+                <Text className="text-center font-sans-medium text-sm text-destructive">
+                  {error}
+                </Text>
+              </View>
+            ) : null}
+            {successMessage ? (
+              <View className="mb-3 mt-1 rounded-xl border border-success/30 bg-success/10 p-3">
+                <Text className="text-center font-sans-medium text-sm text-success">
+                  {successMessage}
+                </Text>
               </View>
             ) : null}
 
-            <Text className="text-[11px] font-sans-medium text-muted-foreground uppercase tracking-[0.8px] mb-3 mt-5">
+            <Text className="mb-3 mt-5 font-sans-semibold text-xs uppercase tracking-wider text-muted-foreground">
               Catálogo actual
             </Text>
             {rewards.length === 0 ? (
-              <Text className="text-sm text-muted-foreground">Aún no hay premios creados.</Text>
+              <Text className="font-sans text-sm text-muted-foreground">
+                Aún no hay premios creados.
+              </Text>
             ) : null}
           </>
         }
@@ -222,11 +278,17 @@ export function ManageRewardsScreen({ navigation }: Props) {
 
           if (isEditing) {
             return (
-              <View className="bg-card border border-border rounded-xl p-4 mb-3">
+              <View
+                style={shadows.card}
+                className="mb-3 rounded-2xl border border-border bg-card p-4"
+              >
+                <Text className="mb-3 font-sans-semibold text-sm text-foreground">
+                  Editando premio
+                </Text>
                 <TextInput
                   value={editTitle}
                   onChangeText={setEditTitle}
-                  className={inputClass}
+                  className="mb-3 rounded-xl border border-border bg-background px-3 py-3 font-sans text-sm text-foreground"
                   placeholder="Nombre del premio"
                   placeholderTextColor={colors.muted}
                   editable={!isSaving}
@@ -234,69 +296,88 @@ export function ManageRewardsScreen({ navigation }: Props) {
                 <TextInput
                   value={editCostPoints}
                   onChangeText={setEditCostPoints}
-                  className={inputClass}
+                  className="mb-3 rounded-xl border border-border bg-background px-3 py-3 font-sans text-sm text-foreground"
                   keyboardType="numeric"
                   placeholder="Costo en puntos"
                   placeholderTextColor={colors.muted}
                   editable={!isSaving}
                 />
-                <View className="flex-row gap-2 mt-3">
-                  <Pressable
-                    className={`flex-1 bg-primary rounded-xl py-3 items-center active:opacity-80 ${isSaving ? "opacity-40" : ""}`}
-                    onPress={() => handleSaveEdit(item)}
-                    disabled={isSaving}
-                  >
-                    <Text className="text-sm font-sans-bold text-primary-foreground">
-                      {isSaving ? "Guardando..." : "Guardar"}
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    className={`flex-1 bg-muted border border-border rounded-xl py-3 items-center active:opacity-70 ${isSaving ? "opacity-40" : ""}`}
-                    onPress={cancelEditing}
-                    disabled={isSaving}
-                  >
-                    <Text className="text-sm font-sans-semibold text-foreground">Cancelar</Text>
-                  </Pressable>
+                <View className="flex-row gap-2">
+                  <View className="flex-1">
+                    <Button
+                      label={isSaving ? "Guardando..." : "Guardar"}
+                      variant="primary"
+                      size="md"
+                      fullWidth
+                      disabled={isSaving}
+                      onPress={() => handleSaveEdit(item)}
+                    />
+                  </View>
+                  <View className="flex-1">
+                    <Button
+                      label="Cancelar"
+                      variant="outline"
+                      size="md"
+                      fullWidth
+                      disabled={isSaving}
+                      onPress={cancelEditing}
+                    />
+                  </View>
                 </View>
               </View>
             );
           }
 
           return (
-            <View className={`bg-card border border-border rounded-xl p-4 mb-3 ${!item.active ? "opacity-55" : ""}`}>
-              <View className="flex-row justify-between items-start gap-2 mb-2">
-                <Text className="flex-1 text-base font-sans-semibold text-foreground">{item.title}</Text>
-                <View className="bg-points/15 rounded-full px-2" style={{ paddingVertical: 3 }}>
-                  <Text className="text-xs font-sans-bold text-points">{item.costPoints} pts</Text>
-                </View>
+            <View
+              style={[shadows.card, !item.active && { opacity: 0.55 }]}
+              className="mb-3 rounded-2xl border border-border bg-card p-4"
+            >
+              <View className="mb-3 flex-row items-start justify-between gap-2">
+                <Text
+                  className="flex-1 font-sans-semibold text-base text-foreground"
+                  numberOfLines={2}
+                >
+                  {item.title}
+                </Text>
+                <GameBadge type="points" value={`${item.costPoints} pts`} size="sm" />
               </View>
 
-              <View className="flex-row items-center gap-1">
-                <View className={`w-[6px] h-[6px] rounded-full ${item.active ? "bg-success" : "bg-muted-foreground"}`} />
-                <Text className="text-[11px] font-sans-medium text-muted-foreground">
+              <View className="mb-3 flex-row items-center gap-1.5">
+                <View
+                  className={`h-1.5 w-1.5 rounded-full ${item.active ? "bg-success" : "bg-muted-foreground"}`}
+                />
+                <Text className="font-sans-medium text-xs text-muted-foreground">
                   {item.active ? "Activo" : "Inactivo"}
                 </Text>
               </View>
 
-              <View className="flex-row gap-2 mt-3">
-                <Pressable
-                  className="flex-1 bg-muted border border-border rounded-xl py-3 items-center active:opacity-70"
-                  onPress={() => startEditing(item)}
-                >
-                  <Text className="text-sm font-sans-semibold text-foreground">Editar</Text>
-                </Pressable>
-                <Pressable
-                  className={`flex-1 border rounded-xl py-3 items-center active:opacity-80 ${
-                    item.active
-                      ? "bg-destructive/15 border-destructive"
-                      : "bg-success/15 border-success"
-                  }`}
-                  onPress={() => handleToggle(item)}
-                >
-                  <Text className={`text-sm font-sans-semibold ${item.active ? "text-destructive" : "text-success"}`}>
-                    {item.active ? "Desactivar" : "Activar"}
-                  </Text>
-                </Pressable>
+              <View className="flex-row gap-2">
+                <View className="flex-1">
+                  <Button
+                    label="Editar"
+                    variant="outline"
+                    size="sm"
+                    fullWidth
+                    onPress={() => startEditing(item)}
+                    iconLeft={
+                      <Ionicons
+                        name="pencil-outline"
+                        size={13}
+                        color={colors.text}
+                      />
+                    }
+                  />
+                </View>
+                <View className="flex-1">
+                  <Button
+                    label={item.active ? "Desactivar" : "Activar"}
+                    variant={item.active ? "destructive" : "secondary"}
+                    size="sm"
+                    fullWidth
+                    onPress={() => handleToggle(item)}
+                  />
+                </View>
               </View>
             </View>
           );

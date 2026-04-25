@@ -1,12 +1,10 @@
 import React, { useCallback, useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  FlatList,
-  Pressable,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, FlatList, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import shadows from "../../../../design-system-rn/tokens/shadows";
+import { Button, GameBadge } from "../../../../design-system-rn/components";
 import { RewardsStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
 import { useTheme } from "../../../core/theme/ThemeProvider";
@@ -21,20 +19,42 @@ import type { RewardRedemption } from "../types";
 
 type Props = NativeStackScreenProps<RewardsStackParamList, "RewardApprovals">;
 
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .slice(0, 2)
+    .map((n) => n[0] ?? "")
+    .join("")
+    .toUpperCase();
+}
+
+function formatDate(value: string) {
+  return new Date(value).toLocaleDateString(undefined, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 export function RewardApprovalsScreen({ navigation }: Props) {
   const { colors } = useTheme();
   const { activeGroupId } = useAppSession();
 
   const [items, setItems] = useState<RewardRedemption[]>([]);
   const [canReview, setCanReview] = useState(false);
-  const [userDisplayNames, setUserDisplayNames] = useState<Record<string, string>>({});
+  const [userDisplayNames, setUserDisplayNames] = useState<
+    Record<string, string>
+  >({});
   const [isLoading, setIsLoading] = useState(true);
   const [reviewingId, setReviewingId] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [dialog, setDialog] = useState<null | {
-    title: string; message: string; confirmText: string;
-    destructive?: boolean; onConfirm: () => void;
+    title: string;
+    message: string;
+    confirmText: string;
+    destructive?: boolean;
+    onConfirm: () => void;
   }>(null);
 
   const loadData = useCallback(async () => {
@@ -50,13 +70,23 @@ export function RewardApprovalsScreen({ navigation }: Props) {
       setIsLoading(true);
       const manager = await canManageRewards(activeGroupId);
       setCanReview(manager);
-      if (!manager) { setItems([]); return; }
+      if (!manager) {
+        setItems([]);
+        return;
+      }
       const data = await listPendingRewardRedemptions(activeGroupId);
       setItems(data);
-      const labels = await getUserDisplayNames(data.map((item) => item.userId), activeGroupId);
+      const labels = await getUserDisplayNames(
+        data.map((item) => item.userId),
+        activeGroupId,
+      );
       setUserDisplayNames(labels);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudieron cargar los canjes pendientes.");
+      setError(
+        err instanceof Error
+          ? err.message
+          : "No se pudieron cargar los canjes pendientes.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -84,7 +114,9 @@ export function RewardApprovalsScreen({ navigation }: Props) {
             );
             await loadData();
           } catch (err) {
-            setError(err instanceof Error ? err.message : "No se pudo revisar el canje.");
+            setError(
+              err instanceof Error ? err.message : "No se pudo revisar el canje.",
+            );
           } finally {
             setReviewingId(null);
           }
@@ -101,24 +133,31 @@ export function RewardApprovalsScreen({ navigation }: Props) {
 
   if (isLoading) {
     return (
-      <View className="flex-1 bg-background items-center justify-center p-6">
-        <ActivityIndicator size="large" color={colors.primary} />
-      </View>
+      <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+        <View className="flex-1 items-center justify-center">
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      </SafeAreaView>
     );
   }
 
   if (!canReview) {
     return (
-      <View className="flex-1 bg-background items-center justify-center p-6">
-        <Text className="text-sm text-muted-foreground text-center">
-          Solo owner o sub_owner puede aprobar o rechazar canjes.
-        </Text>
-      </View>
+      <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
+        <View className="flex-1 items-center justify-center px-6">
+          <View className="mb-4 h-14 w-14 items-center justify-center rounded-full bg-muted">
+            <Ionicons name="lock-closed-outline" size={26} color={colors.muted} />
+          </View>
+          <Text className="text-center font-sans text-sm text-muted-foreground">
+            Solo owner o sub_owner puede aprobar o rechazar canjes.
+          </Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View className="flex-1 bg-background p-4">
+    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
       <ConfirmDialog
         visible={dialog !== null}
         title={dialog?.title ?? ""}
@@ -128,70 +167,140 @@ export function RewardApprovalsScreen({ navigation }: Props) {
         onConfirm={() => dialog?.onConfirm()}
         onCancel={() => setDialog(null)}
       />
-      {error ? (
-        <Text className="text-destructive text-xs text-center mb-3 font-sans">{error}</Text>
-      ) : null}
-      {successMessage ? (
-        <Text className="text-success text-xs text-center mb-3 font-sans">{successMessage}</Text>
-      ) : null}
 
-      {items.length === 0 ? (
-        <Text className="text-sm text-muted-foreground text-center mt-6">
-          No hay canjes pendientes.
-        </Text>
-      ) : (
-        <FlatList
-          data={items}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: 32 }}
-          renderItem={({ item }) => {
-            const isBusy = reviewingId === item.id;
-            const displayName = userDisplayNames[item.userId] ?? item.userId;
-            const date = new Date(item.createdAt).toLocaleString();
+      <FlatList
+        data={items}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          <>
+            {error ? (
+              <View className="mb-3 rounded-xl border border-destructive/30 bg-destructive/10 p-3">
+                <Text className="text-center font-sans-medium text-sm text-destructive">
+                  {error}
+                </Text>
+              </View>
+            ) : null}
+            {successMessage ? (
+              <View className="mb-3 rounded-xl border border-success/30 bg-success/10 p-3">
+                <Text className="text-center font-sans-medium text-sm text-success">
+                  {successMessage}
+                </Text>
+              </View>
+            ) : null}
+            {items.length > 0 ? (
+              <Text className="mb-3 font-sans text-xs text-muted-foreground">
+                {items.length} {items.length === 1 ? "canje pendiente" : "canjes pendientes"}
+              </Text>
+            ) : null}
+          </>
+        }
+        ListEmptyComponent={
+          !error ? (
+            <View className="items-center px-6 py-16">
+              <View className="mb-4 h-16 w-16 items-center justify-center rounded-2xl bg-muted">
+                <Ionicons
+                  name="checkmark-done-outline"
+                  size={32}
+                  color={colors.muted}
+                />
+              </View>
+              <Text className="text-center font-sans-semibold text-base text-foreground">
+                Todo al día
+              </Text>
+              <Text className="mt-1 text-center font-sans text-sm text-muted-foreground">
+                No hay canjes pendientes de revisión.
+              </Text>
+            </View>
+          ) : null
+        }
+        renderItem={({ item }) => {
+          const isBusy = reviewingId === item.id;
+          const displayName = userDisplayNames[item.userId] ?? item.userId;
+          const initials = getInitials(displayName);
 
-            return (
-              <View className="bg-card border border-border rounded-xl p-4 mb-3">
-                <View className="flex-row justify-between items-start gap-2 mb-3">
-                  <Text className="flex-1 text-base font-sans-semibold text-foreground">
-                    {item.rewardTitle}
+          return (
+            <View
+              style={shadows.card}
+              className="mb-3 rounded-2xl border border-border bg-card p-4"
+            >
+              {/* Header: premio + costo */}
+              <View className="mb-3 flex-row items-start justify-between gap-2">
+                <Text
+                  className="flex-1 font-sans-semibold text-base text-foreground"
+                  numberOfLines={2}
+                >
+                  {item.rewardTitle}
+                </Text>
+                <GameBadge
+                  type="points"
+                  value={`${item.rewardCostPoints} pts`}
+                  size="sm"
+                />
+              </View>
+
+              {/* Solicitante */}
+              <View className="mb-3 flex-row items-center gap-2">
+                <View className="h-8 w-8 items-center justify-center rounded-full bg-primary/15">
+                  <Text className="font-sans-bold text-[11px] text-primary">
+                    {initials}
                   </Text>
-                  <View className="bg-points/15 rounded-full px-2" style={{ paddingVertical: 3 }}>
-                    <Text className="text-xs font-sans-bold text-points">{item.rewardCostPoints} pts</Text>
-                  </View>
                 </View>
-                <View className="flex-row items-center gap-2 mb-1">
-                  <Text className="text-[11px] font-sans-medium text-muted-foreground w-[72px]">Solicitado</Text>
-                  <Text className="flex-1 text-xs text-foreground">{displayName}</Text>
-                </View>
-                <View className="flex-row items-center gap-2 mb-1">
-                  <Text className="text-[11px] font-sans-medium text-muted-foreground w-[72px]">Fecha</Text>
-                  <Text className="flex-1 text-xs text-foreground">{date}</Text>
-                </View>
-                <View className="flex-row gap-2 mt-4">
-                  <Pressable
-                    className={`flex-1 bg-success rounded-xl py-3 items-center active:opacity-80 ${isBusy ? "opacity-40" : ""}`}
-                    onPress={() => handleReview(item, "approved")}
-                    disabled={isBusy}
+                <View className="flex-1">
+                  <Text
+                    className="font-sans-medium text-sm text-foreground"
+                    numberOfLines={1}
                   >
-                    <Text className="text-sm font-sans-bold text-primary-foreground">
-                      {isBusy ? "..." : "Aprobar"}
-                    </Text>
-                  </Pressable>
-                  <Pressable
-                    className={`flex-1 bg-destructive/15 border border-destructive rounded-xl py-3 items-center active:opacity-80 ${isBusy ? "opacity-40" : ""}`}
-                    onPress={() => handleReview(item, "rejected")}
-                    disabled={isBusy}
-                  >
-                    <Text className="text-sm font-sans-bold text-destructive">
-                      {isBusy ? "..." : "Rechazar"}
-                    </Text>
-                  </Pressable>
+                    {displayName}
+                  </Text>
+                  <Text className="font-sans text-[11px] text-muted-foreground">
+                    {formatDate(item.createdAt)}
+                  </Text>
                 </View>
               </View>
-            );
-          }}
-        />
-      )}
-    </View>
+
+              {/* Acciones */}
+              <View className="flex-row gap-2">
+                <View className="flex-1">
+                  <Button
+                    label={isBusy ? "..." : "Aprobar"}
+                    variant="primary"
+                    size="md"
+                    fullWidth
+                    disabled={isBusy}
+                    onPress={() => handleReview(item, "approved")}
+                    iconLeft={
+                      isBusy ? undefined : (
+                        <Ionicons
+                          name="checkmark"
+                          size={15}
+                          color={colors.primaryText}
+                        />
+                      )
+                    }
+                  />
+                </View>
+                <View className="flex-1">
+                  <Button
+                    label={isBusy ? "..." : "Rechazar"}
+                    variant="destructive"
+                    size="md"
+                    fullWidth
+                    disabled={isBusy}
+                    onPress={() => handleReview(item, "rejected")}
+                    iconLeft={
+                      isBusy ? undefined : (
+                        <Ionicons name="close" size={15} color="#fff" />
+                      )
+                    }
+                  />
+                </View>
+              </View>
+            </View>
+          );
+        }}
+      />
+    </SafeAreaView>
   );
 }

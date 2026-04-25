@@ -1,18 +1,17 @@
 import React, { useCallback, useEffect, useState } from "react";
-import {
-  FlatList,
-  Pressable,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, FlatList, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import type { NativeStackScreenProps } from "@react-navigation/native-stack";
+import shadows from "../../../../design-system-rn/tokens/shadows";
+import {
+  Button,
+  RewardCard,
+} from "../../../../design-system-rn/components";
 import { RewardsStackParamList } from "../../../app/navigation/types";
 import { useAppSession } from "../../../app/providers/AppSessionProvider";
+import { useTheme } from "../../../core/theme/ThemeProvider";
 import { ConfirmDialog } from "../../../components/shared/ConfirmDialog";
-import { RewardCard } from "../../../components/ui/RewardCard";
-import { EmptyState } from "../../../components/ui/EmptyState";
-import { SkeletonLoader } from "../../../components/ui/SkeletonLoader";
 import { getMyPointsBalance } from "../../home/services/points.service";
 import {
   canManageRewards,
@@ -24,26 +23,35 @@ import type { Reward } from "../types";
 type Props = NativeStackScreenProps<RewardsStackParamList, "RewardsList">;
 
 export function RewardsScreen({ navigation }: Props) {
+  const { colors } = useTheme();
   const { activeGroupId } = useAppSession();
 
-  const [rewards, setRewards]       = useState<Reward[]>([]);
-  const [myPoints, setMyPoints]     = useState(0);
-  const [isManager, setIsManager]   = useState(false);
-  const [isLoading, setIsLoading]   = useState(true);
-  const [error, setError]           = useState("");
+  const [rewards, setRewards] = useState<Reward[]>([]);
+  const [myPoints, setMyPoints] = useState(0);
+  const [isManager, setIsManager] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [dialog, setDialog]         = useState<null | {
-    title: string; message: string; confirmText: string;
-    destructive?: boolean; onConfirm: () => void;
+  const [dialog, setDialog] = useState<null | {
+    title: string;
+    message: string;
+    confirmText: string;
+    destructive?: boolean;
+    onConfirm: () => void;
   }>(null);
 
   const loadData = useCallback(async () => {
     if (!activeGroupId) {
-      setRewards([]); setMyPoints(0); setIsManager(false); setIsLoading(false);
+      setRewards([]);
+      setMyPoints(0);
+      setIsManager(false);
+      setIsLoading(false);
       return;
     }
     try {
-      setError(""); setSuccessMessage(""); setIsLoading(true);
+      setError("");
+      setSuccessMessage("");
+      setIsLoading(true);
       const [canManage, balance] = await Promise.all([
         canManageRewards(activeGroupId),
         getMyPointsBalance(activeGroupId),
@@ -53,7 +61,9 @@ export function RewardsScreen({ navigation }: Props) {
       setMyPoints(balance);
       setRewards(rewardsData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "No se pudieron cargar los premios.");
+      setError(
+        err instanceof Error ? err.message : "No se pudieron cargar los premios.",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -74,34 +84,43 @@ export function RewardsScreen({ navigation }: Props) {
         onConfirm: async () => {
           setDialog(null);
           try {
-            setError(""); setSuccessMessage("");
+            setError("");
+            setSuccessMessage("");
             await requestRewardRedemption(activeGroupId, reward);
             setSuccessMessage("Solicitud enviada. Esperando aprobación.");
             await loadData();
           } catch (err) {
-            setError(err instanceof Error ? err.message : "No se pudo solicitar el canje.");
+            setError(
+              err instanceof Error
+                ? err.message
+                : "No se pudo solicitar el canje.",
+            );
           }
         },
       });
     },
-    [activeGroupId, loadData]
+    [activeGroupId, loadData],
   );
+
+  const availableCount = rewards.filter(
+    (r) => r.active && myPoints >= r.costPoints,
+  ).length;
 
   const renderReward = useCallback(
     ({ item }: { item: Reward }) => (
       <RewardCard
-        reward={item}
+        title={item.title}
+        cost={item.costPoints}
+        available={item.active}
         userPoints={myPoints}
         onRedeem={() => handleRedeem(item)}
       />
     ),
-    [myPoints, handleRedeem]
+    [myPoints, handleRedeem],
   );
 
-  const availableCount = rewards.filter((r) => r.active && myPoints >= r.costPoints).length;
-
   return (
-    <SafeAreaView style={{ flex: 1 }} className="bg-background p-4" edges={["top"]}>
+    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
       <ConfirmDialog
         visible={dialog !== null}
         title={dialog?.title ?? ""}
@@ -112,71 +131,127 @@ export function RewardsScreen({ navigation }: Props) {
         onCancel={() => setDialog(null)}
       />
 
-      {/* Balance */}
-      <View className="bg-card border border-border rounded-xl p-4 mb-3">
-        <Text className="text-[11px] font-sans-medium text-muted-foreground uppercase tracking-[0.8px]">
-          Puntos disponibles
-        </Text>
-        <Text className="text-[40px] font-sans-bold text-foreground leading-[46px] mt-1">
-          {myPoints}
-        </Text>
-        <Text className="text-[11px] text-muted-foreground mt-[2px]">
-          {availableCount} premios al alcance
-        </Text>
-      </View>
-
-      {/* Acciones */}
-      <View className="flex-row flex-wrap gap-2 mb-3">
-        <Pressable
-          onPress={() => navigation.navigate("MyRedemptions")}
-          className="border border-border rounded-full px-3 py-2 bg-card active:opacity-70"
-        >
-          <Text className="text-xs font-sans-semibold text-foreground">Mis canjes</Text>
-        </Pressable>
-
-        {isManager && (
+      <FlatList
+        data={isLoading ? [] : rewards}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 12 }}
+        showsVerticalScrollIndicator={false}
+        renderItem={renderReward}
+        ListHeaderComponent={
           <>
-            <Pressable
-              onPress={() => navigation.navigate("ManageRewards")}
-              className="border border-primary rounded-full px-3 py-2 bg-primary/10 active:opacity-70"
+            {/* Balance */}
+            <View
+              style={shadows.card}
+              className="mb-1 rounded-2xl border border-border bg-card p-4"
             >
-              <Text className="text-xs font-sans-semibold text-primary">Gestionar</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => navigation.navigate("RewardApprovals")}
-              className="border border-primary rounded-full px-3 py-2 bg-primary/10 active:opacity-70"
-            >
-              <Text className="text-xs font-sans-semibold text-primary">Aprobar canjes</Text>
-            </Pressable>
+              <Text className="font-sans text-xs uppercase tracking-wider text-muted-foreground">
+                Puntos disponibles
+              </Text>
+              <Text
+                className="mt-1 font-mono-bold text-5xl text-points"
+                style={{ fontVariant: ["tabular-nums"] }}
+              >
+                {myPoints}
+              </Text>
+              <View className="mt-2 flex-row items-center gap-1.5">
+                <View className="h-1.5 w-1.5 rounded-full bg-success" />
+                <Text className="font-sans text-xs text-muted-foreground">
+                  {availableCount}{" "}
+                  {availableCount === 1 ? "premio" : "premios"} al alcance
+                </Text>
+              </View>
+            </View>
+
+            {/* Acciones */}
+            <View className="mb-3 mt-3 flex-row flex-wrap gap-2">
+              <Button
+                label="Mis canjes"
+                variant="outline"
+                size="sm"
+                onPress={() => navigation.navigate("MyRedemptions")}
+                iconLeft={
+                  <Ionicons
+                    name="receipt-outline"
+                    size={14}
+                    color={colors.text}
+                  />
+                }
+              />
+              {isManager && (
+                <>
+                  <Button
+                    label="Gestionar"
+                    variant="outline"
+                    size="sm"
+                    onPress={() => navigation.navigate("ManageRewards")}
+                    iconLeft={
+                      <Ionicons
+                        name="settings-outline"
+                        size={14}
+                        color={colors.primary}
+                      />
+                    }
+                  />
+                  <Button
+                    label="Aprobar canjes"
+                    variant="outline"
+                    size="sm"
+                    onPress={() => navigation.navigate("RewardApprovals")}
+                    iconLeft={
+                      <Ionicons
+                        name="checkmark-done-outline"
+                        size={14}
+                        color={colors.primary}
+                      />
+                    }
+                  />
+                </>
+              )}
+            </View>
+
+            {error ? (
+              <View className="mb-3 rounded-xl border border-destructive/30 bg-destructive/10 p-3">
+                <Text className="text-center font-sans-medium text-sm text-destructive">
+                  {error}
+                </Text>
+              </View>
+            ) : null}
+            {successMessage ? (
+              <View className="mb-3 rounded-xl border border-success/30 bg-success/10 p-3">
+                <Text className="text-center font-sans-medium text-sm text-success">
+                  {successMessage}
+                </Text>
+              </View>
+            ) : null}
+
+            {isLoading ? (
+              <View className="items-center py-12">
+                <ActivityIndicator size="large" color={colors.primary} />
+              </View>
+            ) : null}
+
+            {!isLoading && rewards.length === 0 ? (
+              <View className="items-center px-6 py-16">
+                <View className="mb-4 h-16 w-16 items-center justify-center rounded-2xl bg-muted">
+                  <Ionicons name="gift-outline" size={32} color={colors.muted} />
+                </View>
+                <Text className="text-center font-sans-semibold text-base text-foreground">
+                  Sin premios aún
+                </Text>
+                <Text className="mt-1 text-center font-sans text-sm text-muted-foreground">
+                  Aún no hay premios disponibles en este grupo.
+                </Text>
+              </View>
+            ) : null}
+
+            {!isLoading && rewards.length > 0 ? (
+              <Text className="mb-1 font-sans-semibold text-xs uppercase tracking-wider text-muted-foreground">
+                Premios disponibles
+              </Text>
+            ) : null}
           </>
-        )}
-      </View>
-
-      {error ? (
-        <Text className="text-destructive text-xs text-center mb-2 font-sans">{error}</Text>
-      ) : null}
-      {successMessage ? (
-        <Text className="text-success text-xs text-center mb-2 font-sans">{successMessage}</Text>
-      ) : null}
-
-      {isLoading ? <SkeletonLoader variant="list" count={3} /> : null}
-
-      {!isLoading && !error && rewards.length === 0 ? (
-        <EmptyState
-          icon="gift-outline"
-          title="Sin premios aún"
-          message="Aún no hay premios disponibles. ¡Crea uno para motivar al equipo!"
-        />
-      ) : null}
-
-      {!isLoading && rewards.length > 0 ? (
-        <FlatList
-          data={rewards}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{ paddingBottom: 32, gap: 12 }}
-          renderItem={renderReward}
-        />
-      ) : null}
+        }
+      />
     </SafeAreaView>
   );
 }

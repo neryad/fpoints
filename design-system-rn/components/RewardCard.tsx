@@ -1,12 +1,13 @@
 import React from "react";
 import { Pressable, Text, View, ViewStyle } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { shadows } from "../tokens/shadows";
 
 export interface RewardCardProps {
   title: string;
   cost: number;
   description?: string;
-  emoji?: string;
+  icon?: React.ReactNode;
   available?: boolean;
   userPoints?: number;
   onRedeem?: () => void;
@@ -17,13 +18,18 @@ export function RewardCard({
   title,
   cost,
   description,
-  emoji = "🎁",
+  icon,
   available = true,
   userPoints = 0,
   onRedeem,
   style,
 }: RewardCardProps) {
   const canRedeem = userPoints >= cost && available;
+  const defaultIcon = (
+    <View className="h-9 w-9 items-center justify-center rounded-full bg-points/15">
+      <Ionicons name="gift-outline" size={20} color="hsl(8, 85%, 60%)" />
+    </View>
+  );
 
   return (
     <View
@@ -31,7 +37,7 @@ export function RewardCard({
       className="flex-col rounded-xl border border-border bg-card p-4"
     >
       <View className="flex-row items-start gap-3">
-        <Text className="text-2xl">{emoji}</Text>
+        {icon ?? defaultIcon}
         <View className="flex-1">
           <Text className="font-sans-semibold text-sm text-foreground">{title}</Text>
           {description ? (
