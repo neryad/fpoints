@@ -239,6 +239,7 @@ function StreakCard({
   onGoToTasks: () => void;
 }) {
   const { colors } = useTheme();
+  const hasStreak = streak.currentStreak > 0;
 
   return (
     <SectionCard title="Racha diaria">
@@ -247,10 +248,12 @@ function StreakCard({
       ) : (
         <>
           <View className="flex-row items-center">
-            <View className="mr-3 h-14 w-14 items-center justify-center rounded-full bg-streak/15 border-2 border-streak">
-              <Ionicons name="flame" size={22} color={colors.streak} />
+            <View
+              className={`mr-3 h-14 w-14 items-center justify-center rounded-full border-2 ${hasStreak ? "bg-streak/15 border-streak" : "bg-muted/30 border-muted"}`}
+            >
+              <Ionicons name="flame" size={22} color={hasStreak ? colors.streak : colors.muted} />
               <Text
-                className="font-mono-bold text-xs text-streak"
+                className={`font-mono-bold text-xs ${hasStreak ? "text-streak" : "text-muted-foreground"}`}
                 style={{ fontVariant: ["tabular-nums"] }}
               >
                 {streak.currentStreak}
@@ -456,11 +459,11 @@ export function HomeScreen({ navigation }: Props) {
         <View className="flex-row gap-3">
           <View className="flex-1">
             <StatCard
-              icon={<Ionicons name="flame" size={20} color={colors.streak} />}
+              icon={<Ionicons name="flame" size={20} color={streak.currentStreak > 0 ? colors.streak : colors.muted} />}
               label="Racha"
               value={streak.currentStreak}
               subtitle={streak.isActiveToday ? "Activa hoy" : "Pendiente"}
-              colorClass="text-streak"
+              colorClass={streak.currentStreak > 0 ? "text-streak" : "text-muted-foreground"}
               trend={streak.isAtRisk ? "down" : "up"}
             />
           </View>
